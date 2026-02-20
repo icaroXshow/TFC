@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1280">
+  <title>Sobre nosotros · QWL Aqua</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  
+<header class="topbar">
+  <div class="container">
+<div class="brand">
+  <div class="logo">
+    <img src="assets/Logo_QWL.png" alt="QWL Aqua" class="logo-img">
+  </div>
+  <div>QWL AQUA</div>
+</div>
+    <nav aria-label="Main navigation">
+      <ul>
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="faqs.html">FAQs</a></li>
+        <li><a href="about.html">Sobre nosotros</a></li>
+        <li><a href="contact.html">Contacto</a></li>
+      </ul>
+    </nav>
+      <a class="btn login-btn" id="openLogin" href="#login">Iniciar sesión</a>
+  </div>
+</header>
+
+  <main class="container">
+    
+<section class="hero">
+  <h2 class="section">¿Quiénes somos?</h2>
+  <div class="grid-2">
+    <div class="panel">
+      <p>Con QWL podrás controlar tu lavandería en remoto, evitando desplazamientos y resolviendo incidencias más rápido.
+      Somos pioneros en domotización de lavanderías autoservicio.</p>
+      <div class="row mt-24">
+        <span class="badge">Sin permanencia</span>
+        <span class="badge">Pagos con tarjeta</span>
+        <span class="badge">Compatible con marcas variadas</span>
+      </div>
+    </div>
+    <div class="panel">
+      <img src="assets/about-photo.png" alt="Lavandería" style="width:100%; border-radius:14px;">
+    </div>
+  </div>
+  <div class="cards mt-24">
+    <div class="card">
+      <h4>Gestión en tiempo real</h4>
+      <p>Abre/cierra, programa horarios, maneja crédito y consulta ciclos.</p>
+    </div>
+    <div class="card">
+      <h4>Promociones y fidelización</h4>
+      <p>Crea campañas, cupones y descuentos desde tu panel.</p>
+    </div>
+    <div class="card">
+      <h4>Compatibilidad</h4>
+      <p>Integra diferentes marcas y sistemas de pago en un único panel.</p>
+    </div>
+  </div>
+</section>
+
+  
+  <div class="overlay" id="authOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <header>
+        <h3 id="authTitle">Acceso a QWL Aqua</h3>
+        <button class="close" id="closeAuth" aria-label="Cerrar">&times;</button>
+      </header>
+      <div class="auth-tabs">
+        <button class="tabBtn active" data-target="loginView">Login</button>
+        <button class="tabBtn" data-target="registerView">Registro</button>
+        <button class="tabBtn" data-target="recoverView">Recuperar</button>
+      </div>
+      <div class="content">
+        <div class="auth-view active" id="loginView">
+          <form class="form" id="loginForm">
+            <input class="input" type="text" name="user" placeholder="Usuario" required>
+            <input class="input" type="password" name="pass" placeholder="Contraseña" required>
+            <div class="row" style="justify-content:space-between">
+              <label class="row" style="gap:8px"><input type="checkbox"> Recuérdame</label>
+              <a href="#" id="goRecover">He olvidado mi contraseña</a>
+            </div>
+            <div class="actions">
+              <button class="btn outline" type="button" id="goRegister">Regístrate</button>
+              <button class="btn" type="submit">Entrar</button>
+            </div>
+          </form>
+        </div>
+        <div class="auth-view" id="registerView">
+          <form class="form" id="registerForm">
+            <input class="input" type="text" name="user" placeholder="Usuario" required>
+            <input class="input" type="email" name="email" placeholder="Correo electrónico" required>
+            <input class="input" type="password" name="pass" placeholder="Contraseña" required>
+            <input class="input" type="password" name="pass2" placeholder="Repetir contraseña" required>
+            <div class="actions">
+              <button class="btn outline" type="button" data-back="loginView">Cancelar</button>
+              <button class="btn" type="submit">Crear cuenta</button>
+            </div>
+          </form>
+        </div>
+        <div class="auth-view" id="recoverView">
+          <form class="form" id="recoverForm">
+            <input class="input" type="text" name="user" placeholder="Nombre de usuario o correo" required>
+            <p class="hint">Te enviaremos un enlace para restablecer tu contraseña.</p>
+            <div class="actions">
+              <button class="btn outline" type="button" data-back="loginView">Volver</button>
+              <button class="btn" type="submit">Recuperar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+  
+<footer>
+  <div class="container footer-inner">
+    <div class="panel">
+      <h3 class="m-0">Horario</h3>
+      <div class="hours mt-16">
+        <div>Lunes</div><div>8:30–22:00</div>
+        <div>Martes</div><div>8:30–22:00</div>
+        <div>Miércoles</div><div>8:30–22:00</div>
+        <div>Jueves</div><div>8:30–22:00</div>
+        <div>Viernes</div><div>8:30–22:00</div>
+        <div>Sábado</div><div>8:30–22:00</div>
+        <div>Domingo</div><div>8:30–22:00</div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2 class="section">Dónde encontrarnos</h2>
+      <div class="map"><iframe title="Mapa QWL Aqua" width="100%" height="220" style="border:0; border-radius:16px;" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=Calle%20Dr.%20Fleming%2C%2026%2C%2024402%20Ponferrada&output=embed"></iframe></div>
+      <p class="mt-8">Calle Dr. Fleming, 26, Bajo, 24402 Ponferrada, León</p>
+    </div>
+  </div>
+  <div class="container legal">
+    <div>© 2025 QWL Aqua. Todos los derechos reservados.</div>
+    <div><a href="#">Políticas de privacidad</a> · <a href="#">Políticas de cookies</a> · <a href="#">Aviso Legal</a></div>
+  </div>
+</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
