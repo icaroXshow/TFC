@@ -8,7 +8,6 @@ Thumbs.db
 *.swp
 *.swo
 *.bak
-
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
@@ -90,5 +89,9 @@ Soluciones/
 03_Recursos/
 *.msi
 *.fig
+.gitignore
+.git/
+Notas/
 Lavanderia QWL.pdf
 Notas/
+Backupper/

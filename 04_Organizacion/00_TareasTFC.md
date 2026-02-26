@@ -89,8 +89,6 @@ Automatizar luces al abrir/cerrar
 Automatizar ventilación al encender/apagar
 Bloquear créditos si tienda cerrada
 
-🔵 CCTV
-
 Configurar acceso a cámaras en red local
 Probar acceso vía VPN
 Integrar vista iframe en panel
