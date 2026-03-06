@@ -9,9 +9,9 @@ Esta guía te ayudará a conectarte de forma segura a la red interna de la lavan
 2. Descarga e instala el cliente WireGuard.
 
 ### Paso 2: Configuración de WireGuard
-1. Recibirás un archivo de configuración llamado `wg0.conf` (o un nombre similar). Este archivo contiene toda la configuración necesaria para que puedas conectarte de forma segura a la red.
+1. Recibirás un archivo de configuración llamado `cliente1.conf` (o un nombre similar). Este archivo contiene toda la configuración necesaria para que puedas conectarte de forma segura a la red.
 2. Abre el cliente de **WireGuard** en tu PC.
-3. Haz clic en **"Importar configuración"** y selecciona el archivo `wg0.conf` que te hemos enviado.
+3. Haz clic en **"Importar configuración"** y selecciona el archivo `cliente1.conf` que te hemos enviado.
 4. Una vez importado, verás el perfil de conexión en la interfaz de WireGuard.
 
 ### Paso 3: Conectar a la VPN
@@ -21,9 +21,8 @@ Esta guía te ayudará a conectarte de forma segura a la red interna de la lavan
 
 ### Paso 4: Acceder a tu servidor Proxmox
 1. Abre tu navegador y escribe la dirección IP de tu servidor Proxmox:
-   - https://192.168.2.10:8006
+   - https://192.168.1.50:8006
 
-   - **Nota:** La dirección `192.168.2.10` es solo un ejemplo. La IP de tu servidor puede ser diferente, asegúrate de que tienes la     correcta.
 2. Inicia sesión con tus credenciales de **Proxmox**.
 
 ---

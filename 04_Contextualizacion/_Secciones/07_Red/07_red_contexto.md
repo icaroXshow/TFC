@@ -81,13 +81,29 @@ https://192.168.1.50:8006
 
 El servidor ejecuta varios sistemas virtuales para separar los servicios.
 
-| Sistema | IP | Función |
-|-------|------|--------|
-| Proxmox | 192.168.1.50 | Host de virtualización |
-| VM_CORE | 192.168.1.51 | Backend + Web + Redis |
-| VM_DATA | 192.168.1.52 | Base de datos MariaDB |
+## Direccionamiento de red
+
+| Dispositivo | IP | Función |
+|-------------|------|--------|
+| Router MikroTik | 192.168.1.1 | Gateway |
+| Proxmox | 192.168.1.50 | Host |
+| VM_CORE | 192.168.1.51 | Backend |
+| VM_DATA | 192.168.1.52 | Base de datos |
 | LXC_MQTT | 192.168.1.53 | Broker MQTT |
 
+Internet
+   │
+Router ISP
+   │
+Router MikroTik
+   │
+LAN 192.168.1.0/24
+   │
+Proxmox (192.168.1.50)
+   │
+ ├ VM_CORE 192.168.1.51
+ ├ VM_DATA 192.168.1.52
+ └ LXC_MQTT 192.168.1.53
 ---
 
 ## VM_CORE
