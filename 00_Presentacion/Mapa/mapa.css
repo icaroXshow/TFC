@@ -1,0 +1,400 @@
+/* =========================================================
+   KWL — Mapa Navegable (CSS)
+   - Paneles: HUD, Índice, Minimapa
+   - Mapa: nodos, edges, labels
+   - Autohide: se aplica con .uiHidden en body
+   ========================================================= */
+
+:root{
+  --bg0:#f7fbff;
+  --bg1:#e7f2ff;
+
+  --glass: rgba(255, 255, 255, 0.72);
+  --glass2: rgba(255, 255, 255, 0.62);
+  --stroke: rgba(0,0,0,.10);
+  --stroke2: rgba(0,0,0,.07);
+
+  --text: rgba(10,16,22,.92);
+  --muted: rgba(10,16,22,.70);
+
+  --line: rgba(0, 120, 255, 0.22);
+  --lineSoft: rgba(0, 120, 255, 0.14);
+
+  --ring: rgba(0, 120, 255, .16);
+
+  --shadow: 0 10px 30px rgba(0,0,0,.18);
+  --radius: 14px;
+
+  --btnBg: rgba(0, 120, 255, 0.10);
+  --btnBgHover: rgba(0, 120, 255, 0.16);
+
+  --focus: rgba(0,120,255,.20);
+}
+
+*{ box-sizing: border-box; }
+
+html, body{
+  height:100%;
+  margin:0;
+  overflow:hidden;
+  background: linear-gradient(180deg, var(--bg0), var(--bg1));
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+}
+
+canvas#spaceBg{
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  z-index: 0;
+  pointer-events: none;
+}
+
+canvas#space3d{
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  z-index: 1;
+  background:
+    radial-gradient(1400px 1100px at 25% 18%, rgba(78,98,255,.10), transparent 62%),
+    radial-gradient(1200px 980px at 78% 78%, rgba(0,255,180,.06), transparent 66%),
+    linear-gradient(180deg, #f7fbff, #e7f2ff);
+}
+
+svg#space{
+  position: relative;
+  z-index: 1;
+  width:100vw;
+  height:100vh;
+  display:block;
+}
+
+/* =========================
+   UI global autohide
+   ========================= */
+body.uiHidden #hud,
+body.uiHidden #navPanel,
+body.uiHidden #miniWrap{
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+}
+
+body.mode3d #miniWrap{ display:none; }
+body.mode3d #btnToggleMini{ display:none; }
+body.mode3d #btnHome{ display:none; }
+body.mode3d #btnCenter{ display:none; }
+body.mode3d #btnFit{ display:none; }
+body.mode3d #btnToggleNav{ display:none; }
+
+/* En modo 3D, el SVG no se usa */
+body.mode3d svg#space{ display:none; }
+
+/* Labels 3D (overlay HTML) */
+#labels3d{
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+}
+.label3d{
+  position: absolute;
+  transform: translate(-50%, -120%);
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.70);
+  border: 1px solid rgba(0,0,0,.10);
+  color: rgba(10,16,22,.92);
+  box-shadow: 0 10px 30px rgba(0,0,0,.10);
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+.label3d .sub3d{
+  display:block;
+  margin-top: 2px;
+  opacity: .78;
+  font-size: 11px;
+}
+
+/* =========================
+   HUD
+   ========================= */
+#hud{
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  z-index: 10;
+  width: min(760px, calc(100vw - 32px));
+  background: var(--glass);
+  border: 1px solid var(--stroke);
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+#title{
+  font-weight: 850;
+  letter-spacing: .2px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+#title .pill{
+  font-size: 11px;
+  font-weight: 750;
+  color: rgba(255,255,255,.86);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke2);
+  background: rgba(0,0,0,.18);
+}
+
+#crumb{
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+#hint{
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+#actions{
+  margin-top: 10px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.btn{
+  cursor:pointer;
+  user-select:none;
+  padding: 7px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke2);
+  background: var(--btnBg);
+  color: var(--text);
+  font-size: 12px;
+  transition: transform .06s ease, background .16s ease, border-color .16s ease;
+}
+.btn:hover{ background: var(--btnBgHover); border-color: rgba(255,255,255,.14); }
+.btn:active{ transform: translateY(1px); }
+.btn[disabled]{ opacity:.5; cursor:not-allowed; }
+
+/* =========================
+   Tooltip
+   ========================= */
+#tooltip{
+  position: fixed;
+  pointer-events:none;
+  z-index: 30;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.70);
+  color: white;
+  font-size: 12px;
+  border: 1px solid var(--stroke);
+  display:none;
+  max-width: 560px;
+  white-space: pre-line;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+/* =========================
+   Minimapa
+   ========================= */
+#miniWrap{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
+  width: 280px;
+  height: 195px;
+  background: var(--glass2);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+#miniTitle{
+  position:absolute;
+  left: 12px;
+  top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  user-select:none;
+}
+
+#miniSvg{ width:100%; height:100%; }
+
+.miniViewport{
+  fill: rgba(255,255,255,.05);
+  stroke: rgba(255,255,255,.34);
+  stroke-width: 1.5;
+}
+.miniNode{ fill: rgba(255,255,255,.40); }
+.miniEdge{ stroke: rgba(255,255,255,.16); stroke-width: 1; }
+.miniBg{ fill: rgba(0,0,0,.05); }
+
+/* =========================
+   Panel índice (nav)
+   ========================= */
+#navPanel{
+  position: fixed;
+  left: 16px;
+  top: 180px;
+  z-index: 12;
+  width: 320px;
+  max-height: calc(100vh - 196px);
+  background: var(--glass2);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+.navHeader{
+  padding: 12px;
+  border-bottom: 1px solid var(--stroke2);
+  display:flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navTitle{
+  font-weight: 850;
+  font-size: 13px;
+  letter-spacing: .2px;
+  flex: 0 0 auto;
+}
+
+.navSearch{
+  flex: 1 1 auto;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke2);
+  background: rgba(0,0,0,.22);
+  color: inherit;
+  outline: none;
+}
+.navSearch:focus{
+  border-color: rgba(120,160,255,.35);
+  box-shadow: 0 0 0 3px rgba(120,160,255,.12);
+}
+
+.navList{
+  padding: 10px;
+  overflow: auto;
+  max-height: calc(100vh - 260px);
+}
+
+.navGroup{ margin: 10px 0 14px; }
+.navGroupTitle{
+  font-size: 11px;
+  opacity: .70;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin: 6px 8px 8px;
+}
+
+.navItem{
+  display:flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  cursor:pointer;
+  user-select:none;
+  border: 1px solid transparent;
+}
+.navItem:hover{ background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.07); }
+
+.navBadge{
+  font-size: 11px;
+  padding: 2px 7px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  opacity: .92;
+  flex: 0 0 auto;
+}
+
+.navText{ font-size: 13px; line-height: 1.15; }
+.navSub{ font-size: 11px; opacity: .72; margin-top: 2px; }
+
+.navItem.active{
+  border-color: rgba(120,160,255,.26);
+  background: rgba(120,160,255,.08);
+}
+
+/* =========================
+   Mapa (nodos/edges)
+   ========================= */
+.edge{ stroke: var(--line); stroke-width: 2; }
+.edge.soft{ stroke: var(--lineSoft); stroke-width: 1.6; }
+
+.edgeLabel{
+  fill: rgba(255,255,255,.54);
+  font-size: 11px;
+  user-select:none;
+}
+
+.label{
+  fill: var(--text);
+  font-weight: 780;
+  font-size: 13px;
+  user-select:none;
+  pointer-events:none;
+}
+
+.sub{
+  fill: var(--muted);
+  font-size: 11px;
+  user-select:none;
+  pointer-events:none;
+}
+
+.ring{
+  fill:none;
+  stroke: var(--ring);
+  stroke-width: 2;
+}
+
+.nodeHit{ cursor:pointer; fill: transparent; }
+
+.planetStroke{
+  fill: rgba(0,0,0,.10);
+  stroke: rgba(255,255,255,.16);
+  stroke-width: 2;
+}
+
+/* Highlight */
+.is-highlight .planetStroke{
+  stroke: rgba(120,160,255,.55);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 10px rgba(120,160,255,.20));
+}
+
+/* Mobile tweaks */
+@media (max-width: 860px){
+  #navPanel{ width: 300px; top: 165px; }
+  #miniWrap{ width: 240px; height: 170px; }
+}

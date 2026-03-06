@@ -1,9 +1,8 @@
 node_modules
 *.log
 config.json
-carpetaA/subcarpeta
 ignore.txt
-zip-with-ignore.ps1
+HacerCopiaSeguridad.ps1
 03_Recursos/Programas
 03_Recursos/Fotos
 Lavanderia QWL.pdf

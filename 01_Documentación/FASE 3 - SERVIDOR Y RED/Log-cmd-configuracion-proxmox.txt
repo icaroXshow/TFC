@@ -1,0 +1,154 @@
+    ____ _    ________   ____             __     ____           __        ____
+   / __ \ |  / / ____/  / __ \____  _____/ /_   /  _/___  _____/ /_____ _/ / /
+  / /_/ / | / / __/    / /_/ / __ \/ ___/ __/   / // __ \/ ___/ __/ __ `/ / /
+ / ____/| |/ / /___   / ____/ /_/ (__  ) /_   _/ // / / (__  ) /_/ /_/ / / /
+/_/     |___/_____/  /_/    \____/____/\__/  /___/_/ /_/____/\__/\__,_/_/_/
+
+ ✓ Kept 'pve-enterprise' repository
+ ✓ Kept 'pve-enterprise' repository
+ ✓ Kept 'ceph enterprise' repository
+ ✓ Kept 'ceph enterprise' repository
+ ✓ Added 'pve-no-subscription' repository
+ ✓ 'ceph' package repository (no-subscription) already exists (skipped)
+ ✓ Added 'pve-test' repository
+ ✓ Disabled subscription nag (Delete browser cache)
+ ✓ Disabled high availability
+ ✓ Disabled Corosync
+ ✗ apt update failed
+ ✓ Updated Proxmox VE
+ ✓ Completed Post Install Routines
+root@kwl:~# Connection to 192.168.1.50 closed by remote host.
+Connection to 192.168.1.50 closed.
+
+C:\Users\DRL>ssh root@192.168.1.50
+root@192.168.1.50's password:
+Linux kwl 6.17.13-1-pve #1 SMP PREEMPT_DYNAMIC PMX 6.17.13-1 (2026-02-10T14:06Z) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Thu Mar  5 16:42:09 2026 from 10.8.0.6
+root@kwl:~# nano /etc/default/grub
+root@kwl:~# nano /etc/default/grub
+root@kwl:~# root@kwl:~# nano /etc/modules
+root@kwl:~# nano /etc/modules
+root@kwl:~# update-initramfs -u -k allfs -u -k all
+update-initramfs: Generating /boot/initrd.img-6.17.13-1-pve
+Running hook script 'zz-proxmox-boot'..
+Re-executing '/etc/kernel/postinst.d/zz-proxmox-boot' in new private mount namespace..
+No /etc/kernel/proxmox-boot-uuids found, skipping ESP sync.
+update-initramfs: Generating /boot/initrd.img-6.17.2-1-pve
+Running hook script 'zz-proxmox-boot'..
+Re-executing '/etc/kernel/postinst.d/zz-proxmox-boot' in new private mount namespace..
+No /etc/kernel/proxmox-boot-uuids found, skipping ESP sync.
+root@kwl:~# ubdate-grub
+-bash: ubdate-grub: command not found
+root@kwl:~# update-grub
+Generating grub configuration file ...
+Found linux image: /boot/vmlinuz-6.17.13-1-pve
+Found initrd image: /boot/initrd.img-6.17.13-1-pve
+Found linux image: /boot/vmlinuz-6.17.2-1-pve
+Found initrd image: /boot/initrd.img-6.17.2-1-pve
+Found memtest86+ 64bit EFI image: /boot/memtest86+x64.efi
+Found memtest86+ 32bit EFI image: /boot/memtest86+ia32.efi
+Found memtest86+ 64bit image: /boot/memtest86+x64.bin
+Found memtest86+ 32bit image: /boot/memtest86+ia32.bin
+Adding boot menu entry for UEFI Firmware Settings ...
+done
+root@kwl:~# reboot
+
+C:\Users\DRL>ssh root@192.168.1.50
+root@192.168.1.50's password:
+Linux kwl 6.17.13-1-pve #1 SMP PREEMPT_DYNAMIC PMX 6.17.13-1 (2026-02-10T14:06Z) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Thu Mar  5 16:54:47 2026 from 10.8.0.6
+root@kwl:~# dmesg | grep -e DMAR -e IOMMU -e AMD-Vi
+[    0.018228] AMD-Vi: Unknown option - 'on'
+[    0.056674] AMD-Vi: ivrs, add hid:AMDI0020, uid:\_SB.FUR0, rdevid:0xa0
+[    0.056676] AMD-Vi: ivrs, add hid:AMDI0020, uid:\_SB.FUR1, rdevid:0xa0
+[    0.056676] AMD-Vi: ivrs, add hid:AMDI0020, uid:\_SB.FUR2, rdevid:0xa0
+[    0.056677] AMD-Vi: ivrs, add hid:AMDI0020, uid:\_SB.FUR3, rdevid:0xa0
+[    0.056677] AMD-Vi: Using global IVHD EFR:0x246577efa2054ada, EFR2:0x0
+[    0.576320] pci 0000:00:00.2: AMD-Vi: IOMMU performance counters supported
+[    0.579497] AMD-Vi: Extended features (0x246577efa2054ada, 0x0): PPR NX GT IA GA PC
+[    0.579507] AMD-Vi: Interrupt remapping enabled
+[    0.579804] perf/amd_iommu: Detected AMD IOMMU #0 (2 banks, 4 counters/bank).
+
+root@kwl:~# apt install iperf3 htop lm-sensors fio
+Installing: [...]
+Processing triggers for libc-bin (2.41-12+deb13u1) ...
+root@kwl:~# htop
+A signal 2 (Interrupt) was received, exiting without persisting settings to htoprc.
+
+root@kwl:~# nano /etc/hostnameetc/hostname
+root@kwl:~# nano /etc/hostso /etc/hosts
+root@kwl:~# hostnamectl set-hostname ServidorTFC
+reboot
+root@kwl:~# Connection to 192.168.1.50 closed by remote host.
+Connection to 192.168.1.50 closed.
+
+root@kwl:~# bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/scaling-governor.sh)"
+
+  ________  __  __  _____
+ / ___/ _ \/ / / / / ___/__ _  _____ _______  ___  _______
+/ /__/ ___/ /_/ / / (_ / _ \ |/ / -_) __/ _ \/ _ \/ __(_-<
+\___/_/   \____/  \___/\___/___/\__/_/ /_//_/\___/_/ /___/
+
+Crontab Set (use 'crontab -e' to check)
+Current CPU Scaling Governor is set to powersave
+
+root@ServidorTFC:~# cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+powersave
+.
+.
+.
+
+root@ServidorTFC:~# timedatectl set-timezone Europe/Madrid
+root@ServidorTFC:~# nano /etc/apt/sources.list.d/pve-enterprise.list
+root@ServidorTFC:~# nano /etc/apt/sources.list.d/ceph.list
+root@ServidorTFC:~# root@ServidorTFC:~# apt update
+Hit:1 http://deb.debian.org/debian trixie InRelease
+Hit:2 http://security.debian.org/debian-security trixie-security InRelease
+Hit:3 http://deb.debian.org/debian trixie-updates InRelease
+Hit:4 http://download.proxmox.com/debian/pve trixie InRelease
+Err:5 https://enterprise.proxmox.com/debian/ceph-squid trixie InRelease
+  401  Unauthorized [IP: 51.91.38.34 443]
+Err:6 https://enterprise.proxmox.com/debian/pve trixie InRelease
+  401  Unauthorized [IP: 51.91.38.34 443]
+Error: Failed to fetch https://enterprise.proxmox.com/debian/ceph-squid/dists/trixie/InRelease  401  Unauthorized [IP: 51.91.38.34 443]
+Error: The repository 'https://enterprise.proxmox.com/debian/ceph-squid trixie InRelease' is not signed.
+Notice: Updating from such a repository can't be done securely, and is therefore disabled by default.
+Notice: See apt-secure(8) manpage for repository creation and user configuration details.
+Error: Failed to fetch https://enterprise.proxmox.com/debian/pve/dists/trixie/InRelease  401  Unauthorized [IP: 51.91.38.34 443]
+Error: The repository 'https://enterprise.proxmox.com/debian/pve trixie InRelease' is not signed.
+Notice: Updating from such a repository can't be done securely, and is therefore disabled by default.
+Notice: See apt-secure(8) manpage for repository creation and user configuration details.
+root@ServidorTFC:~# grep -R enterprise.proxmox.com /etc/apt/
+/etc/apt/sources.list.d/ceph.list:# deb https://enterprise.proxmox.com/debian/ceph-squid trixie enterprise
+/etc/apt/sources.list.d/ceph.sources:URIs: https://enterprise.proxmox.com/debian/ceph-squid
+/etc/apt/sources.list.d/pve-enterprise.list:# deb https://enterprise.proxmox.com/debian/pve trixie pve-enterprise
+/etc/apt/sources.list.d/pve-enterprise.sources:URIs: https://enterprise.proxmox.com/debian/pve
+root@ServidorTFC:~# rm /etc/apt/sources.list.d/pve-enterprise.sources
+rm /etc/apt/sources.list.d/ceph.sources
+root@ServidorTFC:~# apt update
+Hit:1 http://deb.debian.org/debian trixie InRelease
+Hit:2 http://security.debian.org/debian-security trixie-security InRelease
+Hit:3 http://deb.debian.org/debian trixie-updates InRelease
+Hit:4 http://download.proxmox.com/debian/pve trixie InRelease
+All packages are up to date.
+root@ServidorTFC:~# apt full-upgrade
+Summary:
+  Upgrading: 0, Installing: 0, Removing: 0, Not Upgrading: 0
+root@ServidorTFC:~#
+
+## DESCARGAR ISO
+root@ServidorTFC:~# wget https://releases.ubuntu.com/24.04.1/ubuntu-24.04.1-live-server-amd64.iso -P /var/lib/vz/template/iso/

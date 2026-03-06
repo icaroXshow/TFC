@@ -1,148 +1,145 @@
-# 02 - INFRAESTRUCTURA DEL SISTEMA
+# INFRAESTRUCTURA DEL SISTEMA
 
-## 1. Objetivo de la Infraestructura
+## 1. Objetivo
 
-La infraestructura del sistema LAVANDERÍA KWL está diseñada bajo un modelo de arquitectura local centralizada, donde todos los servicios críticos se ejecutan dentro de la propia lavandería.
+La infraestructura del sistema está diseñada para ejecutar todos los servicios dentro de la propia lavandería.
 
-El objetivo principal es:
+Esto permite:
 
-- Garantizar autonomía total del sistema.
-- Evitar dependencia de servicios cloud.
-- Aumentar seguridad y control.
-- Reducir puntos externos de fallo.
-- Permitir acceso remoto exclusivamente mediante VPN.
+- autonomía total del sistema
+- mayor seguridad
+- independencia de servicios cloud
+- control completo de la red
+
+El acceso remoto se realiza exclusivamente mediante VPN.
 
 ---
 
-## 2. Infraestructura Física
+# 2. Infraestructura Física
 
-### 2.1 Servidor Principal
+## Servidor
 
-- Hardware: Intel i9
-- RAM: 16GB
-- Almacenamiento: SSD
-- Sistema de virtualización: Proxmox VE
+Ubicación: lavandería.
+
+Hardware:
+
+- CHUWI AuBox
+- AMD Ryzen 7 8745HS
+- 14 GB RAM
+- SSD M.2
+
+Sistema de virtualización:
+
+Proxmox VE
+
+El servidor actúa como núcleo del sistema ejecutando varias máquinas virtuales y contenedores.
+
+---
+
+# 3. Infraestructura Virtual
+
+Dirección del host Proxmox:
+
+192.168.1.50
+
+El servidor ejecuta los siguientes sistemas virtuales:
+
+---
+
+## VM_CORE
+
+IP: 192.168.1.51
+
+Servicios:
+
+- Nginx
+- Backend PHP
+- Redis
 
 Función:
-El servidor actúa como núcleo del sistema ejecutando una máquina virtual Linux que contiene todos los servicios necesarios para el funcionamiento del proyecto.
+
+- Servir la aplicación web
+- Gestionar la lógica del sistema
+- Comunicarse con MQTT
+- Gestionar eventos en tiempo real
 
 ---
 
-### 2.2 Router y Red
+## VM_DATA
 
-- Modelo: MikroTik hAP ax2
-- Función:
-  - Gestión de red LAN interna
-  - Implementación de VPN mediante WireGuard
-  - Aislamiento del servidor de acceso público directo
+IP: 192.168.1.52
 
-El servidor no está expuesto a Internet.  
-Todo acceso remoto se realiza exclusivamente a través de la VPN.
+Servicios:
 
----
+- MariaDB
 
-### 2.3 Dispositivos IoT
+Función:
 
-- Microcontroladores ESP32
-- Conectividad WiFi
-- Integración mediante protocolo MQTT
+- almacenar información persistente
+- registros de auditoría
+- estado de máquinas
+- historial del sistema
 
-Cada ESP32 está instalado en:
-
-- Lavadoras
-- Sistema de puerta motorizada
-- Sistema de iluminación
-- Sistema de ventilación
-
-Los dispositivos ejecutan únicamente acciones físicas, sin lógica de negocio.
+Separar la base de datos permite mejorar la estabilidad y facilita futuras ampliaciones.
 
 ---
 
-### 2.4 Sistema de Vigilancia
+## LXC_MQTT
 
-- Cámaras IP MOBOTIX
-- Integradas en la red LAN
-- Acceso interno mediante IP local
-- Visualización desde el panel web vía iframe
+IP: 192.168.1.53
 
-El sistema de cámaras no depende del backend para su funcionamiento, únicamente se integra visualmente en el panel.
+Servicios:
 
----
+- Mosquitto MQTT
 
-## 3. Infraestructura Virtual
+Función:
 
-El servidor ejecuta una única máquina virtual Linux (Debian) que contiene:
-
-- Nginx (Servidor Web)
-- PHP (Backend)
-- MariaDB (Base de datos)
-- Redis (Cache y gestión en tiempo real)
-- Mosquitto (Broker MQTT)
-- Servidor WebSocket
-
-Esta decisión simplifica la implementación del TFC manteniendo separación lógica entre componentes.
+gestionar la comunicación entre el servidor y los dispositivos IoT.
 
 ---
 
-## 4. Red Interna
+# 4. Red del Sistema
 
-Estructura simplificada:
+Red LAN:
 
-[ Usuario remoto ]
-        │
-      (VPN)
-        │
-[ Router MikroTik ]
-        │
-       LAN
-        │
-[ Servidor Proxmox ]
-        │
-        ├── VM Linux
-        │     ├── Backend
-        │     ├── Base de Datos
-        │     ├── MQTT
-        │     └── WebSocket
-        │
-        └── Comunicación MQTT
-                │
-        ┌───────────────┬───────────────┬───────────────┐
-        │               │               │
-     [ESP32]        [ESP32]         [Relés]
-     (Lavadora)     (Puerta)        (Luces)
+192.168.1.0/24
+
+Direcciones principales:
+
+| Dispositivo | IP | Función |
+|--------------|------|-----------|
+| Router MikroTik | 192.168.1.1 | Gateway |
+| Proxmox | 192.168.1.50 | Host virtualización |
+| VM_CORE | 192.168.1.51 | Backend |
+| VM_DATA | 192.168.1.52 | Base de datos |
+| LXC_MQTT | 192.168.1.53 | Broker MQTT |
 
 ---
 
-## 5. Principios de Infraestructura
+# 5. Comunicación del Sistema
 
-- Arquitectura 100% local.
-- Separación entre lógica (servidor) y ejecución física (ESP32).
-- Comunicación basada en eventos (MQTT).
-- Acceso externo únicamente mediante VPN.
-- No exposición directa de puertos a Internet.
-- Registro de acciones críticas en base de datos.
+La comunicación se basa en eventos mediante MQTT.
 
----
+Arquitectura simplificada:
 
-## 6. Decisiones Técnicas para el TFC
-
-Para la versión de TFC:
-
-- Todos los servicios se ejecutan en una única VM.
-- Se controla una única máquina física.
-- No se implementa redundancia.
-- No se implementa balanceo de carga.
-- La arquitectura está preparada para escalar, pero no se despliega escalabilidad en esta fase.
+Usuario  
+│  
+Panel Web  
+│  
+Backend (VM_CORE)  
+│  
+MQTT (LXC_MQTT)  
+│  
+ESP32  
+│  
+Relés / Máquinas
 
 ---
 
-## 7. Escalabilidad Futura
+# 6. Principios de Infraestructura
 
-En la versión completa (8 meses) se contemplan:
-
-- Separación de servicios en múltiples VMs.
-- Alta disponibilidad.
-- Sistema de backup automatizado.
-- Segmentación avanzada de red.
-- Monitorización avanzada.
-- Soporte para múltiples lavanderías sincronizadas.
+- sistema completamente local
+- servicios separados mediante virtualización
+- comunicación basada en eventos
+- acceso remoto solo mediante VPN
+- servidor no expuesto directamente a Internet

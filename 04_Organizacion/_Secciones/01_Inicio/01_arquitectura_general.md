@@ -1,138 +1,156 @@
-
 # ARQUITECTURA GENERAL DEL SISTEMA
 
 ## 1. Visión Global
 
-El sistema está diseñado bajo una arquitectura centralizada local, donde un servidor actúa como núcleo de control y los dispositivos ESP32 ejecutan las acciones físicas.
+El sistema está diseñado bajo una arquitectura local centralizada basada en virtualización.
 
-No se utilizan servicios en la nube. Todo opera dentro de la red local de la lavandería y es accesible remotamente únicamente mediante VPN.
+Todos los servicios del sistema se ejecutan dentro de un servidor físico instalado en la lavandería.  
+Este servidor utiliza **Proxmox VE** como plataforma de virtualización para separar los diferentes servicios del sistema.
+
+El sistema no depende de servicios en la nube.  
+Todo opera dentro de la red local y el acceso remoto se realiza exclusivamente mediante VPN.
 
 ---
 
-## 2. Componentes Principales
+# 2. Componentes Principales
 
-### 2.1 Servidor Local (Infraestructura Central)
-Ubicación: Proxmox (Servidor físico en lavandería)
+## 2.1 Servidor de Infraestructura
 
-Contiene una máquina virtual Linux que ejecuta:
+Ubicación: Servidor físico en la lavandería.
 
-- Nginx (Servidor web)
-- PHP (Backend)
-- MariaDB (Base de datos)
-- Redis (Cache y tiempo real)
-- Mosquitto (Broker MQTT)
-- WebSocket Server
+Hardware:
+
+- CHUWI AuBox
+- AMD Ryzen 7 8745HS
+- 14 GB RAM
+- SSD M.2
+
+El servidor ejecuta **Proxmox VE**, que permite crear máquinas virtuales y contenedores para separar los distintos servicios del sistema.
+
+Dirección del host:
+
+Proxmox  
+https://192.168.1.50:8006
+
+---
+
+# 3. Infraestructura Virtual
+
+El servidor Proxmox ejecuta varias instancias virtualizadas.
+
+## VM_CORE
+
+IP: 192.168.1.51
+
+Servicios:
+
+- Nginx
+- Backend PHP
+- Redis
 
 Función:
-- Gestionar usuarios
-- Procesar lógica de negocio
-- Emitir comandos
-- Registrar auditoría
-- Mantener estado de tienda
-- Servir panel web
-- Comunicarse con ESP32
+
+Gestionar la lógica del sistema, servir el panel web y coordinar la comunicación con los dispositivos IoT.
+
+Acceso al panel web:
+
+http://192.168.1.51
 
 ---
 
-### 2.2 Router con VPN
-Ubicación: Red local (MikroTik hAP ax3)
+## VM_DATA
+
+IP: 192.168.1.52
+
+Servicios:
+
+- MariaDB
 
 Función:
-- Gestionar red LAN
-- Proveer acceso remoto seguro mediante WireGuard
-- No exponer directamente el servidor a Internet
+
+Almacenar toda la información persistente del sistema:
+
+- usuarios
+- máquinas
+- créditos
+- auditoría
+- eventos
+
+Separar la base de datos en una VM independiente mejora la organización y permite escalar el sistema en el futuro.
 
 ---
 
-### 2.3 Dispositivos IoT (ESP32)
-Ubicación: Interior de máquinas / cuadro eléctrico
+## LXC_MQTT
+
+IP: 192.168.1.53
+
+Servicios:
+
+- Mosquitto MQTT
+
+Función:
+
+Gestionar la comunicación en tiempo real entre el servidor y los dispositivos ESP32 mediante el protocolo MQTT.
+
+El uso de un contenedor permite un consumo reducido de recursos.
+
+---
+
+# 4. Router y Red
+
+Dispositivo:
+
+MikroTik hAP ax2
 
 Funciones:
-- Conectarse a la red WiFi local
-- Comunicarse con el servidor mediante MQTT
-- Ejecutar acciones físicas:
-  - Encendido / apagado máquinas
-  - Reinicio controlado
-  - Inyección de pulsos de crédito
-  - Subir / bajar puerta
-  - Encender / apagar luces
-- Enviar confirmaciones (ACK)
-- Reportar estado
+
+- gestión de la red LAN
+- servidor VPN WireGuard
+- control de acceso a la red interna
+
+El servidor no está expuesto directamente a Internet.  
+Todo acceso externo se realiza únicamente mediante VPN.
 
 ---
 
-### 2.4 Sistema de Vigilancia (CCTV)
-Ubicación: Red LAN
+# 5. Dispositivos IoT
 
-Componentes:
-- Cámaras IP MOBOTIX
-- Acceso web mediante dirección interna
+Los dispositivos ESP32 se instalan dentro de las máquinas y sistemas del local.
 
-Función:
-- Supervisión del local
-- Visualización desde el panel web (vía iframe o acceso directo)
-- Acceso solo mediante VPN
+Funciones:
 
----
+- conexión WiFi
+- cliente MQTT
+- ejecución de acciones físicas
+- envío de estado al servidor
 
-## 3. Diagrama Simplificado de Arquitectura
+Las acciones físicas incluyen:
 
-
-
-[ Usuario remoto ]
-│
-(VPN)
-│
-[ Router MikroTik ]
-│
-│ LAN
-│
-[ Servidor Proxmox ]
-│
-├── VM Linux Debian
-│ ├── Nginx + PHP (Backend)
-│ ├── MariaDB
-│ ├── Redis
-│ └── Mosquitto MQTT
-│
-│ MQTT
-│
-┌───────────────┬───────────────┬───────────────┐
-│ │ │ │
-[ ESP32 ] [ ESP32 ] [ Puerta ] [ Luces ]
-(Máquina) (Máquina) (Relés motor) (Relés)
-
+- control de máquinas
+- control de puerta
+- control de luces
+- control de ventilación
+- gestión de pulsos del monedero
 
 ---
 
-## 4. Flujo General de Comunicación
+# 6. Sistema de Vigilancia
 
-1. Usuario interactúa con el panel web.
+El sistema incluye dispositivos MOBOTIX:
+
+- cámaras IP
+- altavoz IP
+
+Estos dispositivos funcionan dentro de la red local y pueden visualizarse desde el panel web.
+
+---
+
+# 7. Flujo General del Sistema
+
+1. El usuario interactúa con el panel web.
 2. El backend procesa la acción.
-3. Si es una acción física:
-   - Se publica un mensaje MQTT.
+3. Si se requiere una acción física, el backend publica un mensaje MQTT.
 4. El ESP32 recibe el comando.
-5. Ejecuta la acción física.
-6. Envía confirmación.
-7. El backend actualiza estado y lo envía al frontend mediante WebSocket.
-
----
-
-## 5. Principios Arquitectónicos
-
-- Arquitectura local y autónoma.
-- Separación clara entre lógica (servidor) y ejecución física (ESP32).
-- Comunicación basada en eventos (MQTT).
-- Acceso externo únicamente mediante VPN.
-- Sin dependencia de servicios cloud.
-
----
-
-## 6. Decisiones Técnicas Clave (Versión TFC)
-
-- Todos los servicios se ejecutan en una única VM por simplicidad.
-- La VPN se implementa en el router.
-- Las cámaras no se gestionan desde el backend, solo se visualizan.
-- El sistema está preparado para escalar, pero se implementa una única lavandería.
-
----
+5. Ejecuta la acción.
+6. Envía confirmación al servidor.
+7. El backend actualiza el estado del sistema.
