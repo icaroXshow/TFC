@@ -68,6 +68,27 @@ Funciones del router:
 
 ---
 
+# Organización lógica de servicios
+
+Aunque todos los sistemas se encuentran en la misma red LAN, los servicios del sistema están organizados por función:
+
+Infraestructura
+- Router MikroTik
+- Servidor Proxmox
+
+Servicios de aplicación
+- VM_CORE (backend y web)
+- VM_DATA (base de datos)
+
+Servicios de comunicación
+- LXC_MQTT (broker MQTT)
+
+Dispositivos físicos
+- controladores ESP32
+- relés y sistemas eléctricos
+
+Esta separación lógica permite escalar el sistema fácilmente en el futuro migrando cada servicio a diferentes máquinas o redes si fuese necesario.
+
 # 4. Acceso remoto
 
 El sistema no expone servicios directamente a Internet.
