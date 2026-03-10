@@ -80,6 +80,12 @@ LXC_MQTT
 
 ---
 
+# Criterios de diseño
+
+- VM_CORE separada para aislar la lógica del sistema
+- VM_DATA separada para proteger persistencia y facilitar copias
+- LXC_MQTT por bajo consumo y simplicidad
+
 # 6 Seguridad
 
 Se aplicaron las siguientes medidas:
@@ -88,3 +94,7 @@ Se aplicaron las siguientes medidas:
 - firewall del servidor activo
 - separación de servicios
 - usuarios limitados por rol
+
+# 7. Resultado final del host
+
+El host Proxmox queda preparado para alojar los servicios del TFC con separación lógica, bajo consumo y facilidad de mantenimiento.

@@ -138,11 +138,11 @@ El servidor ejecuta varias instancias virtualizadas para separar los servicios.
 
 | Sistema | IP | Función |
 |-------|------|--------|
-| Proxmox | 192.168.1.50 | Host de virtualización |
-| VM_CORE | 192.168.1.51 | Backend + Web + Redis |
-| VM_DATA | 192.168.1.52 | Base de datos |
+| Proxmox | 192.168.1.50  | Host de virtualización |
+| VM_CORE | 192.168.1.51  | Backend + Web + Redis |
+| VM_DATA | 192.168.1.52  | Base de datos |
 | LXC_MQTT | 192.168.1.53 | Broker MQTT |
-
+| LXC_DNS | 192.168.1.5   | Servidor DNS |
 ---
 
 ## VM_CORE
@@ -191,6 +191,16 @@ Función
 Gestionar la comunicación en tiempo real entre el servidor y los dispositivos IoT.
 
 ---
+
+## Resolución de nombres interna
+
+La infraestructura utiliza DNS interno para facilitar el acceso a los servicios mediante nombres lógicos.
+
+Ejemplos:
+- proxmox.kwl
+- panel.kwl
+- db.kwl
+- mqtt.kwl
 
 # 7. Dispositivos IoT
 

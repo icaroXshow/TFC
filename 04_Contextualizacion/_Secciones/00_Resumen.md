@@ -1,7 +1,7 @@
 # RESUMEN DEL PROYECTO
 
 ## Nombre del proyecto
-LAVANDERÍA KWL- Sistema integral de gestión, autumatización y control de una lavanderia 
+LAVANDERÍA KWL- Sistema integral de gestión, automatización y control de una lavanderia 
 
 ---
 
@@ -60,7 +60,7 @@ El sistema se ejecutará completamente en infraestructura local.
 
 El sistema se compone de:
 
-- Servidor local (VM sobre Proxmox)
+- Servidor local con Proxmox (VM_CORE, VM_DATA y LXC_MQTT)
 - Router con VPN
 - Red LAN interna
 - Controladores ESP32 conectados a elementos eléctricos

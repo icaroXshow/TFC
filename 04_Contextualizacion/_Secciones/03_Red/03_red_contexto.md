@@ -91,6 +91,8 @@ El servidor ejecuta varios sistemas virtuales para separar los servicios.
 | VM_DATA | 192.168.1.52 | Base de datos |
 | LXC_MQTT | 192.168.1.53 | Broker MQTT |
 
+
+
 Internet
    │
 Router ISP
@@ -107,7 +109,7 @@ Proxmox (192.168.1.50)
 ---
 ## Resolución de nombres (DNS)
 
-Para facilitar el acceso a los servicios internos se utiliza resolución de nombres dentro de la red local.
+El DNS interno se utiliza como mecanismo de comodidad y abstracción, manteniéndose las direcciones IP como referencia principal para la documentación técnica y las pruebas del TFC.
 
 Esto permite acceder a los sistemas mediante nombres en lugar de direcciones IP.
 

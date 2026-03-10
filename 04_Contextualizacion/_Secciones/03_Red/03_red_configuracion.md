@@ -1,5 +1,5 @@
 # README — Configuración de red y acceso remoto con MikroTik + WireGuard
-
+ Este documento describe la configuración prevista para la red final basada en MikroTik y WireGuard.
 ## 1. Propósito del documento
 
 Este documento describe cómo configurar desde cero la red principal del proyecto utilizando un router MikroTik y acceso remoto seguro mediante WireGuard.
@@ -36,7 +36,7 @@ Red LAN 192.168.1.0/24
  ├─ VM_DATA      192.168.1.52
  └─ LXC_MQTT     192.168.1.53
 
-El acceso remoto se realizará mediante WireGuard, que MikroTik documenta en RouterOS como su solución VPN moderna y de alto rendimiento. WireGuard está soportado en RouterOS v7. :contentReference[oaicite:0]{index=0}
+El acceso remoto se realizará mediante WireGuard, que MikroTik documenta en RouterOS como su solución VPN moderna y de alto rendimiento. WireGuard está soportado en RouterOS v7. 
 
 ---
 
@@ -76,7 +76,7 @@ Antes de empezar conviene tener preparado:
 - IPs definitivas de la LAN
 - lista de clientes WireGuard que se van a crear
 
-MikroTik recomienda mantener RouterOS actualizado y usar WireGuard o IPsec para acceso remoto en lugar de abrir puertos de gestión a Internet. :contentReference[oaicite:1]{index=1}
+MikroTik recomienda mantener RouterOS actualizado y usar WireGuard o IPsec para acceso remoto en lugar de abrir puertos de gestión a Internet. 
 
 ---
 
@@ -105,7 +105,7 @@ Dejar el MikroTik como router principal de la red interna.
 - no exponer WinBox, WebFig ni SSH al exterior
 - mantener activas las reglas de firewall por defecto salvo que se entienda muy bien lo que se toca
 
-MikroTik indica que el firewall preconfigurado bloquea accesos desde WAN y que esto no debe eliminarse sin una alternativa segura. :contentReference[oaicite:2]{index=2}
+MikroTik indica que el firewall preconfigurado bloquea accesos desde WAN y que esto no debe eliminarse sin una alternativa segura. 
 
 ---
 
@@ -170,7 +170,7 @@ Y acceso web:
 
 Permitir acceso remoto seguro a la red interna.
 
-WireGuard en MikroTik se configura creando una interfaz, asignándole una clave privada, añadiendo dirección IP a esa interfaz y definiendo peers con sus claves públicas y sus direcciones permitidas. Eso forma parte del flujo oficial de configuración de RouterOS. :contentReference[oaicite:3]{index=3}
+WireGuard en MikroTik se configura creando una interfaz, asignándole una clave privada, añadiendo dirección IP a esa interfaz y definiendo peers con sus claves públicas y sus direcciones permitidas. Eso forma parte del flujo oficial de configuración de RouterOS. 
 
 ## Configuración lógica prevista
 
@@ -214,7 +214,7 @@ Cada cliente debe tener:
 - una IP VPN exclusiva
 - configuración de endpoint apuntando al MikroTik
 
-MikroTik documenta que en cada peer se definen claves públicas y rangos de direcciones permitidas. :contentReference[oaicite:4]{index=4}
+MikroTik documenta que en cada peer se definen claves públicas y rangos de direcciones permitidas.
 
 ## Ejemplo conceptual de reparto
 
@@ -244,7 +244,7 @@ Permitir la VPN sin exponer innecesariamente el router.
 2. Permitir tráfico desde la interfaz WireGuard hacia la LAN.
 3. Mantener bloqueado el acceso directo desde Internet a servicios de gestión.
 
-En RouterOS, el firewall se divide en módulos como filter y nat, y las reglas se organizan por cadenas. Para acceso seguro, MikroTik recomienda proteger el acceso de gestión y usar VPN en vez de abrir puertos administrativos a Internet. :contentReference[oaicite:5]{index=5}
+En RouterOS, el firewall se divide en módulos como filter y nat, y las reglas se organizan por cadenas. Para acceso seguro, MikroTik recomienda proteger el acceso de gestión y usar VPN en vez de abrir puertos administrativos a Internet. 
 
 ## Importante
 
@@ -262,13 +262,13 @@ Todo eso debe seguir yendo por VPN.
 
 ## Escenario A — MikroTik como router directamente conectado a Internet
 
-En este caso normalmente el propio router ya hará NAT de salida para la LAN, según la configuración habitual del equipo. MikroTik indica en Quick Set que NAT suele mantenerse activo en redes domésticas o pequeñas cuando no se dispone de direccionamiento público también para la red interna. :contentReference[oaicite:6]{index=6}
+En este caso normalmente el propio router ya hará NAT de salida para la LAN, según la configuración habitual del equipo. MikroTik indica en Quick Set que NAT suele mantenerse activo en redes domésticas o pequeñas cuando no se dispone de direccionamiento público también para la red interna. 
 
 ## Escenario B — MikroTik detrás del router del operador
 
 Si el MikroTik queda detrás del router ISP, entonces hay que redirigir el puerto UDP 51820 desde el router ISP hacia la IP WAN del MikroTik.
 
-MikroTik documenta el port forwarding mediante dst-nat hacia una IP y puerto internos concretos. :contentReference[oaicite:7]{index=7}
+MikroTik documenta el port forwarding mediante dst-nat hacia una IP y puerto internos concretos.{index=7}
 
 ## Resumen práctico
 
@@ -283,7 +283,7 @@ MikroTik documenta el port forwarding mediante dst-nat hacia una IP y puerto int
 
 Poder conectar a la VPN aunque cambie la IP pública.
 
-MikroTik dispone de servicio Cloud con DDNS propio; al habilitarlo, el router registra un nombre DNS que apunta a la última IP pública que el equipo haya enviado al servicio. :contentReference[oaicite:8]{index=8}
+MikroTik dispone de servicio Cloud con DDNS propio; al habilitarlo, el router registra un nombre DNS que apunta a la última IP pública que el equipo haya enviado al servicio. 
 
 ## Opciones
 
@@ -319,7 +319,7 @@ Conectar un portátil o móvil remoto a la red del laboratorio.
 - address: IP del cliente en la red VPN
 - allowed IPs: al menos 10.8.0.0/24 y 192.168.1.0/24
 
-MikroTik usa el concepto de allowed-address/allowed IPs para definir qué direcciones se enrutan por el túnel y qué IPs se aceptan para cada peer. :contentReference[oaicite:9]{index=9}
+MikroTik usa el concepto de allowed-address/allowed IPs para definir qué direcciones se enrutan por el túnel y qué IPs se aceptan para cada peer.
 
 ## Comportamiento esperado
 
@@ -366,7 +366,7 @@ Tras conectar, el equipo remoto debe poder alcanzar:
 - conservar firewall por defecto y añadir solo lo necesario
 - usar VPN para administración remota
 
-MikroTik recomienda explícitamente usar WireGuard o IPsec para acceso remoto y no abrir puertos de gestión al exterior sin protección. :contentReference[oaicite:10]{index=10}
+MikroTik recomienda explícitamente usar WireGuard o IPsec para acceso remoto y no abrir puertos de gestión al exterior sin protección. 
 
 ---
 

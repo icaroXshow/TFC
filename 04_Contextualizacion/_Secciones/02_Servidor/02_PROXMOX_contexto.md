@@ -46,7 +46,7 @@ https://192.168.1.50:8006
 | VM_CORE | 192.168.1.51 | Backend + Web |
 | VM_DATA | 192.168.1.52 | Base de datos |
 | LXC_MQTT | 192.168.1.53 | Broker MQTT |
-
+| LXC_DNS | 192.168.1.5 | Servidor DNS |
 ---
 
 # 4. Distribución de servicios
