@@ -6,29 +6,29 @@
    ========================================================= */
 
 :root{
-  --bg0:#f7fbff;
-  --bg1:#e7f2ff;
+  --bg0:#000000;
+  --bg1:#011614c4;
 
-  --glass: rgba(255, 255, 255, 0.72);
-  --glass2: rgba(255, 255, 255, 0.62);
-  --stroke: rgba(0,0,0,.10);
-  --stroke2: rgba(0,0,0,.07);
+  --glass: rgba(44, 49, 48, 0.58);
+  --glass2: rgba(0, 77, 70, 0.42);
+  --stroke: rgba(255,255,255,.12);
+  --stroke2: rgba(255,255,255,.09);
 
-  --text: rgba(10,16,22,.92);
-  --muted: rgba(10,16,22,.70);
+  --text: rgba(255,255,255,.92);
+  --muted: rgba(255,255,255,.70);
 
-  --line: rgba(0, 120, 255, 0.22);
-  --lineSoft: rgba(0, 120, 255, 0.14);
+  --line: rgba(5, 255, 180, 0.17);
+  --lineSoft: rgba(10, 221, 98, 0.12);
 
-  --ring: rgba(0, 120, 255, .16);
+  --ring: rgba(120,160,255,.18);
 
-  --shadow: 0 10px 30px rgba(0,0,0,.18);
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
   --radius: 14px;
 
-  --btnBg: rgba(0, 120, 255, 0.10);
-  --btnBgHover: rgba(0, 120, 255, 0.16);
+  --btnBg: rgba(14, 238, 208, 0.28);
+  --btnBgHover: rgba(89, 235, 167, 0.336);
 
-  --focus: rgba(0,120,255,.20);
+  --focus: rgba(120,160,255,.35);
 }
 
 *{ box-sizing: border-box; }
@@ -52,19 +52,6 @@ canvas#spaceBg{
   pointer-events: none;
 }
 
-canvas#space3d{
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  display: block;
-  z-index: 1;
-  background:
-    radial-gradient(1400px 1100px at 25% 18%, rgba(78,98,255,.10), transparent 62%),
-    radial-gradient(1200px 980px at 78% 78%, rgba(0,255,180,.06), transparent 66%),
-    linear-gradient(180deg, #f7fbff, #e7f2ff);
-}
-
 svg#space{
   position: relative;
   z-index: 1;
@@ -82,44 +69,6 @@ body.uiHidden #miniWrap{
   opacity: 0;
   pointer-events: none;
   transform: translateY(-6px);
-}
-
-body.mode3d #miniWrap{ display:none; }
-body.mode3d #btnToggleMini{ display:none; }
-body.mode3d #btnHome{ display:none; }
-body.mode3d #btnCenter{ display:none; }
-body.mode3d #btnFit{ display:none; }
-body.mode3d #btnToggleNav{ display:none; }
-
-/* En modo 3D, el SVG no se usa */
-body.mode3d svg#space{ display:none; }
-
-/* Labels 3D (overlay HTML) */
-#labels3d{
-  position: fixed;
-  inset: 0;
-  z-index: 15;
-  pointer-events: none;
-}
-.label3d{
-  position: absolute;
-  transform: translate(-50%, -120%);
-  padding: 6px 8px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.70);
-  border: 1px solid rgba(0,0,0,.10);
-  color: rgba(10,16,22,.92);
-  box-shadow: 0 10px 30px rgba(0,0,0,.10);
-  font-size: 12px;
-  line-height: 1.2;
-  white-space: nowrap;
-  backdrop-filter: blur(6px);
-}
-.label3d .sub3d{
-  display:block;
-  margin-top: 2px;
-  opacity: .78;
-  font-size: 11px;
 }
 
 /* =========================

@@ -23,17 +23,16 @@
       <div id="hint">
         Rueda: zoom · Arrastra: mover · Click: abrir · Shift+Click: abrir (nueva pestaña) · Minimapa: click/arrastrar · UI: se oculta a los 30s
       </div>
-    <div id="actions">
-      <div class="btn" id="btnBack" disabled>← Volver</div>
-      <div class="btn" id="btnHome">⌂ Inicio</div>
-      <div class="btn" id="btnCenter">◎ Centrar</div>
-      <div class="btn" id="btnFit">⤢ Ajustar</div>
-      <div class="btn" id="btnToggleLabels">Aa Etiquetas</div>
-      <div class="btn" id="btnToggleEdges">— Conexiones</div>
-      <div class="btn" id="btnToggleMini">▣ Minimapa</div>
-      <div class="btn" id="btnToggleNav">≡ Índice</div>
+      <div id="actions">
+        <div class="btn" id="btnBack" disabled>← Volver</div>
+        <div class="btn" id="btnHome">⌂ Inicio</div>
+        <div class="btn" id="btnCenter">◎ Centrar</div>
+        <div class="btn" id="btnFit">⤢ Ajustar</div>
+        <div class="btn" id="btnToggleLabels">Aa Etiquetas</div>
+        <div class="btn" id="btnToggleEdges">— Conexiones</div>
+        <div class="btn" id="btnToggleMini">▣ Minimapa</div>
+      </div>
     </div>
-  </div>
 
     <!-- Tooltip -->
     <div id="tooltip"></div>
@@ -56,15 +55,8 @@
     <!-- Fondo animado -->
     <canvas id="spaceBg"></canvas>
 
-    <!-- Lienzo 3D -->
-    <canvas id="space3d"></canvas>
-    <div id="labels3d"></div>
-
-    <!-- Lienzo (fallback D3/SVG) -->
+    <!-- Lienzo -->
     <svg id="space"></svg>
-
-    <!-- Three.js (local, evita bloqueos de privacidad/CSP) -->
-    <script src="./assets/vendor/three.min.js"></script>
 
     <!-- JS externo -->
     <script src="./mapa.js"></script>
