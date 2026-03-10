@@ -105,6 +105,20 @@ Proxmox (192.168.1.50)
  ├ VM_DATA 192.168.1.52
  └ LXC_MQTT 192.168.1.53
 ---
+## Resolución de nombres (DNS)
+
+Para facilitar el acceso a los servicios internos se utiliza resolución de nombres dentro de la red local.
+
+Esto permite acceder a los sistemas mediante nombres en lugar de direcciones IP.
+
+| Servicio | Dominio | IP |
+|--------|--------|----|
+| Proxmox | proxmox.kwl | 192.168.1.50 |
+| Panel Web | panel.kwl | 192.168.1.51 |
+| Base de datos | db.kwl | 192.168.1.52 |
+| Broker MQTT | mqtt.kwl | 192.168.1.53 |
+
+El uso de DNS permite modificar la infraestructura sin depender de direcciones IP fijas en los clientes.
 
 ## VM_CORE
 
@@ -234,6 +248,21 @@ El sistema sigue varios principios de seguridad:
 Esto reduce significativamente la superficie de ataque del sistema.
 
 ---
+## Acceso administrativo
+
+El acceso administrativo a la infraestructura se limita a los siguientes servicios:
+
+| Servicio | Dirección |
+|--------|--------|
+| Proxmox | https://192.168.1.50:8006 |
+| Panel Web | http://192.168.1.51 |
+
+Estos servicios solo son accesibles desde:
+
+- red LAN interna
+- clientes conectados mediante VPN
+
+Esto evita la exposición directa de los sistemas críticos a Internet.
 
 # 10. Principios de diseño
 

@@ -1,0 +1,661 @@
+Microsoft Windows [Versión 10.0.26200.7840]
+(c) Microsoft Corporation. Todos los derechos reservados.
+
+C:\Users\DRL>ssh root@192.168.1.50
+root@192.168.1.50's password:
+Permission denied, please try again.
+root@192.168.1.50's password:
+Permission denied, please try again.
+root@192.168.1.50's password:
+root@192.168.1.50: Permission denied (publickey,password).
+
+C:\Users\DRL>ssh root@192.168.1.52
+root@192.168.1.52's password:
+Permission denied, please try again.
+root@192.168.1.52's password:
+
+C:\Users\DRL>ssh icarox@192.168.1.52
+icarox@192.168.1.52's password:
+Permission denied, please try again.
+icarox@192.168.1.52's password:
+Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-101-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of mar 10 mar 2026 08:23:25 UTC
+
+  System load:  0.0                Processes:              109
+  Usage of /:   34.9% of 18.53GB   Users logged in:        0
+  Memory usage: 10%                IPv4 address for ens18: 192.168.1.52
+  Swap usage:   0%
+
+ * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar for easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+
+El mantenimiento de seguridad expandido para Applications está desactivado
+
+Se pueden aplicar 0 actualizaciones de forma inmediata.
+
+Active ESM Apps para recibir futuras actualizaciones de seguridad adicionales.
+Vea https://ubuntu.com/esm o ejecute «sudo pro status»
+
+
+Last login: Fri Mar  6 14:39:11 2026 from 10.8.0.6
+icarox@vm-data:~$ sudo apt update
+sudo apt upgrade -y
+[sudo] password for icarox:
+Obj:1 http://archive.ubuntu.com/ubuntu noble InRelease
+Des:2 http://archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+Des:3 http://security.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+Des:4 http://security.ubuntu.com/ubuntu noble-security/main amd64 Packages [1.504 kB]
+Des:5 http://archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+Des:6 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1.806 kB]
+Des:7 http://security.ubuntu.com/ubuntu noble-security/main amd64 Components [21,5 kB]
+Des:8 http://security.ubuntu.com/ubuntu noble-security/main amd64 c-n-f Metadata [10,1 kB]
+Des:9 http://security.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [2.599 kB]
+Des:10 http://security.ubuntu.com/ubuntu noble-security/restricted amd64 Components [212 B]
+Des:11 http://security.ubuntu.com/ubuntu noble-security/restricted amd64 c-n-f Metadata [544 B]
+Des:12 http://security.ubuntu.com/ubuntu noble-security/universe amd64 Packages [976 kB]
+Des:13 http://security.ubuntu.com/ubuntu noble-security/universe amd64 Components [74,1 kB]
+Des:14 http://security.ubuntu.com/ubuntu noble-security/universe amd64 c-n-f Metadata [20,6 kB]
+Des:15 http://security.ubuntu.com/ubuntu noble-security/multiverse amd64 Components [212 B]
+Des:16 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 Components [177 kB]
+Des:17 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 c-n-f Metadata [16,7 kB]
+Des:18 http://archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [2.748 kB]
+Des:19 http://archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Components [212 B]
+Des:20 http://archive.ubuntu.com/ubuntu noble-updates/restricted amd64 c-n-f Metadata [556 B]
+Des:21 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1.564 kB]
+Des:22 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [386 kB]
+Des:23 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 c-n-f Metadata [32,9 kB]
+Des:24 http://archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]
+Des:25 http://archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [7.312 B]
+Des:26 http://archive.ubuntu.com/ubuntu noble-backports/restricted amd64 Components [216 B]
+Des:27 http://archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [10,5 kB]
+Des:28 http://archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Components [212 B]
+Descargados 12,3 MB en 2s (5.028 kB/s)
+Leyendo lista de paquetes... Hecho
+Creando árbol de dependencias... Hecho
+Leyendo la información de estado... Hecho
+Se pueden actualizar 5 paquetes. Ejecute «apt list --upgradable» para verlos.
+Leyendo lista de paquetes... Hecho
+Creando árbol de dependencias... Hecho
+Leyendo la información de estado... Hecho
+Calculando la actualización... Hecho
+Se actualizarán los siguientes paquetes:
+  libpython3.12-minimal libpython3.12-stdlib libpython3.12t64 python3.12 python3.12-minimal
+5 actualizados, 0 nuevos se instalarán, 0 para eliminar y 0 no actualizados.
+5 standard LTS security updates
+Se necesita descargar 8.235 kB de archivos.
+Se utilizarán 4.096 B de espacio de disco adicional después de esta operación.
+Des:1 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3.12t64 amd64 3.12.3-1ubuntu0.12 [2.345 kB]
+Des:2 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3.12 amd64 3.12.3-1ubuntu0.12 [651 kB]
+Des:3 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3.12-stdlib amd64 3.12.3-1ubuntu0.12 [2.069 kB]
+Des:4 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 python3.12-minimal amd64 3.12.3-1ubuntu0.12 [2.334 kB]
+Des:5 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpython3.12-minimal amd64 3.12.3-1ubuntu0.12 [837 kB]
+Descargados 8.235 kB en 2s (4.633 kB/s)
+(Leyendo la base de datos ... 87764 ficheros o directorios instalados actualmente.)
+Preparando para desempaquetar .../libpython3.12t64_3.12.3-1ubuntu0.12_amd64.deb ...
+Desempaquetando libpython3.12t64:amd64 (3.12.3-1ubuntu0.12) sobre (3.12.3-1ubuntu0.11) ...
+Preparando para desempaquetar .../python3.12_3.12.3-1ubuntu0.12_amd64.deb ...
+Desempaquetando python3.12 (3.12.3-1ubuntu0.12) sobre (3.12.3-1ubuntu0.11) ...
+Preparando para desempaquetar .../libpython3.12-stdlib_3.12.3-1ubuntu0.12_amd64.deb ...
+Desempaquetando libpython3.12-stdlib:amd64 (3.12.3-1ubuntu0.12) sobre (3.12.3-1ubuntu0.11) ...
+Preparando para desempaquetar .../python3.12-minimal_3.12.3-1ubuntu0.12_amd64.deb ...
+Desempaquetando python3.12-minimal (3.12.3-1ubuntu0.12) sobre (3.12.3-1ubuntu0.11) ...
+Preparando para desempaquetar .../libpython3.12-minimal_3.12.3-1ubuntu0.12_amd64.deb ...
+Desempaquetando libpython3.12-minimal:amd64 (3.12.3-1ubuntu0.12) sobre (3.12.3-1ubuntu0.11) ...
+Configurando libpython3.12-minimal:amd64 (3.12.3-1ubuntu0.12) ...
+Configurando python3.12-minimal (3.12.3-1ubuntu0.12) ...
+Configurando libpython3.12-stdlib:amd64 (3.12.3-1ubuntu0.12) ...
+Configurando python3.12 (3.12.3-1ubuntu0.12) ...
+Configurando libpython3.12t64:amd64 (3.12.3-1ubuntu0.12) ...
+Procesando disparadores para systemd (255.4-1ubuntu8.12) ...
+Procesando disparadores para man-db (2.12.0-4build2) ...
+Procesando disparadores para libc-bin (2.39-0ubuntu8.7) ...
+Scanning processes...
+Scanning candidates...
+Scanning linux images...
+
+Running kernel seems to be up-to-date.
+
+Restarting services...
+
+Service restarts being deferred:
+ systemctl restart unattended-upgrades.service
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+icarox@vm-data:~$ sudo apt install mariadb-server mariadb-client -y
+Leyendo lista de paquetes... Hecho
+Creando árbol de dependencias... Hecho
+Leyendo la información de estado... Hecho
+Se instalarán los siguientes paquetes adicionales:
+  galera-4 libcgi-fast-perl libcgi-pm-perl libclone-perl libconfig-inifiles-perl libdbd-mysql-perl libdbi-perl libencode-locale-perl libfcgi-bin libfcgi-perl libfcgi0t64 libhtml-parser-perl libhtml-tagset-perl libhtml-template-perl
+  libhttp-date-perl libhttp-message-perl libio-html-perl liblwp-mediatypes-perl libmariadb3 libmysqlclient21 libsnappy1v5 libtimedate-perl liburi-perl mariadb-client-core mariadb-common mariadb-plugin-provider-bzip2
+  mariadb-plugin-provider-lz4 mariadb-plugin-provider-lzma mariadb-plugin-provider-lzo mariadb-plugin-provider-snappy mariadb-server-core mysql-common pv socat
+Paquetes sugeridos:
+  libmldbm-perl libnet-daemon-perl libsql-statement-perl libdata-dump-perl libipc-sharedcache-perl libio-compress-brotli-perl libbusiness-isbn-perl libregexp-ipv6-perl libwww-perl mailx mariadb-test doc-base
+Se instalarán los siguientes paquetes NUEVOS:
+  galera-4 libcgi-fast-perl libcgi-pm-perl libclone-perl libconfig-inifiles-perl libdbd-mysql-perl libdbi-perl libencode-locale-perl libfcgi-bin libfcgi-perl libfcgi0t64 libhtml-parser-perl libhtml-tagset-perl libhtml-template-perl
+  libhttp-date-perl libhttp-message-perl libio-html-perl liblwp-mediatypes-perl libmariadb3 libmysqlclient21 libsnappy1v5 libtimedate-perl liburi-perl mariadb-client mariadb-client-core mariadb-common mariadb-plugin-provider-bzip2
+  mariadb-plugin-provider-lz4 mariadb-plugin-provider-lzma mariadb-plugin-provider-lzo mariadb-plugin-provider-snappy mariadb-server mariadb-server-core mysql-common pv socat
+0 actualizados, 36 nuevos se instalarán, 0 para eliminar y 0 no actualizados.
+Se necesita descargar 19,7 MB de archivos.
+Se utilizarán 201 MB de espacio de disco adicional después de esta operación.
+Des:1 http://archive.ubuntu.com/ubuntu noble/universe amd64 galera-4 amd64 26.4.16-2build4 [736 kB]
+Des:2 http://archive.ubuntu.com/ubuntu noble/main amd64 mysql-common all 5.8+1.1.0build1 [6.746 B]
+Des:3 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 mariadb-common all 1:10.11.14-0ubuntu0.24.04.1 [28,6 kB]
+Des:4 http://archive.ubuntu.com/ubuntu noble/main amd64 libdbi-perl amd64 1.643-4build3 [721 kB]
+Des:5 http://archive.ubuntu.com/ubuntu noble/main amd64 libconfig-inifiles-perl all 3.000003-2 [39,4 kB]
+Des:6 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 libmariadb3 amd64 1:10.11.14-0ubuntu0.24.04.1 [196 kB]
+Des:7 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 mariadb-client-core amd64 1:10.11.14-0ubuntu0.24.04.1 [1.039 kB]
+Des:8 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 mariadb-client amd64 1:10.11.14-0ubuntu0.24.04.1 [2.502 kB]
+Des:9 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 mariadb-server-core amd64 1:10.11.14-0ubuntu0.24.04.1 [8.406 kB]
+Des:10 http://archive.ubuntu.com/ubuntu noble/main amd64 socat amd64 1.8.0.0-4build3 [374 kB]
+Des:11 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 mariadb-server amd64 1:10.11.14-0ubuntu0.24.04.1 [3.463 kB]
+Des:12 http://archive.ubuntu.com/ubuntu noble/main amd64 libhtml-tagset-perl all 3.20-6 [11,3 kB]
+Des:13 http://archive.ubuntu.com/ubuntu noble/main amd64 liburi-perl all 5.27-1 [88,0 kB]
+Des:14 http://archive.ubuntu.com/ubuntu noble/main amd64 libhtml-parser-perl amd64 3.81-1build3 [85,8 kB]
+Des:15 http://archive.ubuntu.com/ubuntu noble/main amd64 libcgi-pm-perl all 4.63-1 [185 kB]
+Des:16 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libfcgi0t64 amd64 2.4.2-2.1ubuntu0.24.04.1 [27,0 kB]
+Des:17 http://archive.ubuntu.com/ubuntu noble/main amd64 libfcgi-perl amd64 0.82+ds-3build2 [21,7 kB]
+Des:18 http://archive.ubuntu.com/ubuntu noble/main amd64 libcgi-fast-perl all 1:2.17-1 [10,3 kB]
+Des:19 http://archive.ubuntu.com/ubuntu noble/main amd64 libclone-perl amd64 0.46-1build3 [10,7 kB]
+Des:20 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libmysqlclient21 amd64 8.0.45-0ubuntu0.24.04.1 [1.255 kB]
+Des:21 http://archive.ubuntu.com/ubuntu noble/universe amd64 libdbd-mysql-perl amd64 4.052-1ubuntu3 [85,5 kB]
+Des:22 http://archive.ubuntu.com/ubuntu noble/main amd64 libencode-locale-perl all 1.05-3 [11,6 kB]
+Des:23 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libfcgi-bin amd64 2.4.2-2.1ubuntu0.24.04.1 [11,2 kB]
+Des:24 http://archive.ubuntu.com/ubuntu noble/main amd64 libhtml-template-perl all 2.97-2 [60,2 kB]
+Des:25 http://archive.ubuntu.com/ubuntu noble/main amd64 libtimedate-perl all 2.3300-2 [34,0 kB]
+Des:26 http://archive.ubuntu.com/ubuntu noble/main amd64 libhttp-date-perl all 6.06-1 [10,2 kB]
+Des:27 http://archive.ubuntu.com/ubuntu noble/main amd64 libio-html-perl all 1.004-3 [15,9 kB]
+Des:28 http://archive.ubuntu.com/ubuntu noble/main amd64 liblwp-mediatypes-perl all 6.04-2 [20,1 kB]
+Des:29 http://archive.ubuntu.com/ubuntu noble/main amd64 libhttp-message-perl all 6.45-1ubuntu1 [78,2 kB]
+Des:30 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 mariadb-plugin-provider-bzip2 amd64 1:10.11.14-0ubuntu0.24.04.1 [13,9 kB]
+Des:31 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 mariadb-plugin-provider-lz4 amd64 1:10.11.14-0ubuntu0.24.04.1 [13,8 kB]
+Des:32 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 mariadb-plugin-provider-lzma amd64 1:10.11.14-0ubuntu0.24.04.1 [13,8 kB]
+Des:33 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 mariadb-plugin-provider-lzo amd64 1:10.11.14-0ubuntu0.24.04.1 [13,8 kB]
+Des:34 http://archive.ubuntu.com/ubuntu noble/main amd64 libsnappy1v5 amd64 1.1.10-1build1 [28,6 kB]
+Des:35 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 mariadb-plugin-provider-snappy amd64 1:10.11.14-0ubuntu0.24.04.1 [13,8 kB]
+Des:36 http://archive.ubuntu.com/ubuntu noble/main amd64 pv amd64 1.8.5-2build1 [73,9 kB]
+Descargados 19,7 MB en 2s (8.548 kB/s)
+Extrayendo plantillas para los paquetes: 100%
+Preconfigurando paquetes ...
+Seleccionando el paquete galera-4 previamente no seleccionado.
+(Leyendo la base de datos ... 87764 ficheros o directorios instalados actualmente.)
+Preparando para desempaquetar .../0-galera-4_26.4.16-2build4_amd64.deb ...
+info: The home dir /nonexistent you specified can't be accessed: No such file or directory
+
+info: Selecting UID from range 100 to 999 ...
+
+info: Adding system user `_galera' (UID 110) ...
+info: Adding new user `_galera' (UID 110) with group `nogroup' ...
+info: Not creating `/nonexistent'.
+Desempaquetando galera-4 (26.4.16-2build4) ...
+Seleccionando el paquete mysql-common previamente no seleccionado.
+Preparando para desempaquetar .../1-mysql-common_5.8+1.1.0build1_all.deb ...
+Desempaquetando mysql-common (5.8+1.1.0build1) ...
+Seleccionando el paquete mariadb-common previamente no seleccionado.
+Preparando para desempaquetar .../2-mariadb-common_1%3a10.11.14-0ubuntu0.24.04.1_all.deb ...
+Desempaquetando mariadb-common (1:10.11.14-0ubuntu0.24.04.1) ...
+Seleccionando el paquete libdbi-perl:amd64 previamente no seleccionado.
+Preparando para desempaquetar .../3-libdbi-perl_1.643-4build3_amd64.deb ...
+Desempaquetando libdbi-perl:amd64 (1.643-4build3) ...
+Seleccionando el paquete libconfig-inifiles-perl previamente no seleccionado.
+Preparando para desempaquetar .../4-libconfig-inifiles-perl_3.000003-2_all.deb ...
+Desempaquetando libconfig-inifiles-perl (3.000003-2) ...
+Seleccionando el paquete libmariadb3:amd64 previamente no seleccionado.
+Preparando para desempaquetar .../5-libmariadb3_1%3a10.11.14-0ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando libmariadb3:amd64 (1:10.11.14-0ubuntu0.24.04.1) ...
+Seleccionando el paquete mariadb-client-core previamente no seleccionado.
+Preparando para desempaquetar .../6-mariadb-client-core_1%3a10.11.14-0ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando mariadb-client-core (1:10.11.14-0ubuntu0.24.04.1) ...
+Seleccionando el paquete mariadb-client previamente no seleccionado.
+Preparando para desempaquetar .../7-mariadb-client_1%3a10.11.14-0ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando mariadb-client (1:10.11.14-0ubuntu0.24.04.1) ...
+Seleccionando el paquete mariadb-server-core previamente no seleccionado.
+Preparando para desempaquetar .../8-mariadb-server-core_1%3a10.11.14-0ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando mariadb-server-core (1:10.11.14-0ubuntu0.24.04.1) ...
+Seleccionando el paquete socat previamente no seleccionado.
+Preparando para desempaquetar .../9-socat_1.8.0.0-4build3_amd64.deb ...
+Desempaquetando socat (1.8.0.0-4build3) ...
+Configurando mysql-common (5.8+1.1.0build1) ...
+update-alternatives: utilizando /etc/mysql/my.cnf.fallback para proveer /etc/mysql/my.cnf (my.cnf) en modo automático
+Configurando mariadb-common (1:10.11.14-0ubuntu0.24.04.1) ...
+update-alternatives: utilizando /etc/mysql/mariadb.cnf para proveer /etc/mysql/my.cnf (my.cnf) en modo automático
+Seleccionando el paquete mariadb-server previamente no seleccionado.
+(Leyendo la base de datos ... 88231 ficheros o directorios instalados actualmente.)
+Preparando para desempaquetar .../00-mariadb-server_1%3a10.11.14-0ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando mariadb-server (1:10.11.14-0ubuntu0.24.04.1) ...
+Seleccionando el paquete libhtml-tagset-perl previamente no seleccionado.
+Preparando para desempaquetar .../01-libhtml-tagset-perl_3.20-6_all.deb ...
+Desempaquetando libhtml-tagset-perl (3.20-6) ...
+Seleccionando el paquete liburi-perl previamente no seleccionado.
+Preparando para desempaquetar .../02-liburi-perl_5.27-1_all.deb ...
+Desempaquetando liburi-perl (5.27-1) ...
+Seleccionando el paquete libhtml-parser-perl:amd64 previamente no seleccionado.
+Preparando para desempaquetar .../03-libhtml-parser-perl_3.81-1build3_amd64.deb ...
+Desempaquetando libhtml-parser-perl:amd64 (3.81-1build3) ...
+Seleccionando el paquete libcgi-pm-perl previamente no seleccionado.
+Preparando para desempaquetar .../04-libcgi-pm-perl_4.63-1_all.deb ...
+Desempaquetando libcgi-pm-perl (4.63-1) ...
+Seleccionando el paquete libfcgi0t64:amd64 previamente no seleccionado.
+Preparando para desempaquetar .../05-libfcgi0t64_2.4.2-2.1ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando libfcgi0t64:amd64 (2.4.2-2.1ubuntu0.24.04.1) ...
+Seleccionando el paquete libfcgi-perl previamente no seleccionado.
+Preparando para desempaquetar .../06-libfcgi-perl_0.82+ds-3build2_amd64.deb ...
+Desempaquetando libfcgi-perl (0.82+ds-3build2) ...
+Seleccionando el paquete libcgi-fast-perl previamente no seleccionado.
+Preparando para desempaquetar .../07-libcgi-fast-perl_1%3a2.17-1_all.deb ...
+Desempaquetando libcgi-fast-perl (1:2.17-1) ...
+Seleccionando el paquete libclone-perl:amd64 previamente no seleccionado.
+Preparando para desempaquetar .../08-libclone-perl_0.46-1build3_amd64.deb ...
+Desempaquetando libclone-perl:amd64 (0.46-1build3) ...
+Seleccionando el paquete libmysqlclient21:amd64 previamente no seleccionado.
+Preparando para desempaquetar .../09-libmysqlclient21_8.0.45-0ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando libmysqlclient21:amd64 (8.0.45-0ubuntu0.24.04.1) ...
+Seleccionando el paquete libdbd-mysql-perl:amd64 previamente no seleccionado.
+Preparando para desempaquetar .../10-libdbd-mysql-perl_4.052-1ubuntu3_amd64.deb ...
+Desempaquetando libdbd-mysql-perl:amd64 (4.052-1ubuntu3) ...
+Seleccionando el paquete libencode-locale-perl previamente no seleccionado.
+Preparando para desempaquetar .../11-libencode-locale-perl_1.05-3_all.deb ...
+Desempaquetando libencode-locale-perl (1.05-3) ...
+Seleccionando el paquete libfcgi-bin previamente no seleccionado.
+Preparando para desempaquetar .../12-libfcgi-bin_2.4.2-2.1ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando libfcgi-bin (2.4.2-2.1ubuntu0.24.04.1) ...
+Seleccionando el paquete libhtml-template-perl previamente no seleccionado.
+Preparando para desempaquetar .../13-libhtml-template-perl_2.97-2_all.deb ...
+Desempaquetando libhtml-template-perl (2.97-2) ...
+Seleccionando el paquete libtimedate-perl previamente no seleccionado.
+Preparando para desempaquetar .../14-libtimedate-perl_2.3300-2_all.deb ...
+Desempaquetando libtimedate-perl (2.3300-2) ...
+Seleccionando el paquete libhttp-date-perl previamente no seleccionado.
+Preparando para desempaquetar .../15-libhttp-date-perl_6.06-1_all.deb ...
+Desempaquetando libhttp-date-perl (6.06-1) ...
+Seleccionando el paquete libio-html-perl previamente no seleccionado.
+Preparando para desempaquetar .../16-libio-html-perl_1.004-3_all.deb ...
+Desempaquetando libio-html-perl (1.004-3) ...
+Seleccionando el paquete liblwp-mediatypes-perl previamente no seleccionado.
+Preparando para desempaquetar .../17-liblwp-mediatypes-perl_6.04-2_all.deb ...
+Desempaquetando liblwp-mediatypes-perl (6.04-2) ...
+Seleccionando el paquete libhttp-message-perl previamente no seleccionado.
+Preparando para desempaquetar .../18-libhttp-message-perl_6.45-1ubuntu1_all.deb ...
+Desempaquetando libhttp-message-perl (6.45-1ubuntu1) ...
+Seleccionando el paquete mariadb-plugin-provider-bzip2 previamente no seleccionado.
+Preparando para desempaquetar .../19-mariadb-plugin-provider-bzip2_1%3a10.11.14-0ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando mariadb-plugin-provider-bzip2 (1:10.11.14-0ubuntu0.24.04.1) ...
+Seleccionando el paquete mariadb-plugin-provider-lz4 previamente no seleccionado.
+Preparando para desempaquetar .../20-mariadb-plugin-provider-lz4_1%3a10.11.14-0ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando mariadb-plugin-provider-lz4 (1:10.11.14-0ubuntu0.24.04.1) ...
+Seleccionando el paquete mariadb-plugin-provider-lzma previamente no seleccionado.
+Preparando para desempaquetar .../21-mariadb-plugin-provider-lzma_1%3a10.11.14-0ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando mariadb-plugin-provider-lzma (1:10.11.14-0ubuntu0.24.04.1) ...
+Seleccionando el paquete mariadb-plugin-provider-lzo previamente no seleccionado.
+Preparando para desempaquetar .../22-mariadb-plugin-provider-lzo_1%3a10.11.14-0ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando mariadb-plugin-provider-lzo (1:10.11.14-0ubuntu0.24.04.1) ...
+Seleccionando el paquete libsnappy1v5:amd64 previamente no seleccionado.
+Preparando para desempaquetar .../23-libsnappy1v5_1.1.10-1build1_amd64.deb ...
+Desempaquetando libsnappy1v5:amd64 (1.1.10-1build1) ...
+Seleccionando el paquete mariadb-plugin-provider-snappy previamente no seleccionado.
+Preparando para desempaquetar .../24-mariadb-plugin-provider-snappy_1%3a10.11.14-0ubuntu0.24.04.1_amd64.deb ...
+Desempaquetando mariadb-plugin-provider-snappy (1:10.11.14-0ubuntu0.24.04.1) ...
+Seleccionando el paquete pv previamente no seleccionado.
+Preparando para desempaquetar .../25-pv_1.8.5-2build1_amd64.deb ...
+Desempaquetando pv (1.8.5-2build1) ...
+Configurando libconfig-inifiles-perl (3.000003-2) ...
+Configurando galera-4 (26.4.16-2build4) ...
+Configurando libmysqlclient21:amd64 (8.0.45-0ubuntu0.24.04.1) ...
+Configurando libclone-perl:amd64 (0.46-1build3) ...
+Configurando libfcgi0t64:amd64 (2.4.2-2.1ubuntu0.24.04.1) ...
+Configurando libhtml-tagset-perl (3.20-6) ...
+Configurando liblwp-mediatypes-perl (6.04-2) ...
+Configurando libfcgi-bin (2.4.2-2.1ubuntu0.24.04.1) ...
+Configurando libencode-locale-perl (1.05-3) ...
+Configurando libsnappy1v5:amd64 (1.1.10-1build1) ...
+Configurando socat (1.8.0.0-4build3) ...
+Configurando libio-html-perl (1.004-3) ...
+Configurando libmariadb3:amd64 (1:10.11.14-0ubuntu0.24.04.1) ...
+Configurando libtimedate-perl (2.3300-2) ...
+Configurando pv (1.8.5-2build1) ...
+Configurando libfcgi-perl (0.82+ds-3build2) ...
+Configurando mariadb-server-core (1:10.11.14-0ubuntu0.24.04.1) ...
+Configurando liburi-perl (5.27-1) ...
+Configurando libdbi-perl:amd64 (1.643-4build3) ...
+Configurando libhttp-date-perl (6.06-1) ...
+Configurando mariadb-client-core (1:10.11.14-0ubuntu0.24.04.1) ...
+Configurando libdbd-mysql-perl:amd64 (4.052-1ubuntu3) ...
+Configurando libhtml-parser-perl:amd64 (3.81-1build3) ...
+Configurando libhttp-message-perl (6.45-1ubuntu1) ...
+Configurando mariadb-client (1:10.11.14-0ubuntu0.24.04.1) ...
+Configurando libcgi-pm-perl (4.63-1) ...
+Configurando libhtml-template-perl (2.97-2) ...
+Configurando mariadb-server (1:10.11.14-0ubuntu0.24.04.1) ...
+Created symlink /etc/systemd/system/multi-user.target.wants/mariadb.service → /usr/lib/systemd/system/mariadb.service.
+Configurando mariadb-plugin-provider-bzip2 (1:10.11.14-0ubuntu0.24.04.1) ...
+Configurando mariadb-plugin-provider-lzma (1:10.11.14-0ubuntu0.24.04.1) ...
+Configurando mariadb-plugin-provider-lzo (1:10.11.14-0ubuntu0.24.04.1) ...
+Configurando mariadb-plugin-provider-lz4 (1:10.11.14-0ubuntu0.24.04.1) ...
+Configurando libcgi-fast-perl (1:2.17-1) ...
+Configurando mariadb-plugin-provider-snappy (1:10.11.14-0ubuntu0.24.04.1) ...
+Procesando disparadores para man-db (2.12.0-4build2) ...
+Procesando disparadores para libc-bin (2.39-0ubuntu8.7) ...
+Procesando disparadores para mariadb-server (1:10.11.14-0ubuntu0.24.04.1) ...
+Scanning processes...
+Scanning candidates...
+Scanning linux images...
+
+Running kernel seems to be up-to-date.
+
+Restarting services...
+
+Service restarts being deferred:
+ systemctl restart unattended-upgrades.service
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+icarox@vm-data:~$ sudo systemctl enable mariadb
+sudo systemctl start mariadb
+Synchronizing state of mariadb.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable mariadb
+icarox@vm-data:~$ sudo systemctl status mariadb
+● mariadb.service - MariaDB 10.11.14 database server
+     Loaded: loaded (/usr/lib/systemd/system/mariadb.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-03-10 08:24:35 UTC; 8s ago
+       Docs: man:mariadbd(8)
+             https://mariadb.com/kb/en/library/systemd/
+   Main PID: 5307 (mariadbd)
+     Status: "Taking your SQL requests now..."
+      Tasks: 13 (limit: 14938)
+     Memory: 78.8M (peak: 82.0M)
+        CPU: 233ms
+     CGroup: /system.slice/mariadb.service
+             └─5307 /usr/sbin/mariadbd
+
+mar 10 08:24:35 vm-data mariadbd[5307]: 2026-03-10  8:24:35 0 [Note] InnoDB: Loading buffer pool(s) from /var/lib/mysql/ib_buffer_pool
+mar 10 08:24:35 vm-data mariadbd[5307]: 2026-03-10  8:24:35 0 [Warning] You need to use --log-bin to make --expire-logs-days or --binlog-expire-logs-seconds work.
+mar 10 08:24:35 vm-data mariadbd[5307]: 2026-03-10  8:24:35 0 [Note] Server socket created on IP: '127.0.0.1', port: '3306'.
+mar 10 08:24:35 vm-data mariadbd[5307]: 2026-03-10  8:24:35 0 [Note] InnoDB: Buffer pool(s) load completed at 260310  8:24:35
+mar 10 08:24:35 vm-data mariadbd[5307]: 2026-03-10  8:24:35 0 [Note] /usr/sbin/mariadbd: ready for connections.
+mar 10 08:24:35 vm-data mariadbd[5307]: Version: '10.11.14-MariaDB-0ubuntu0.24.04.1'  socket: '/run/mysqld/mysqld.sock'  port: 3306  Ubuntu 24.04
+mar 10 08:24:35 vm-data systemd[1]: Started mariadb.service - MariaDB 10.11.14 database server.
+mar 10 08:24:35 vm-data /etc/mysql/debian-start[5325]: Upgrading MariaDB tables if necessary.
+mar 10 08:24:35 vm-data /etc/mysql/debian-start[5336]: Checking for insecure root accounts.
+mar 10 08:24:35 vm-data /etc/mysql/debian-start[5340]: Triggering myisam-recover for all MyISAM tables and aria-recover for all Aria tables
+icarox@vm-data:~$ sudo mysql_secure_installation
+
+NOTE: RUNNING ALL PARTS OF THIS SCRIPT IS RECOMMENDED FOR ALL MariaDB
+      SERVERS IN PRODUCTION USE!  PLEASE READ EACH STEP CAREFULLY!
+
+In order to log into MariaDB to secure it, we'll need the current
+password for the root user. If you've just installed MariaDB, and
+haven't set the root password yet, you should just press enter here.
+
+Enter current password for root (enter for none):
+OK, successfully used password, moving on...
+
+Setting the root password or using the unix_socket ensures that nobody
+can log into the MariaDB root user without the proper authorisation.
+
+You already have your root account protected, so you can safely answer 'n'.
+
+Switch to unix_socket authentication [Y/n] n
+ ... skipping.
+
+You already have your root account protected, so you can safely answer 'n'.
+
+Change the root password? [Y/n] y
+New password:
+Re-enter new password:
+Password updated successfully!
+Reloading privilege tables..
+ ... Success!
+
+
+By default, a MariaDB installation has an anonymous user, allowing anyone
+to log into MariaDB without having to have a user account created for
+them.  This is intended only for testing, and to make the installation
+go a bit smoother.  You should remove them before moving into a
+production environment.
+
+Remove anonymous users? [Y/n] y
+ ... Success!
+
+Normally, root should only be allowed to connect from 'localhost'.  This
+ensures that someone cannot guess at the root password from the network.
+
+Disallow root login remotely? [Y/n] y
+ ... Success!
+
+By default, MariaDB comes with a database named 'test' that anyone can
+access.  This is also intended only for testing, and should be removed
+before moving into a production environment.
+
+Remove test database and access to it? [Y/n] y
+ - Dropping test database...
+ ... Success!
+ - Removing privileges on test database...
+ ... Success!
+
+Reloading the privilege tables will ensure that all changes made so far
+will take effect immediately.
+
+Reload privilege tables now? [Y/n] y
+ ... Success!
+
+Cleaning up...
+
+All done!  If you've completed all of the above steps, your MariaDB
+installation should now be secure.
+
+Thanks for using MariaDB!
+icarox@vm-data:~$ sudo mysql
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 39
+Server version: 10.11.14-MariaDB-0ubuntu0.24.04.1 Ubuntu 24.04
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> exit
+Bye
+icarox@vm-data:~$ sudo ufw allow from 192.168.1.51 to any port 3306
+sudo ufw enable
+Rules updated
+Command may disrupt existing ssh connections. Proceed with operation (y|n)? y
+Firewall is active and enabled on system startup
+icarox@vm-data:~$ sudo mysql
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 40
+Server version: 10.11.14-MariaDB-0ubuntu0.24.04.1 Ubuntu 24.04
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> CREATE DATABASE kwl;
+Query OK, 1 row affected (0,000 sec)
+
+MariaDB [(none)]> SHOW DATABASES;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| kwl                |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+5 rows in set (0,001 sec)
+
+MariaDB [(none)]> CREATE USER 'backend'@'%' IDENTIFIED BY 'alojomora';
+Query OK, 0 rows affected (0,008 sec)
+
+MariaDB [(none)]> GRANT ALL PRIVILEGES ON kwl.* TO 'backend'@'%';
+Query OK, 0 rows affected (0,010 sec)
+
+MariaDB [(none)]> FLUSH PRIVILEGES;
+Query OK, 0 rows affected (0,001 sec)
+
+MariaDB [(none)]> EXIT;
+Bye
+icarox@vm-data:~$ sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+icarox@vm-data:~$ sudo systemctl restart mariadbtl restart mariadb
+icarox@vm-data:~$
+
+
+
+VM-CORE:
+
+Configurando libconfig-inifiles-perl (3.000003-2) ...
+Configurando mysql-common (5.8+1.1.0build1) ...
+update-alternatives: utilizando /etc/mysql/my.cnf.fallback para proveer /etc/mysql/my.cnf (my.cnf) en modo automático
+Configurando libmysqlclient21:amd64 (8.0.45-0ubuntu0.24.04.1) ...
+Configurando mariadb-common (1:10.11.14-0ubuntu0.24.04.1) ...
+update-alternatives: utilizando /etc/mysql/mariadb.cnf para proveer /etc/mysql/my.cnf (my.cnf) en modo automático
+Configurando libmariadb3:amd64 (1:10.11.14-0ubuntu0.24.04.1) ...
+Configurando libdbi-perl:amd64 (1.643-4build3) ...
+Configurando mariadb-client-core (1:10.11.14-0ubuntu0.24.04.1) ...
+Configurando libdbd-mysql-perl:amd64 (4.052-1ubuntu3) ...
+Configurando mariadb-client (1:10.11.14-0ubuntu0.24.04.1) ...
+Procesando disparadores para man-db (2.12.0-4build2) ...
+Procesando disparadores para libc-bin (2.39-0ubuntu8.7) ...
+Scanning processes...
+Scanning candidates...
+Scanning linux images...
+
+Running kernel seems to be up-to-date.
+
+Restarting services...
+
+Service restarts being deferred:
+ systemctl restart unattended-upgrades.service
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+icarox@vm-core:~$ mysql --version
+mysql  Ver 15.1 Distrib 10.11.14-MariaDB, for debian-linux-gnu (x86_64) using  EditLine wrapper
+icarox@vm-core:~$ mysql -h 192.168.1.52 -u backend -p kwl
+Enter password:
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 31
+Server version: 10.11.14-MariaDB-0ubuntu0.24.04.1 Ubuntu 24.04
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [kwl]> exit
+Bye
+icarox@vm-core:~$ https://192.168.1.50:8006
+-bash: https://192.168.1.50:8006: No such file or directory
+icarox@vm-core:~$ client_loop: send disconnect: Connection reset
+
+C:\Users\DRL>ssh icarox@192.168.1.51
+icarox@192.168.1.51's password:
+Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-101-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of mar 10 mar 2026 09:41:16 UTC
+
+  System load:  0.0                Processes:              112
+  Usage of /:   35.4% of 18.53GB   Users logged in:        1
+  Memory usage: 12%                IPv4 address for ens18: 192.168.1.51
+  Swap usage:   0%
+
+ * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar for easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+
+El mantenimiento de seguridad expandido para Applications está desactivado
+
+Se pueden aplicar 0 actualizaciones de forma inmediata.
+
+Active ESM Apps para recibir futuras actualizaciones de seguridad adicionales.
+Vea https://ubuntu.com/esm o ejecute «sudo pro status»
+
+
+Last login: Tue Mar 10 08:38:34 2026 from 10.8.0.6
+icarox@vm-core:~$No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+icarox@vm-core:~$ redis-cli ping
+PONG
+icarox@vm-core:~$ systemctl status php8.3-fpm
+● php8.3-fpm.service - The PHP 8.3 FastCGI Process Manager
+     Loaded: loaded (/usr/lib/systemd/system/php8.3-fpm.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-03-10 10:53:48 UTC; 5min ago
+       Docs: man:php-fpm8.3(8)
+   Main PID: 20184 (php-fpm8.3)
+     Status: "Processes active: 0, idle: 2, Requests: 0, slow: 0, Traffic: 0req/sec"
+      Tasks: 3 (limit: 2263)
+     Memory: 9.8M (peak: 10.8M)
+        CPU: 72ms
+     CGroup: /system.slice/php8.3-fpm.service
+             ├─20184 "php-fpm: master process (/etc/php/8.3/fpm/php-fpm.conf)"
+             ├─20185 "php-fpm: pool www"
+             └─20186 "php-fpm: pool www"
+
+mar 10 10:53:48 vm-core systemd[1]: Starting php8.3-fpm.service - The PHP 8.3 FastCGI Process Manager...
+mar 10 10:53:48 vm-core systemd[1]: Started php8.3-fpm.service - The PHP 8.3 FastCGI Process Manager.
+icarox@vm-core:~$ sudo systemctl enable php8.3-fpm
+sudo systemctl start php8.3-fpm
+Synchronizing state of php8.3-fpm.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable php8.3-fpm
+icarox@vm-core:~$ ls /run/php/
+php8.3-fpm.pid  php8.3-fpm.sock  php-fpm.sock
+icarox@vm-core:~$ sudo nano /etc/nginx/sites-available/default
+icarox@vm-core:~$ sudo systemctl restart nginxmctl restart nginx
+icarox@vm-core:~$ mosquitto_sub -h 192.168.1.53 -t test -u usuario -P password
+Connection error: Connection Refused: not authorised.
+icarox@vm-core:~$ redis-cli ping
+PONG
+icarox@vm-core:~$ mysql -h 192.168.1.52 -u usuario -p
+Enter password:
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 35
+Server version: 10.11.14-MariaDB-0ubuntu0.24.04.1 Ubuntu 24.04
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> ^C
+MariaDB [(none)]> exit
+Bye
+icarox@vm-core:~$ mosquitto_sub -h 192.168.1.53 -t test -u kwl -P password
+Connection error: Connection Refused: not authorised.
+icarox@vm-core:~$ mosquitto_sub -h 192.168.1.53 -t test -u kwl -P alojomora
+hola
+^Cicarox@vm-core:~$
+
+DESDE DATA: 
+icarox@vm-data:~$ mosquitto_pub -h 192.168.1.53 -t test -m "hola" -u kwl -P TU_PASSWORD
+Command 'mosquitto_pub' not found, but can be installed with:
+sudo snap install mosquitto          # version 2.1.2, or
+sudo apt  install mosquitto-clients  # version 2.0.18-1
+See 'snap info mosquitto' for additional versions.
+icarox@vm-data:~$
+icarox@vm-data:~$ mosquitto_pub -h 192.168.1.53 -t test -m "hola" -u kwl -P alojomora
+Command 'mosquitto_pub' not found, but can be installed with:
+sudo snap install mosquitto          # version 2.1.2, or
+sudo apt  install mosquitto-clients  # version 2.0.18-1
+See 'snap info mosquitto' for additional versions.
+icarox@vm-data:~$
