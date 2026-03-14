@@ -7,14 +7,9 @@ Sistema integral de gestión, automatización y control de lavanderías autoserv
 
 # Infraestructura
 
-Motor de base de datos:
+Motor de base de datos: MariaDB
 
-MariaDB
-
-Servidor de base de datos:
-
-VM_DATA  
-IP: 192.168.1.52
+Servidor de base de datos: VM_DATA  IP: 192.168.1.52
 
 La base de datos se ejecuta en una máquina virtual dedicada dentro del entorno del sistema.
 

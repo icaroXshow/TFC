@@ -61,11 +61,9 @@ Usuario 1 --- N Auditoria
 ---
 
 ## Maquina
-
-Representa cada lavadora o secadora.
+    Representa cada lavadora o secadora.
 
 Atributos:
-
 - id_maquina
 - id_lavanderia
 - codigo_visible (L1, L2, S1, etc)
@@ -84,13 +82,9 @@ Maquina 1 --- N LogMaquina
 ---
 
 ## TarifaMaquina
-
-Define las condiciones económicas vigentes durante un periodo.
-
-Permite cambiar precios sin alterar ciclos históricos.
+    Define las condiciones económicas vigentes durante un periodo. Permite cambiar precios sin alterar ciclos históricos.
 
 Atributos:
-
 - id_tarifa
 - id_lavanderia
 - precio_arranque
@@ -108,11 +102,9 @@ TarifaMaquina 1 --- N Ciclo
 ---
 
 ## Ciclo
-
-Representa una ejecución real de la máquina.
+    Representa una ejecución real de la máquina.
 
 Atributos:
-
 - id_ciclo
 - id_maquina
 - id_tarifa_aplicada
@@ -136,21 +128,17 @@ Ciclo 1 --- N LogMaquina
 ---
 
 ## MovimientoMaquina
+    Representa cada entrada económica aplicada a una máquina.
 
-Representa cada entrada económica aplicada a una máquina.
-
-Tipos de movimiento:
-
+@Tipos de movimiento:
 - ARRANQUE
 - AMPLIACION_TIEMPO
 
-Origen del movimiento:
-
+@Origen del movimiento:
 - MONEDERO
 - WEB_MANUAL
 
 Atributos:
-
 - id_movimiento
 - id_lavanderia
 - id_maquina
@@ -172,11 +160,9 @@ Interpretación:
 ---
 
 ## LogMaquina
-
-Eventos técnicos generados por dispositivos o backend.
+    Eventos técnicos generados por dispositivos o backend.
 
 Atributos:
-
 - id_log
 - id_lavanderia
 - id_maquina
@@ -188,7 +174,6 @@ Atributos:
 - procesado
 
 Ejemplos de eventos:
-
 - CICLO_INICIADO
 - CICLO_FINALIZADO
 - MONEDA_RECIBIDA
@@ -198,11 +183,9 @@ Ejemplos de eventos:
 ---
 
 ## Auditoria
-
-Registro de acciones administrativas.
+    Registro de acciones administrativas.
 
 Atributos:
-
 - id_auditoria
 - id_usuario
 - id_lavanderia
@@ -218,11 +201,9 @@ Atributos:
 ---
 
 ## Configuracion
-
-Parámetros auxiliares del sistema.
+    Parámetros auxiliares del sistema.
 
 Atributos:
-
 - id_configuracion
 - ambito
 - id_lavanderia
