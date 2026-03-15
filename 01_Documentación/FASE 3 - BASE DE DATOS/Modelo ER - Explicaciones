@@ -1,0 +1,277 @@
+Modelo Entidad-Relación del sistema
+
+Para el diseño de la base de datos del sistema KWL – Sistema integral de gestión, automatización y control de una lavandería autoservicio, se ha desarrollado un modelo conceptual basado en el modelo Entidad-Relación en notación Chen.
+
+El objetivo del modelo conceptual es representar de forma abstracta las entidades principales del sistema, sus atributos y las relaciones existentes entre ellas, sin entrar todavía en detalles de implementación específicos del sistema gestor de bases de datos.
+
+El sistema está diseñado para gestionar la operación completa de una o varias lavanderías autoservicio, incluyendo el control de máquinas, registro de ciclos de lavado, movimientos económicos asociados, eventos técnicos del sistema y auditoría de acciones realizadas por los usuarios del sistema.
+
+El modelo conceptual permite representar de forma clara las diferentes áreas funcionales del sistema:
+
+gestión de lavanderías
+
+control de máquinas
+
+registro de ciclos de funcionamiento
+
+gestión económica de los ciclos
+
+registro de eventos técnicos
+
+auditoría de acciones de los usuarios
+
+Entidades del sistema
+
+A continuación se describen las entidades principales que componen el modelo conceptual.
+
+Lavanderia
+
+La entidad Lavanderia representa cada uno de los establecimientos físicos donde se encuentran instaladas las máquinas.
+
+Cada lavandería contiene un conjunto de máquinas y puede tener diferentes configuraciones de tarifas asociadas.
+
+Atributos principales:
+
+id_lavanderia (clave primaria)
+
+nombre
+
+dirección
+
+ciudad
+
+Cada instancia de esta entidad representa una lavandería concreta dentro del sistema.
+
+Maquina
+
+La entidad Maquina representa cada dispositivo físico instalado en una lavandería, como lavadoras o secadoras.
+
+Las máquinas ejecutan ciclos de lavado o secado y generan eventos de funcionamiento que son registrados por el sistema.
+
+Atributos principales:
+
+id_maquina (clave primaria)
+
+tipo_maquina
+
+codigo_visible
+
+estado_actual
+
+El atributo codigo_visible corresponde al identificador que aparece físicamente en la máquina y que permite al usuario identificarla.
+
+Tarifa
+
+La entidad Tarifa representa la configuración económica de los ciclos de las máquinas.
+
+Las tarifas permiten definir el precio de arranque de un ciclo y la duración base del mismo, así como el incremento de tiempo cuando se introducen monedas adicionales durante el ciclo.
+
+Atributos principales:
+
+id_tarifa (clave primaria)
+
+precio_arranque
+
+tiempo_base_min
+
+minutos_por_euro
+
+Esto permite que el sistema pueda adaptarse fácilmente a cambios de precios o promociones futuras sin modificar la estructura del sistema.
+
+Ciclo
+
+La entidad Ciclo representa cada ejecución real de una máquina.
+
+Cada vez que un cliente inicia un lavado o secado se genera un ciclo en el sistema, registrando información sobre el inicio, la finalización y el importe total asociado.
+
+Atributos principales:
+
+id_ciclo (clave primaria)
+
+fecha_inicio
+
+fecha_fin
+
+importe_total
+
+tiempo_total_min
+
+El tiempo total puede variar durante la ejecución del ciclo si el cliente introduce monedas adicionales.
+
+Movimiento
+
+La entidad Movimiento representa cada movimiento económico asociado a un ciclo.
+
+Un movimiento puede corresponder a:
+
+introducción de monedas
+
+saldo añadido manualmente desde el sistema
+
+otros tipos de ajustes económicos.
+
+Atributos principales:
+
+id_movimiento (clave primaria)
+
+tipo_movimiento
+
+importe
+
+fecha_movimiento
+
+Un ciclo puede tener varios movimientos asociados.
+
+Log
+
+La entidad Log representa los eventos técnicos generados por las máquinas o el sistema.
+
+Estos eventos permiten registrar información relevante para diagnóstico o seguimiento del funcionamiento de los dispositivos.
+
+Atributos principales:
+
+id_log (clave primaria)
+
+evento
+
+fecha_evento
+
+Usuario
+
+La entidad Usuario representa a las personas que tienen acceso al sistema de gestión.
+
+Los usuarios pueden realizar acciones de control, administración o mantenimiento del sistema.
+
+Atributos principales:
+
+id_usuario (clave primaria)
+
+nombre
+
+login
+
+rol
+
+El rol define el nivel de acceso del usuario dentro del sistema.
+
+Auditoria
+
+La entidad Auditoria permite registrar las acciones realizadas por los usuarios dentro del sistema.
+
+Este registro es fundamental para garantizar la trazabilidad de las operaciones realizadas.
+
+Atributos principales:
+
+id_auditoria (clave primaria)
+
+accion
+
+fecha_accion
+
+Relaciones entre entidades
+
+El modelo define varias relaciones entre las entidades del sistema.
+
+Lavanderia – Maquina
+
+Relación tiene
+
+Una lavandería puede contener varias máquinas.
+
+Cardinalidad:
+
+Lavanderia (1) —— (N) Maquina
+
+Cada máquina pertenece a una única lavandería.
+
+Lavanderia – Tarifa
+
+Relación define
+
+Cada lavandería puede definir diferentes tarifas a lo largo del tiempo.
+
+Cardinalidad:
+
+Lavanderia (1) —— (N) Tarifa
+
+Cada tarifa pertenece a una única lavandería.
+
+Maquina – Ciclo
+
+Relación ejecuta
+
+Una máquina puede ejecutar múltiples ciclos.
+
+Cardinalidad:
+
+Maquina (1) —— (N) Ciclo
+
+Cada ciclo pertenece a una única máquina.
+
+Tarifa – Ciclo
+
+Relación aplica
+
+Cada ciclo utiliza una tarifa concreta.
+
+Cardinalidad:
+
+Tarifa (1) —— (N) Ciclo
+
+Una misma tarifa puede aplicarse a muchos ciclos.
+
+Ciclo – Movimiento
+
+Relación genera
+
+Un ciclo puede generar varios movimientos económicos.
+
+Cardinalidad:
+
+Ciclo (1) —— (N) Movimiento
+
+Cada movimiento pertenece a un único ciclo.
+
+Maquina – Log
+
+Relación registra
+
+Las máquinas generan eventos técnicos registrados como logs.
+
+Cardinalidad:
+
+Maquina (1) —— (N) Log
+
+Cada log corresponde a una única máquina.
+
+Usuario – Auditoria
+
+Relación realiza
+
+Los usuarios realizan acciones que quedan registradas en el sistema de auditoría.
+
+Cardinalidad:
+
+Usuario (1) —— (N) Auditoria
+
+Cada registro de auditoría corresponde a un único usuario.
+
+Justificación del modelo
+
+El modelo conceptual se ha diseñado siguiendo los principios de simplicidad, coherencia y separación de responsabilidades.
+
+Cada entidad representa un concepto claro del dominio del problema, evitando mezclar información de naturaleza diferente en una misma estructura.
+
+Se ha separado explícitamente:
+
+la ejecución de ciclos
+
+los movimientos económicos
+
+los eventos técnicos
+
+las acciones administrativas
+
+Esto permite mantener el sistema flexible, escalable y fácilmente ampliable en futuras versiones del software.
+
+Además, el modelo permite soportar múltiples lavanderías dentro del mismo sistema, lo que facilita su reutilización en instalaciones adicionales.
