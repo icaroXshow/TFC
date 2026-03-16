@@ -86,7 +86,8 @@ bootstrap/
 vendor/
 node_modules/
 Soluciones/
-03_Recursos/
+03_Recursos/_Fotos/
+03_Recursos/Programas/
 *.msi
 *.fig
 .gitignore
