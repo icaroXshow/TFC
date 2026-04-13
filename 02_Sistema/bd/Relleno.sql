@@ -28,7 +28,8 @@ INSERT INTO lavanderia (
 );
 
 -- ===============================
--- Usuario administrador
+-- Usuario inicial de administracion
+-- admin / admin123
 -- ===============================
 INSERT INTO usuario (
     id_usuario,
@@ -44,7 +45,7 @@ INSERT INTO usuario (
     'Admin',
     'Sistema',
     'admin',
-    '$2y$10$examplehashcambiar', -- cambiar luego
+    'sha256:240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9',
     'ADMIN',
     1,
     NOW()

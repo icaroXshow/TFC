@@ -1,0 +1,16 @@
+[Unit]
+Description=KWL ESP32 VM Simulator
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kwl
+Group=kwl
+WorkingDirectory=/opt/kwl/02_Sistema/sim_esp32
+ExecStart=/opt/kwl/02_Sistema/sim_esp32/run_sim.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

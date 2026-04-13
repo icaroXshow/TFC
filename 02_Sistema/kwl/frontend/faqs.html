@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FAQs · KWL Aqua</title>
+    <link rel="icon" href="./assets/img/logo_kwl.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./assets/css/landing.css" />
+  </head>
+
+  <body>
+    <div class="auth-overlay" id="authOverlay" aria-hidden="true">
+      <div class="auth-modal auth-modal--embed" role="dialog" aria-modal="true" aria-label="Inicio de sesión">
+        <button class="auth-close" id="authClose" type="button">✕</button>
+        <iframe src="./login.html" title="Login administrador" class="auth-iframe"></iframe>
+      </div>
+    </div>
+
+    <header class="topbar">
+      <div class="cabecera">
+        <div class="logo"><img src="./assets/img/logo_kwl.png" alt="KWL Aqua" class="logo-img" /></div>
+        <div class="titulo"><h1>KWL AQUA</h1></div>
+        <div class="loguin"><a class="btn login-btn" id="openLogin" href="#login">Admin Login</a></div>
+      </div>
+
+      <div class="navegador">
+        <nav>
+          <ul>
+            <li><a href="./index.html">Inicio</a></li>
+            <li><a href="./about.html">About us</a></li>
+            <li><a href="./contact.html">Contacto</a></li>
+            <li><a href="./faqs.html" class="active">FAQs</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="faqs">
+        <h2 class="faq-title">PREGUNTAS FRECUENTES</h2>
+
+        <div class="faq-grid">
+          <div>
+            <img src="./assets/img/faq.png" alt="Lavandería" class="faq-Img" />
+          </div>
+
+          <div class="faq-list">
+            <div class="faq-item">
+              <div class="ask">¿Qué es KWL Aqua?</div>
+              <div class="faq-desc">Sistema que digitaliza y automatiza lavanderías autoservicio.</div>
+              <div class="faq-bullet"><img src="./assets/img/triangulo.svg" alt="Triangulo" /></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="ask">¿Cómo funciona KWL Aqua?</div>
+              <div class="faq-desc">Conecta máquinas al panel para gestionar ciclos, pagos y ocupación.</div>
+              <div class="faq-bullet"><img src="./assets/img/triangulo.svg" alt="Triangulo" /></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="ask">¿Estropearán las lavadoras mi ropa?</div>
+              <div class="faq-desc">Las máquinas están calibradas y con mantenimiento periódico.</div>
+              <div class="faq-bullet"><img src="./assets/img/triangulo.svg" alt="Triangulo" /></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="ask">¿Puedo pagar con tarjeta?</div>
+              <div class="faq-desc">Sí, admitimos tarjeta, Bizum y monedero virtual de la App.</div>
+              <div class="faq-bullet"><img src="./assets/img/triangulo.svg" alt="Triangulo" /></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="ask">¿Existe algún tipo de permanencia?</div>
+              <div class="faq-desc">No exigimos permanencia, uso flexible según necesidades.</div>
+              <div class="faq-bullet"><img src="./assets/img/triangulo.svg" alt="Triangulo" /></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="ask">¿Existen descuentos o App móvil?</div>
+              <div class="faq-desc">Sí, hay promociones puntuales y descuentos para usuarios de App.</div>
+              <div class="faq-bullet"><img src="./assets/img/triangulo.svg" alt="Triangulo" /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-top">
+        <div class="footer-col-1">
+          <a href="./index.html" aria-label="Inicio">
+            <img src="./assets/img/logo_kwl.png" alt="KWL Aqua" class="footer-logo-big" />
+          </a>
+          <ul class="footer-menu">
+            <li><a href="./contact.html">Contacto</a></li>
+            <li><a href="./about.html">Sobre nosotros</a></li>
+            <li><a href="./faqs.html">FAQs</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-top-drch">
+          <div class="footer-col-2">
+            <h4>Horario</h4>
+            <ul class="hours-list">
+              <li><span>Lunes</span><span>8:30–22:00</span></li>
+              <li><span>Martes</span><span>8:30–22:00</span></li>
+              <li><span>Miércoles</span><span>8:30–22:00</span></li>
+              <li><span>Jueves</span><span>8:30–22:00</span></li>
+              <li><span>Viernes</span><span>8:30–22:00</span></li>
+              <li><span>Sábado</span><span>8:30–22:00</span></li>
+              <li><span>Domingo</span><span>8:30–22:00</span></li>
+            </ul>
+          </div>
+
+          <div class="footer-col-3">
+            <h4>Donde encontrarnos</h4>
+            <div class="footer-map">
+              <iframe src="https://www.google.com/maps?q=Calle%20Dr.%20Fleming%2C%2026%2C%2024402%20Ponferrada&output=embed" loading="lazy" allowfullscreen></iframe>
+            </div>
+          </div>
+
+          <div class="footer-col-4">
+            <div class="footer-social">
+              <a href="#"><img src="./assets/img/ln.png" alt="LinkedIn" /></a>
+              <a href="#"><img src="./assets/img/ig.png" alt="Instagram" /></a>
+              <a href="#"><img src="./assets/img/facebook.png" alt="Facebook" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-politicas">
+        <a href="./assets/legal/politica-cookies.txt" download>Políticas de cookies</a>
+        <a href="./assets/legal/aviso-legal.txt" download>Aviso Legal</a>
+        <a href="./assets/legal/politica-privacidad.txt" download>Políticas de privacidad</a>
+      </div>
+
+      <div class="footer-copy">© 2026 KWL Aqua. Todos los derechos reservados.</div>
+    </footer>
+
+    <script type="module" src="./assets/js/public-ui.js"></script>
+  </body>
+</html>

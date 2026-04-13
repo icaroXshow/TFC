@@ -1,0 +1,11 @@
+KWL Aqua - Politica de cookies
+
+Documento de ejemplo para demo.
+
+Este sitio puede utilizar cookies tecnicas necesarias para el funcionamiento.
+En un despliegue real, completar con:
+- listado de cookies
+- finalidad
+- duracion
+- como desactivar
+- contacto responsable

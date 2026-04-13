@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KWL Aqua · Login Admin</title>
+  <link rel="icon" href="./assets/img/logo_kwl.png" type="image/png">
+  <link rel="stylesheet" href="./assets/css/main.css">
+</head>
+<body class="site-body auth-screen">
+  <main class="auth-wrap">
+    <section class="auth-card">
+      <img class="auth-logo" src="./assets/img/logo_kwl.png" alt="KWL Aqua">
+      <h1>Inicio de sesion</h1>
+      <p class="muted">Acceso exclusivo para administracion de tienda.</p>
+
+      <form id="loginForm" class="auth-form">
+        <label>
+          Usuario
+          <input id="loginInput" name="login" type="text" autocomplete="username" required>
+        </label>
+        <label>
+          Password
+          <input id="passwordInput" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">Entrar al panel</button>
+      </form>
+
+      <p id="loginMessage" class="muted"></p>
+      <a href="./index.html" class="auth-back">Volver a la landing</a>
+    </section>
+  </main>
+
+  <script type="module" src="./assets/js/login.js"></script>
+</body>
+</html>
