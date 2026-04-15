@@ -1,0 +1,43 @@
+# simulation
+
+## Descripción
+
+Simulador de dispositivos del sistema.
+
+Permite probar el funcionamiento completo sin necesidad de hardware físico.
+
+---
+
+## Dispositivos simulados
+
+* lavadora
+* ventilador
+* puerta (persiana)
+* luces
+
+---
+
+## Funcionalidad
+
+* recepción de comandos vía MQTT
+* envío de estados
+* generación de eventos
+* simulación de comportamientos y errores
+
+---
+
+## Objetivo
+
+Facilitar:
+
+* desarrollo sin hardware
+* pruebas del sistema
+* despliegue en entorno de evaluación
+
+---
+
+## Notas
+
+El simulador es independiente del entorno.
+
+Su ejecución en el sistema real se define en `server/lxc_sim/`.
