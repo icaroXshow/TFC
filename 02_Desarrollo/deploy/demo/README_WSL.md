@@ -1,6 +1,16 @@
 # WSL · Cómo seguir testeando (demo)
 
-## 1) Base de datos (MariaDB en Docker)
+## REQUISITOS
+- Habilitar virtualizacion en la bios
+- Instalar WSL2
+- Tener instalado docker (Usando WSL2)
+- Tener instalado python
+
+# AUTOMATICO
+ - Ejecutar: deploy\demo\auto_deploy.ps1
+
+# MANUAL
+## 1) Lanzar Base de datos (MariaDB en Docker)
 
 ```bash
 cd deploy/demo
@@ -10,7 +20,7 @@ docker compose ps
 
 Puerto host: `3307` (ya está configurado en `app/backend/.env`).
 
-### Adminer (panel web para la BD)
+### Lanzar Adminer (panel web para la BD)
 
 Arranca con el mismo compose:
 
@@ -29,7 +39,7 @@ Datos:
 - Contraseña: `demo`
 - Base de datos: `kwl_lavanderia`
 
-## 2) Backend (Node)
+## 2) Lanzar Backend (Node)
 
 ```bash
 cd app/backend
@@ -40,7 +50,7 @@ node --env-file=.env dist/server.js
 
 Backend: `http://127.0.0.1:8080/health`
 
-Si lo quieres en segundo plano:
+Mejor que se ejecute en segundo plano:
 
 ```bash
 cd app/backend
@@ -48,13 +58,13 @@ setsid node --env-file=.env dist/server.js > /tmp/kwl_backend.out 2>&1 & echo $!
 tail -f /tmp/kwl_backend.out
 ```
 
-Parar:
+Parar Backend:
 
 ```bash
 kill $(cat /tmp/kwl_backend.pid)
 ```
 
-## 3) Frontend (estático)
+## 3) Lanzar Frontend
 
 ```bash
 cd app/frontend/public
@@ -68,7 +78,7 @@ Web: `http://127.0.0.1:8081/index.html`
 - Email: `admin@gmail.com`
 - Password: `admin`
 
-## 5) Actualizar cambios (cuando edites código)
+## 5) Actualizar cambios (solo si se edita codico)
 
 Backend (TS → dist):
 
@@ -79,4 +89,4 @@ kill $(cat /tmp/kwl_backend.pid) 2>/dev/null || true
 setsid node --env-file=.env dist/server.js > /tmp/kwl_backend.out 2>&1 & echo $! > /tmp/kwl_backend.pid
 ```
 
-Frontend: no compila nada (recarga el navegador).
+- Si el Frontend: no compila nada (recarga el navegador F5).

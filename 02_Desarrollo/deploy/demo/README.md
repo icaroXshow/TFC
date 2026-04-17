@@ -1,6 +1,6 @@
 # deploy/demo
 
-Despliegue **demo/evaluación** (todo en una sola máquina).
+Despliegue **demo/evaluación** (Para poder ejecutar en Windows local).
 
 ## MariaDB (demo)
 
@@ -12,7 +12,7 @@ Levanta MariaDB con el esquema desde `context/db/BD_modelo_fisico.sql` y datos m
 2. Comprueba:
    - `docker compose logs -f mariadb`
 
-Credenciales demo:
+Credenciales demo (para login bd):
 
 - DB: `kwl_lavanderia`
 - User: `root`

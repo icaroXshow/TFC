@@ -97,3 +97,8 @@ Lavanderia QWL.pdf
 Backupper/
 05_KWL/
 Acceso.md
+node_modules/
+dist/
+.env
+.env.*.local
+npm-debug.log*
