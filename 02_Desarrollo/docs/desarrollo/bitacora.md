@@ -1,0 +1,398 @@
+# Bitácora de implementación (TFC)
+
+Este documento guarda **qué se ha creado**, **cómo se ha hecho** y **por qué**,
+de forma que pueda copiarse/adaptarse en la memoria del TFC.
+
+## 2026-04-17 — Frontend: separación público/privado y mejoras responsive
+
+### Qué
+
+- Se reorganiza el frontend para que la web pública viva en `app/frontend/public/`.
+- Se crea el panel privado (admin) en `app/frontend/public/admin/index.html`.
+- Se añade un visor de PDFs legales en `app/frontend/public/legal/`.
+
+### Cómo
+
+- Se mueve el `index.html` principal a `app/frontend/public/index.html` y se deja
+  `app/frontend/index.html` como redirección para no romper accesos antiguos.
+- El botón de login del modal redirige a `admin/index.html` (zona privada).
+- Se ajustan CSS existentes para mejorar responsive (topbar/nav/hero/modal auth).
+- Los enlaces del footer (“cookies/privacidad/aviso legal”) apuntan a páginas
+  visor que embeben un PDF con `<object>`.
+- En la vista móvil, el botón “X” del modal deja de ser un enlace (`<a href=...>`)
+  para evitar que navegue al inicio: ahora solo cierra el modal.
+
+### Por qué
+
+- Separar “público” y “admin” evita mezclar requisitos y permite aplicar auth
+  solo al área privada.
+- El frontend público debe ser estético y usable en móvil (profes lo verán en
+  pantallas distintas).
+- El visor legal permite cumplir el requisito “mostrar PDFs” sin bloquear el
+  desarrollo (aunque aún no existan los ficheros).
+
+### Archivos clave
+
+- Público: `app/frontend/public/index.html`
+- Admin: `app/frontend/public/admin/index.html`
+- Legal: `app/frontend/public/legal/*.html`
+
+## 2026-04-17 — Backend: base API + auth + lectura MariaDB (MVP)
+
+### Qué
+
+- Se crea un backend Node.js (Express) en `app/backend/` con:
+  - `GET /health`
+  - `POST /api/auth/login`
+  - `GET /api/auth/me`
+  - `GET /api/maquinas` (ya lee desde MariaDB si existe)
+- Se añade capa MariaDB (pool) y variables de entorno.
+
+### Cómo
+
+- Express + middlewares (helmet/cors/morgan) para API básica.
+- Autenticación con token estilo JWT (HMAC SHA-256) y middleware `requireAuth`.
+- Login consulta la tabla `usuario` y valida password:
+  - si hay hash bcrypt → compara bcrypt
+  - si no hay hash → comparación directa (fallback MVP, para no bloquear)
+- `GET /health` intenta `SELECT 1` para reportar `db: ok|down`.
+- `GET /api/maquinas` consulta la tabla `maquina` filtrando por lavandería.
+  La lavandería se envía en cabecera `x-lavanderia-id` (si no, usa `1`).
+- CORS se adapta a desarrollo local: se permite `Origin: null` para soportar
+  abrir el frontend con `file://` (útil en demo/evaluación).
+
+### Ampliación: primer flujo operativo (arranque de máquina)
+
+- Se implementa `POST /api/maquinas/{id}/iniciar` (MVP):
+  - requiere auth y rol `ADMIN`
+  - valida máquina activa y estado `STOP`
+  - obtiene tarifa vigente
+  - crea `ciclo` con valores congelados
+  - registra `movimiento_maquina` (ARRANQUE, WEB_MANUAL, bonificación MVP)
+  - registra `auditoria` y `log_maquina`
+  - actualiza `maquina.estado_actual` a `EN_MARCHA`
+
+- Se implementa `POST /api/maquinas/{id}/detener` (MVP):
+  - requiere auth y rol `ADMIN`
+  - cierra el ciclo abierto (`INICIADO` → `FINALIZADO`, `fecha_hora_fin = NOW()`)
+  - registra `auditoria` y `log_maquina` (`CICLO_FINALIZADO`)
+  - actualiza `maquina.estado_actual` a `STOP`
+
+- Se implementa `POST /api/maquinas/{id}/ampliar` (MVP):
+  - requiere auth y rol `ADMIN`
+  - valida ciclo abierto (`estado_ciclo = INICIADO`)
+  - calcula incrementos según tarifa aplicada (`importe_incremento` / `minutos_por_incremento`)
+  - registra `movimiento_maquina` (AMPLIACION_TIEMPO, WEB_MANUAL, bonificación MVP)
+  - actualiza acumulados del `ciclo` (minutos extra, importes, duración programada)
+  - registra `auditoria` y `log_maquina` (`AMPLIACION_APLICADA`)
+
+### Por qué
+
+- Permite demostrar el flujo “frontend → API → backend decide” aunque todavía no
+  esté MQTT/Redis/WebSocket.
+- Conectar a la BD pronto reduce incoherencias con `context/` y acelera el resto
+  del dominio (máquinas, ciclos, auditoría, etc.).
+
+### Archivos clave
+
+- Entrada: `app/backend/src/server.ts`
+- Enrutado: `app/backend/src/web/api.ts`
+- Auth: `app/backend/src/web/auth/*`
+- DB pool: `app/backend/src/db/pool.ts`
+
+## 2026-04-17 — Deploy demo: MariaDB con schema + seed
+
+### Qué
+
+- Se crea un despliegue demo para MariaDB en `deploy/demo/`:
+  - `deploy/demo/docker-compose.yml`
+  - `deploy/demo/db/init/02_seed.sql`
+
+### Cómo
+
+- MariaDB en contenedor con init SQL:
+  - `context/db/BD_modelo_fisico.sql` (schema, “fuente de verdad”)
+  - `02_seed.sql` (datos mínimos: lavandería, usuario admin, máquinas)
+
+### Por qué
+
+- Los profesores deben poder levantar el sistema en local sin tocar infra real.
+- Seed mínimo permite probar login y endpoints sin depender de UI completa.
+
+### Nota de entorno
+
+En WSL hace falta Docker Desktop con integración WSL. Si no, no se puede usar
+`docker compose` desde esta distro.
+
+En esta máquina, el puerto `3306` dio conflicto/forward error, así que el demo
+publica MariaDB en `3307` (host) → `3306` (contenedor).
+
+Verificación:
+
+- `docker compose up -d` levanta MariaDB demo.
+- `GET /health` del backend devuelve `db: ok` cuando la BD está disponible.
+
+## 2026-04-17 — Modo demo “en vivo” (servicios levantados en local)
+
+### Qué
+
+- Se deja el sistema demo levantado para ver cambios del frontend “sobre la marcha”.
+
+### Cómo
+
+- MariaDB: `deploy/demo` con `docker compose up -d` (puerto host `3307`).
+- Backend: proceso Node escuchando en `http://127.0.0.1:8080`.
+- Frontend: servidor estático simple con `python -m http.server` en `http://127.0.0.1:8081`.
+
+### Por qué
+
+- Abrir HTML con `file://` da fricción (CORS/orígenes). Servirlo por HTTP hace el flujo más
+  parecido a producción y facilita ver cambios sin pasos extra.
+
+## 2026-04-17 — Frontend admin: login + consumo de API (primer wiring)
+
+### Qué
+
+- El panel admin deja de ser “solo maqueta”: ahora puede hacer login contra el
+  backend y cargar la lista de máquinas.
+  Además, se unifica el flujo para que exista **un único login** (el de la web pública).
+
+### Cómo
+
+- Login único en público (`app/frontend/public/js/app.js`):
+  - el modal llama `POST /api/auth/login`
+  - guarda token en `localStorage` (`kwl_auth`)
+  - redirige a `app/frontend/public/admin/index.html`
+- En admin (`app/frontend/public/js/admin.js`):
+  - si no hay token, redirige a `../index.html#login` (abre el modal automáticamente)
+  - si hay token, carga `GET /api/maquinas` y renderiza tarjetas
+- “Salir” borra token (`localStorage`) para forzar re-login.
+
+### Ampliación: acción “Iniciar” desde el panel
+
+- En la rejilla de máquinas, el botón “Iniciar” se habilita cuando el estado es `STOP`.
+- Al pulsar:
+  - llama `POST /api/maquinas/{id}/iniciar`
+  - recarga `GET /api/maquinas` para reflejar el nuevo estado
+
+### Ampliación: acción “Detener” desde el panel
+
+- El botón “Detener” se habilita cuando el estado es `EN_MARCHA` (o `PAUSADA`).
+- Al pulsar:
+  - llama `POST /api/maquinas/{id}/detener`
+  - recarga `GET /api/maquinas` para reflejar el estado `STOP`
+
+### Ampliación: acción “Ampliar” desde el panel
+
+- El botón “Ampliar” se habilita cuando el estado es `EN_MARCHA` (o `PAUSADA`).
+- Al pulsar:
+  - pide un importe en euros (prompt MVP)
+  - llama `POST /api/maquinas/{id}/ampliar` con `{ importe }`
+  - recarga `GET /api/maquinas`
+
+### Por qué
+
+- Permite demostrar el flujo MVP “panel privado → API → datos reales de BD”
+  antes de implementar MQTT/Redis/WebSockets.
+- Evita que se vea el panel privado (aunque sea estático) sin autenticación,
+  manteniendo la separación pública/privada coherente.
+- Evita duplicar formularios de login y reduce confusión en la demo.
+
+## 2026-04-17 — Admin: una vista por pantalla + breadcrumbs dinámicos
+
+### Qué
+
+- El panel admin pasa de “secciones en una página” a **vistas separadas** (una pantalla por apartado),
+  como en el panel de referencia.
+- La barra superior muestra la ruta tipo explorador: `Inicio › ... › ...` según la vista actual.
+
+### Cómo
+
+- Se crean páginas en `app/frontend/public/admin/`:
+  - `maquinas.html`, `iot.html`, `camara.html`, `niveles.html`, `caja.html`, `informes.html`, `usuarios.html`, `logs.html`
+- El JS `app/frontend/public/js/admin.js`:
+  - redirige a `/index.html#login` si no hay token
+  - marca el ítem activo del menú lateral según la URL
+  - renderiza breadcrumbs a partir de `body[data-breadcrumb="Grupo|Vista"]`
+- El login público redirige a `admin/maquinas.html` tras autenticación.
+
+## 2026-04-17 — Admin: lavandería activa (multi-lavandería)
+
+### Qué
+
+- La UI deja de mostrar una dirección fija. Ahora la ubicación depende de la **lavandería activa**.
+
+### Cómo
+
+- Backend: `GET /api/lavanderias` devuelve las lavanderías asociadas al usuario (`usuario_lavanderia`).
+- Front admin:
+  - selector de lavandería en topbar (`#adminLavSelect`)
+  - guarda la lavandería activa en `localStorage` (`kwl_lavanderia_activa`)
+  - envía `x-lavanderia-id` en llamadas API (`/api/maquinas`, acciones)
+  - muestra dirección/ciudad/provincia en `#adminLocation`
+
+## 2026-04-17 — Admin: INICIO + menús según PENDIENTES
+
+### Qué
+
+- Se añade la vista `Inicio` (cámara + máquinas en marcha + caja del día).
+- Se elimina “Nivel de líquidos” del panel admin (ya no aplica al MVP actual).
+- Se reestructura el menú lateral en grupos: Domótica / Contabilidad / Gestión.
+
+### Cómo
+
+- Nueva vista: `app/frontend/public/admin/inicio.html`
+- Redirección post-login a `admin/inicio.html`.
+- Menú actualizado en vistas existentes.
+- `niveles.html` se elimina.
+
+## 2026-04-17 — Cámara MOBOTIX: proxy backend + controles PTZ/zoom (MVP)
+
+### Qué
+
+- Se implementa un proxy en backend para consumir la cámara sin exponer credenciales en el frontend.
+- Se añaden endpoints de control PTZ/zoom y stream.
+
+### Cómo
+
+- Variables env:
+  - `CAMERA_BASE_URL`, `CAMERA_USER`, `CAMERA_PASS`
+- Rutas backend:
+  - `GET /api/camera/ptz/status`
+  - `POST /api/camera/zoom`
+  - `POST /api/camera/ptz/center`
+  - `GET /api/camera/stream.jpg`
+- Validaciones:
+  - zoom absoluto `1000..8000`
+  - zoom relativo limitado en API propia a `-1000..1000`
+- Auditoría:
+  - acciones PTZ/zoom registradas en `auditoria`
+
+### Por qué
+
+- La cámara requiere autenticación. Si se llama desde frontend, se filtran credenciales.
+- El backend actúa como “puente seguro” y centraliza reglas/validación.
+
+## 2026-04-17 — Login público solo para admins (sin registro)
+
+### Qué
+
+- Se elimina el registro y la recuperación de contraseña del modal de login público.
+  El login queda solo para admins y usa correo + password.
+
+### Cómo
+
+- Se quita la vista `view-register` de los HTML públicos.
+- Se quita la vista/acción de “He olvidado mi contraseña”.
+- Se ajusta el JS para no manejar vistas inexistentes.
+- En demo, el admin se representa como correo: `admin@gmail.com` (seed).
+
+### Por qué
+
+- En el MVP el login es solo para administración (no hay cuentas de cliente final).
+- El reset por email requiere infraestructura (SMTP/API) y se pospone.
+
+## 2026-04-17 — Gestión de usuarios (CRUD) en panel admin
+
+### Qué
+
+- La vista `Usuarios` deja de ser un placeholder y pasa a gestionar usuarios reales.
+- Solo el rol `ADMIN` puede ver y usar esta sección.
+- Se permite: listar, crear, editar y activar/desactivar usuarios.
+
+### Cómo
+
+- Backend:
+  - `GET /api/usuarios` (lista por lavandería activa)
+  - `POST /api/usuarios` (crea usuario y lo asocia a la lavandería activa)
+  - `PUT /api/usuarios/:id` (edita datos y opcionalmente password)
+  - `POST /api/usuarios/:id/activar`
+  - `POST /api/usuarios/:id/desactivar` (no permite desactivarte a ti mismo)
+- Frontend:
+  - `app/frontend/public/admin/usuarios.html` con tabla, buscador y modal (crear/editar)
+  - `app/frontend/public/js/admin.js` llama a la API y renderiza; oculta la entrada de menú si no eres `ADMIN`
+- Auditoría:
+  - Las acciones se registran en la tabla `auditoria` con entidad `usuario`.
+
+### Por qué
+
+- En el sistema habrá varias lavanderías y distintos perfiles (admin/operador).
+  Necesitamos control de acceso y gestión de cuentas desde el propio panel.
+
+## 2026-04-17 — Programador IoT (Puerta/Luces/Ventilación) (MVP)
+
+### Qué
+
+- La vista `Programador` permite controlar manualmente puerta/luces/ventilación.
+- Se añaden horarios (encender/apagar) por lavandería.
+- Se ejecuta un scheduler en backend que aplica los horarios y deja rastro en auditoría.
+
+### Cómo
+
+- Backend:
+  - Nuevas rutas en `app/backend/src/web/routes/iot.ts`:
+    - `GET /api/iot/state`, `PUT /api/iot/state`
+    - `GET /api/iot/schedule`, `PUT /api/iot/schedule`
+  - Persistencia en tabla `configuracion` (ámbito `LAVANDERIA`) con claves:
+    - `iot_state` (JSON)
+    - `iot_schedule` (JSON)
+    - `iot_last` (JSON, evita re-ejecuciones repetidas el mismo minuto)
+  - Scheduler en `app/backend/src/iot/scheduler.ts` (tick cada 30s) que aplica el horario y audita.
+  - Seguridad:
+    - lectura (`GET`) requiere sesión
+    - escritura (`PUT`) requiere rol `ADMIN`
+- Frontend:
+  - `app/frontend/public/admin/iot.html` con estado, botones y campos `time`.
+  - `app/frontend/public/js/admin.js` consume la API y refresca la UI.
+
+### Por qué
+
+- Se necesita automatizar horarios de apertura/iluminación/ventilación.
+- Para el MVP no hay hardware real: se simula guardando estados y auditando acciones.
+
+## 2026-04-17 — Caja (diaria / semanal / acumulada) (MVP)
+
+### Qué
+
+- Se implementa la sección `Caja` con 3 vistas: diaria, semanal y rango (acumulada).
+- Se muestra el total y el desglose por máquina.
+
+### Cómo
+
+- Backend:
+  - `app/backend/src/web/routes/caja.ts`
+  - Endpoints:
+    - `GET /api/caja/dia?date=YYYY-MM-DD`
+    - `GET /api/caja/semana?date=YYYY-MM-DD` (semana lunes→domingo del día elegido)
+    - `GET /api/caja/rango?from=YYYY-MM-DD&to=YYYY-MM-DD`
+  - Fuente de datos: `movimiento_maquina` (solo `es_bonificacion = 0`) + join con `maquina` para `codigo_visible`.
+- Frontend:
+  - `app/frontend/public/admin/caja.html` con tabs + filtros + tabla.
+  - `app/frontend/public/js/admin.js` consume la API y renderiza.
+
+### Por qué
+
+- Permite al admin ver facturación operativa sin entrar a consultas manuales.
+- Encaja con el objetivo de “contabilidad” del panel y prepara la base para “Informes”.
+
+## 2026-04-17 — Informes: Ciclos (lista + filtros + paginación) (MVP)
+
+### Qué
+
+- Se implementa la primera parte de `Informes`: listado real de ciclos.
+- Permite filtrar por rango de fechas, máquina y estado, con paginación.
+
+### Cómo
+
+- Backend:
+  - `app/backend/src/web/routes/informes.ts`
+  - Endpoint: `GET /api/informes/ciclos?from=YYYY-MM-DD&to=YYYY-MM-DD&id_maquina=&estado=&limit=&offset=`
+  - Join con `maquina` para mostrar `codigo_visible` y limitar por `id_lavanderia`.
+- Frontend:
+  - `app/frontend/public/admin/informes.html` con pestañas (Ciclos/Evolución/Estadísticas).
+  - `app/frontend/public/js/admin.js` renderiza la tabla, aplica filtros y controla paginación.
+
+### Por qué
+
+- La tabla de ciclos es la base para “Evolución” y “Estadísticas”.
+- Evita depender de consultas manuales a BD para el análisis del TFC.

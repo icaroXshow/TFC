@@ -1,0 +1,30 @@
+import { Router } from "express";
+import { authRouter } from "./routes/auth.js";
+import { maquinasRouter } from "./routes/maquinas.js";
+import { tiendaRouter } from "./routes/tienda.js";
+import { eventosRouter } from "./routes/eventos.js";
+import { auditoriaRouter } from "./routes/auditoria.js";
+import { usuariosRouter } from "./routes/usuarios.js";
+import { dashboardRouter } from "./routes/dashboard.js";
+import { configuracionRouter } from "./routes/configuracion.js";
+import { lavanderiasRouter } from "./routes/lavanderias.js";
+import { cameraRouter } from "./routes/camera.js";
+import { iotRouter } from "./routes/iot.js";
+import { cajaRouter } from "./routes/caja.js";
+import { informesRouter } from "./routes/informes.js";
+
+export const apiRouter = Router();
+
+apiRouter.use("/auth", authRouter);
+apiRouter.use("/maquinas", maquinasRouter);
+apiRouter.use("/tienda", tiendaRouter);
+apiRouter.use("/eventos", eventosRouter);
+apiRouter.use("/auditoria", auditoriaRouter);
+apiRouter.use("/usuarios", usuariosRouter);
+apiRouter.use("/dashboard", dashboardRouter);
+apiRouter.use("/configuracion", configuracionRouter);
+apiRouter.use("/lavanderias", lavanderiasRouter);
+apiRouter.use("/camera", cameraRouter);
+apiRouter.use("/iot", iotRouter);
+apiRouter.use("/caja", cajaRouter);
+apiRouter.use("/informes", informesRouter);

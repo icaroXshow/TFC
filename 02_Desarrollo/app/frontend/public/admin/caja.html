@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caja · Admin · KWL Aqua</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/componentes.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
+
+  <body data-breadcrumb="Contabilidad|Caja">
+    <div class="admin-layout" id="adminApp">
+      <aside class="admin-sidebar" aria-label="Menú lateral">
+        <div class="admin-brand">
+          <img src="/assets/Logo_QWL.png" alt="QWL Aqua" class="admin-brand-logo" />
+          <div class="admin-brand-text">
+            <strong>KWL Aqua</strong>
+            <span>Panel admin</span>
+          </div>
+        </div>
+
+        <nav class="admin-nav" aria-label="Navegación">
+          <a class="admin-nav-item" data-nav="inicio" href="/admin/inicio.html">Inicio</a>
+
+          <div class="admin-nav-group">Domótica</div>
+          <a class="admin-nav-item" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
+          <a class="admin-nav-item" data-nav="iot" href="/admin/iot.html">Programador</a>
+          <a class="admin-nav-item" data-nav="camara" href="/admin/camara.html">Cámara</a>
+
+          <div class="admin-nav-group">Contabilidad</div>
+          <a class="admin-nav-item" data-nav="caja" href="/admin/caja.html">Caja</a>
+          <a class="admin-nav-item" data-nav="informes" href="/admin/informes.html">Informes</a>
+
+          <div class="admin-nav-group">Gestión</div>
+          <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
+          <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
+        </nav>
+
+        <div class="admin-sidebar-bottom">
+          <a class="admin-logout" id="adminLogout" href="/index.html">Cerrar sesión</a>
+        </div>
+      </aside>
+
+      <header class="admin-topbar">
+        <button class="admin-burger" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
+        <div class="admin-breadcrumbs" id="adminBreadcrumbs"></div>
+        <div class="admin-topbar-right">
+          <select class="admin-lav-select" id="adminLavSelect" aria-label="Lavandería activa"></select>
+          <span class="admin-location" id="adminLocation">—</span>
+        </div>
+      </header>
+
+      <main class="admin-main">
+        <section class="admin-section">
+          <div class="admin-section-head">
+            <h3>Caja</h3>
+            <p>Resumen de facturación por lavandería (día, semana o rango).</p>
+          </div>
+
+          <div class="cash-tabs" role="tablist" aria-label="Vistas de caja">
+            <button type="button" class="cash-tab is-active" data-tab="dia" aria-selected="true">Diaria</button>
+            <button type="button" class="cash-tab" data-tab="semana" aria-selected="false">Semanal</button>
+            <button type="button" class="cash-tab" data-tab="rango" aria-selected="false">Acumulada</button>
+          </div>
+
+          <div class="cash-filters">
+            <div class="cash-filter" data-view="dia">
+              <label>Fecha
+                <input type="date" class="input" id="cashDay" />
+              </label>
+              <button type="button" class="btn-primary" id="cashLoadDay">Ver</button>
+            </div>
+
+            <div class="cash-filter" data-view="semana" hidden>
+              <label>Semana (elige un día)
+                <input type="date" class="input" id="cashWeekDate" />
+              </label>
+              <button type="button" class="btn-primary" id="cashLoadWeek">Ver</button>
+            </div>
+
+            <div class="cash-filter" data-view="rango" hidden>
+              <label>Desde
+                <input type="date" class="input" id="cashFrom" />
+              </label>
+              <label>Hasta
+                <input type="date" class="input" id="cashTo" />
+              </label>
+              <button type="button" class="btn-primary" id="cashLoadRange">Ver</button>
+            </div>
+          </div>
+
+          <div class="cash-summary">
+            <div class="cash-card">
+              <span>Periodo</span>
+              <strong id="cashPeriod">—</strong>
+            </div>
+            <div class="cash-card">
+              <span>Movimientos</span>
+              <strong id="cashMoves">—</strong>
+            </div>
+            <div class="cash-card">
+              <span>Total</span>
+              <strong id="cashTotal">—</strong>
+            </div>
+          </div>
+
+          <div class="cash-table-wrap">
+            <table class="cash-table" aria-label="Caja por máquina">
+              <thead>
+                <tr>
+                  <th>Máquina</th>
+                  <th>Tipo</th>
+                  <th>Movimientos</th>
+                  <th>Importe</th>
+                </tr>
+              </thead>
+              <tbody id="cashTbody"></tbody>
+            </table>
+          </div>
+
+          <div class="cash-note" id="cashHint" hidden></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script src="/js/admin.js"></script>
+  </body>
+</html>

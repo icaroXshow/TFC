@@ -15,6 +15,7 @@ Incluye:
 * arquitectura del sistema
 * decisiones técnicas
 * guías de despliegue
+* bitácora de implementación (qué/cómo/por qué)
 
 ---
 
@@ -25,3 +26,10 @@ Servir como apoyo para:
 * desarrollo
 * mantenimiento
 * evaluación del proyecto
+
+---
+
+## Índice rápido
+
+- `docs/desarrollo/bitacora.md` → registro de cambios explicados (TFC)
+- `docs/decisiones/decision_backend_node.md` → por qué Node.js en backend

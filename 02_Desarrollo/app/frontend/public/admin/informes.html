@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Informes · Admin · KWL Aqua</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/componentes.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
+
+  <body data-breadcrumb="Contabilidad|Informes">
+    <div class="admin-layout" id="adminApp">
+      <aside class="admin-sidebar" aria-label="Menú lateral">
+        <div class="admin-brand">
+          <img src="/assets/Logo_QWL.png" alt="QWL Aqua" class="admin-brand-logo" />
+          <div class="admin-brand-text">
+            <strong>KWL Aqua</strong>
+            <span>Panel admin</span>
+          </div>
+        </div>
+
+        <nav class="admin-nav" aria-label="Navegación">
+          <a class="admin-nav-item" data-nav="inicio" href="/admin/inicio.html">Inicio</a>
+
+          <div class="admin-nav-group">Domótica</div>
+          <a class="admin-nav-item" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
+          <a class="admin-nav-item" data-nav="iot" href="/admin/iot.html">Programador</a>
+          <a class="admin-nav-item" data-nav="camara" href="/admin/camara.html">Cámara</a>
+
+          <div class="admin-nav-group">Contabilidad</div>
+          <a class="admin-nav-item" data-nav="caja" href="/admin/caja.html">Caja</a>
+          <a class="admin-nav-item" data-nav="informes" href="/admin/informes.html">Informes</a>
+
+          <div class="admin-nav-group">Gestión</div>
+          <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
+          <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
+        </nav>
+
+        <div class="admin-sidebar-bottom">
+          <a class="admin-logout" id="adminLogout" href="/index.html">Cerrar sesión</a>
+        </div>
+      </aside>
+
+      <header class="admin-topbar">
+        <button class="admin-burger" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
+        <div class="admin-breadcrumbs" id="adminBreadcrumbs"></div>
+        <div class="admin-topbar-right">
+          <select class="admin-lav-select" id="adminLavSelect" aria-label="Lavandería activa"></select>
+          <span class="admin-location" id="adminLocation">—</span>
+        </div>
+      </header>
+
+      <main class="admin-main">
+        <section class="admin-section">
+          <div class="admin-section-head">
+            <h3>Informes</h3>
+            <p>Ciclos, evolución y estadísticas (MVP por partes).</p>
+          </div>
+
+          <div class="reports-tabs" role="tablist" aria-label="Secciones de informes">
+            <button type="button" class="reports-tab is-active" data-tab="ciclos" aria-selected="true">Ciclos</button>
+            <button type="button" class="reports-tab" data-tab="evolucion" aria-selected="false">Evolución</button>
+            <button type="button" class="reports-tab" data-tab="estadisticas" aria-selected="false">Estadísticas</button>
+          </div>
+
+          <div class="reports-view" data-view="ciclos">
+            <div class="reports-filters">
+              <label>Desde
+                <input type="date" class="input" id="repFrom" />
+              </label>
+              <label>Hasta
+                <input type="date" class="input" id="repTo" />
+              </label>
+              <label>Máquina (ID)
+                <input type="number" class="input" id="repMachineId" min="1" placeholder="(opcional)" />
+              </label>
+              <label>Estado
+                <select class="input" id="repEstado">
+                  <option value="">(todos)</option>
+                  <option value="INICIADO">INICIADO</option>
+                  <option value="FINALIZADO">FINALIZADO</option>
+                  <option value="CANCELADO">CANCELADO</option>
+                  <option value="INCIDENCIA">INCIDENCIA</option>
+                </select>
+              </label>
+              <button type="button" class="btn-primary" id="repLoad">Ver</button>
+            </div>
+
+            <div class="reports-meta">
+              <div class="cash-card">
+                <span>Total ciclos</span>
+                <strong id="repTotal">—</strong>
+              </div>
+              <div class="cash-card">
+                <span>Página</span>
+                <strong id="repPage">—</strong>
+              </div>
+              <div class="cash-card">
+                <span>Rango</span>
+                <strong id="repRange">—</strong>
+              </div>
+            </div>
+
+            <div class="reports-table-wrap">
+              <table class="reports-table" aria-label="Tabla de ciclos">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Máquina</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Estado</th>
+                    <th>Duración (min)</th>
+                    <th>Importe</th>
+                  </tr>
+                </thead>
+                <tbody id="repTbody"></tbody>
+              </table>
+            </div>
+
+            <div class="reports-pager">
+              <button type="button" class="btn-secondary" id="repPrev">←</button>
+              <button type="button" class="btn-secondary" id="repNext">→</button>
+              <span class="reports-hint" id="repHint" aria-live="polite"></span>
+            </div>
+          </div>
+
+          <div class="reports-view" data-view="evolucion" hidden>
+            <div class="admin-empty">Evolución: siguiente (gráficos + comparativas).</div>
+          </div>
+
+          <div class="reports-view" data-view="estadisticas" hidden>
+            <div class="admin-empty">Estadísticas: siguiente (tramos por horas/mes/año).</div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script src="/js/admin.js"></script>
+  </body>
+</html>

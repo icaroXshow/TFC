@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inicio · KWL Aqua</title>
+    <!-- FUENTES-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- ESTILOS-->
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/auth.css" />
+    <link rel="stylesheet" href="css/componentes.css" />
+  </head>
+
+  <body>
+    <!-- ===== MODAL GLOBAL DE AUTENTICACIÓN ===== -->
+    <div class="auth-overlay" id="authOverlay">
+      <div class="auth-modal">
+        <!-- Botón cerrar -->
+        <button class="auth-close" id="authClose" type="button">✕</button>
+
+        <!-- Login -->
+        <div class="auth-view active" id="view-login">
+          <h2>Iniciar sesión</h2>
+
+          <input id="authLogin" type="email" placeholder="Correo electrónico" />
+          <input id="authPassword" type="password" placeholder="Contraseña" />
+
+          <button class="auth-btn" id="authSubmit">👤 LOGIN</button>
+
+        </div>
+
+      </div>
+    </div>
+
+    <header class="topbar">
+      <div class="cabecera">
+        <div class="logo">
+          <img src="assets/Logo_KWL.png" alt="KWL Aqua" class="logo-img" />
+        </div>
+        <div class="titulo">
+          <h1>KWL AQUA</h1>
+        </div>
+        <div class="loguin">
+          <a class="btn login-btn" id="openLogin" href="#login">👤Login</a>
+        </div>
+      </div>
+
+      <div class="navegador">
+        <nav>
+          <ul>
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="about.html">About us</a></li>
+            <li><a href="contact.html">Contacto</a></li>
+            <li><a href="faqs.html">FAQs</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <!-- CONTENIDO -->
+    <main>
+      <section class="inicio container">
+        <p class="bienvenido">¡Bienvenido!</p>
+        <h2 class="somos">Somos KWL Ponferrada</h2>
+        <p class="tuservicio">Tu servicio de lavandería .</p>
+      </section>
+    </main>
+
+    <!-- FOOTER FOOTER FOOTER-->
+    <footer class="footer">
+      <div class="footer-top">
+        <!-- Columna 1: Logo + Menú -->
+        <div class="footer-col-1">
+          <img
+            src="assets/Logo_KWL.png"
+            alt="KWL Aqua"
+            class="footer-logo-big"
+          />
+
+          <ul class="footer-menu">
+            <li><a href="contact.html">Contacto</a></li>
+            <li><a href="about.html">Sobre nosotros</a></li>
+            <li><a href="faqs.html">FAQs</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-top-drch">
+          <!-- Columna 2: Horario -->
+          <div class="footer-col-2">
+            <h4>Horario</h4>
+            <ul class="hours-list">
+              <li><span>Lunes</span><span>8:30–22:00</span></li>
+              <li><span>Martes</span><span>8:30–22:00</span></li>
+              <li><span>Miércoles</span><span>8:30–22:00</span></li>
+              <li><span>Jueves</span><span>8:30–22:00</span></li>
+              <li><span>Viernes</span><span>8:30–22:00</span></li>
+              <li><span>Sábado</span><span>8:30–22:00</span></li>
+              <li><span>Domingo</span><span>8:30–22:00</span></li>
+            </ul>
+          </div>
+
+          <!-- Columna 3: Mapa -->
+          <div class="footer-col-3">
+            <h4>Donde encontrarnos</h4>
+
+            <div class="footer-map">
+              <iframe
+                src="https://www.google.com/maps?q=Calle%20Dr.%20Fleming%2C%2026%2C%2024402%20Ponferrada&output=embed"
+                loading="lazy"
+                allowfullscreen
+              >
+              </iframe>
+            </div>
+          </div>
+
+          <!-- Columna 4: Redes Sociales -->
+          <div class="footer-col-4">
+            <div class="footer-social">
+              <a href="#"><img src="assets/ln.png" alt="LinkedIn" /></a>
+              <a href="#"><img src="assets/ig.png" alt="Instagram" /></a>
+              <a href="#"><img src="assets/facebook.png" alt="Facebook" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Franja inferior -->
+      <div class="footer-politicas">
+        <a href="legal/cookies.html">Políticas de cookies</a>
+        <a href="legal/aviso-legal.html">Aviso Legal</a>
+        <a href="legal/privacidad.html">Políticas de privacidad</a>
+      </div>
+
+      <div class="footer-copy">
+        © 2025 KWL Aqua. Todos los derechos reservados.
+      </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+  </body>
+</html>

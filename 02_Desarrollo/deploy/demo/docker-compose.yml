@@ -1,0 +1,26 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: kwl_demo_mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: demo
+      MARIADB_DATABASE: kwl_lavanderia
+    ports:
+      - "3307:3306"
+    volumes:
+      - kwl_demo_db:/var/lib/mysql
+      - ../../context/db/BD_modelo_fisico.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./db/init/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+
+  adminer:
+    image: adminer:4
+    container_name: kwl_demo_adminer
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    depends_on:
+      - mariadb
+
+volumes:
+  kwl_demo_db:
