@@ -31,16 +31,33 @@ if (-not $dockerInstalado) {
     winget install --id Docker.DockerDesktop --exact --source winget --accept-package-agreements --accept-source-agreements
     Write-Host "[!] ADVERTENCIA: Es posible que necesites reiniciar el ordenador para que Docker Desktop funcione correctamente." -ForegroundColor Red
 } else {
-    Write-Host "[v] Docker ya está instalado." -ForegroundColor Green
+Write-Host "[v] Docker ya está instalado." -ForegroundColor Green
+Write-Host ""
+Write-Host "Levantando servicios Docker (DB + Adminer)..." -ForegroundColor Cyan
+Set-Location $PSScriptRoot
+docker compose up -d
+Write-Host "[v] DB/Adminer listos en puerto 3307/8082." -ForegroundColor Green
 }
 
 Write-Host ""
+Write-Host "=============================================" -ForegroundColor Cyan
+Write-Host " Configurando Backend (Node.js)" -ForegroundColor Cyan
+Write-Host "=============================================" -ForegroundColor Cyan
+
+$BackendPath = Join-Path $PSScriptRoot "..\..\app\backend"
+Set-Location $BackendPath
+npm ci
+npm run build
+Write-Host "[v] Backend listo en puerto 8080."
+Start-Process powershell.exe -ArgumentList "-ExecutionPolicy","Bypass", "-NoExit", "-Command", "Set-Location '$BackendPath'; node --env-file=.env dist/server.js"
+Set-Location $PSScriptRoot
+
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host " Levantando servidor web (Frontend)" -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 
 # 3. Levantar el servidor de desarrollo
-$FrontendPath = Join-Path -Path $PSScriptRoot -ChildPath "app\frontend\public"
+$FrontendPath = Join-Path -Path $PSScriptRoot -ChildPath "..\..\app\frontend\public"
 
 if (Test-Path $FrontendPath) {
     Write-Host "-> Cambiando al directorio del frontend..."
@@ -64,6 +81,18 @@ if (Test-Path $FrontendPath) {
     Write-Host "[X] No se encontró el directorio del frontend en: $FrontendPath" -ForegroundColor Red
 }
 
+Start-Sleep -Seconds 5
 Write-Host ""
-Write-Host "Proceso completado. Presiona cualquier tecla para salir..." -ForegroundColor Cyan
+Write-Host "Abriendo aplicación web en el navegador..." -ForegroundColor Cyan
+Start-Process "http://localhost:8081/index.html"
+
+Write-Host ""
+Write-Host "=============================================" -ForegroundColor Green
+Write-Host "¡DESPLIEGUE COMPLETADO!" -ForegroundColor Green
+Write-Host "URLs:" -ForegroundColor Cyan
+Write-Host "  - Frontend: http://localhost:8081/index.html (admin@gmail.com / admin)" -ForegroundColor Cyan
+Write-Host "  - Backend: http://localhost:8080/health" -ForegroundColor Cyan
+Write-Host "  - DB Adminer: http://localhost:8082" -ForegroundColor Cyan
+Write-Host "=============================================" -ForegroundColor Green
+Write-Host "Presiona Ctrl+C en terminales para parar." -ForegroundColor Cyan
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

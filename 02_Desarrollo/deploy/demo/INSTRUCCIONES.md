@@ -1,4 +1,4 @@
-# WSL · Cómo seguir testeando (demo)
+# WSL ·  Despliegue en un unico equipo
 
 ## REQUISITOS
 - Habilitar virtualizacion en la bios
@@ -7,7 +7,27 @@
 - Tener instalado python
 
 # AUTOMATICO
- - Ejecutar: deploy\demo\auto_deploy.ps1
+ - Ejecutar: 
+ 
+ ```bash 
+cd 02_Desarrollo/deploy/demo
+powershell.exe -ExecutionPolicy Bypass -File auto_deploy.ps1
+```
+## Windows (PowerShell)
+
+- Instala Python/Docker si hace falta
+- Levanta DB/Adminer (docker)
+- Prepara y inicia Backend (8080, terminal nueva)
+- Inicia Frontend (8081)
+
+**URLs**:
+- Frontend: http://localhost:8081/index.html (login admin@gmail.com / admin)
+- Adminer: http://localhost:8082
+- Backend: http://localhost:8080/health
+
+**Parar**:
+- DB: cd deploy/demo && docker compose down
+- Backend/Frontend: taskkill /IM node.exe /F ; taskkill /IM python.exe /F ; Ctrl+C terminales
 
 # MANUAL
 ## 1) Lanzar Base de datos (MariaDB en Docker)
