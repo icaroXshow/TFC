@@ -4,8 +4,8 @@ services:
     container_name: kwl_demo_mariadb
     restart: unless-stopped
     environment:
-      MARIADB_ROOT_PASSWORD: demo
-      MARIADB_DATABASE: kwl_lavanderia
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-demo}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-kwl_lavanderia}
     ports:
       - "3307:3306"
     volumes:
@@ -18,14 +18,14 @@ services:
     container_name: kwl_demo_redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
   mqtt:
     image: eclipse-mosquitto:2
     container_name: kwl_demo_mqtt
     restart: unless-stopped
     ports:
-      - "1883:1883"
+      - "127.0.0.1:1883:1883"
 
   mqtt-sim:
     build:
@@ -49,21 +49,21 @@ services:
       NODE_ENV: development
       HOST: 0.0.0.0
       PORT: 8080
-      CORS_ORIGIN: http://127.0.0.1:8081,http://localhost:8081,http://127.0.0.1:8080,null,*
+      CORS_ORIGIN: http://127.0.0.1:8081,http://localhost:8081,http://127.0.0.1:8080,null
       DB_HOST: mariadb
       DB_PORT: 3306
       DB_USER: root
-      DB_PASSWORD: demo
+      DB_PASSWORD: ${MARIADB_ROOT_PASSWORD:-demo}
       DB_NAME: kwl_lavanderia
-      AUTH_TOKEN_SECRET: kwl-backend-super-secret-2024
+      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-change-this-secret}
       MQTT_ENABLED: "true"
       MQTT_URL: mqtt://mqtt:1883
-      CAMERA_BASE_URL: http://es1034.c14.ovh:1055
-      CAMERA_USER: api
-      CAMERA_PASS: XJ2Ugh32rVHvCqXZtu9pOSaujSyl5ynM4SP1
-      CAMERA2_BASE_URL: http://es1034.c14.ovh:1055
-      CAMERA2_USER: api
-      CAMERA2_PASS: XJ2Ugh32rVHvCqXZtu9pOSaujSyl5ynM4SP1
+      CAMERA_BASE_URL: ${CAMERA_BASE_URL:-}
+      CAMERA_USER: ${CAMERA_USER:-}
+      CAMERA_PASS: ${CAMERA_PASS:-}
+      CAMERA2_BASE_URL: ${CAMERA2_BASE_URL:-}
+      CAMERA2_USER: ${CAMERA2_USER:-}
+      CAMERA2_PASS: ${CAMERA2_PASS:-}
     depends_on:
       - mariadb
       - redis

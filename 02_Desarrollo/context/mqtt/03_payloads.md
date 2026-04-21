@@ -12,10 +12,28 @@ Se recomienda JSON.
 
 ```json
 {
-  "accion": "iniciar_maquina",
+  "accion": "encender_rele",
+  "id_maquina": 1,
+  "timestamp": "2026-04-15T18:00:00Z"
+}
+```
+
+```json
+{
+  "accion": "insertar_credito",
   "id_maquina": 1,
   "id_ciclo": 25,
+  "importe": 1.0,
   "timestamp": "2026-04-15T18:00:00Z"
+}
+```
+
+```json
+{
+  "accion": "apagar_rele",
+  "id_maquina": 1,
+  "id_ciclo": 25,
+  "timestamp": "2026-04-15T18:46:00Z"
 }
 ```
 
@@ -38,6 +56,7 @@ Se recomienda JSON.
 ```json
 {
   "id_maquina": 1,
+  "id_ciclo": 25,
   "tipo_evento": "CICLO_FINALIZADO",
   "nivel": "INFO",
   "payload": {
@@ -46,6 +65,12 @@ Se recomienda JSON.
   "timestamp": "2026-04-15T18:46:00Z"
 }
 ```
+
+Eventos relevantes adicionales:
+
+- `PULSO_INICIO`
+- `PULSO_FIN`
+- `AMPLIACION_APLICADA`
 
 ---
 

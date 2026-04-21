@@ -25,8 +25,8 @@ Detalle de una máquina.
 
 Acciones:
 
-- crea un nuevo ciclo en la base de datos
-- asigna tarifa vigente
+- enciende relé de la máquina
+- pasa la máquina a estado `PAUSADA`
 - registra auditoría
 - envía comando MQTT
 
@@ -38,6 +38,9 @@ Solicita reinicio.
 
 ### POST /api/maquinas/{id}/ampliar
 Registra ampliación de tiempo.
+
+### POST /api/maquinas/{id}/credito
+Inserta crédito cuando la máquina está encendida (`PAUSADA`) para iniciar lavado.
 
 ---
 
@@ -115,3 +118,37 @@ Consulta configuración operativa.
 
 ### PUT /api/configuracion/{clave}
 Actualiza parámetro permitido.
+
+### GET /api/configuracion/env
+Lee ajustes de entorno por lavandería (admin).
+
+### PUT /api/configuracion/env
+Guarda ajustes de entorno por lavandería (admin).
+
+---
+
+## IoT
+
+### GET /api/iot/state
+Estado actual de relés lógicos de tienda.
+
+### PUT /api/iot/state
+Actualiza estado lógico de tienda (admin).
+
+### GET /api/iot/schedule
+Obtiene programación.
+
+### PUT /api/iot/schedule
+Guarda programación (admin).
+
+### GET /api/iot/store-actions
+Obtiene acciones de abrir/cerrar tienda.
+
+### PUT /api/iot/store-actions
+Guarda acciones de abrir/cerrar tienda (admin).
+
+### GET /api/iot/store-open-machines
+Obtiene máquinas a encender con botón Abrir tienda.
+
+### PUT /api/iot/store-open-machines
+Guarda máquinas a encender con botón Abrir tienda (admin).

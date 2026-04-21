@@ -19,6 +19,7 @@
    - histórico persistente
    - estado actual visible
 4. La API no debe asumir que el dispositivo ha ejecutado una orden hasta recibir confirmación o evento.
+5. Las rutas de cámara con token en query deben validar acceso del usuario a la lavandería solicitada.
 
 ---
 

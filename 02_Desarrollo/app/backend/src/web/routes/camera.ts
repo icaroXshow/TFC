@@ -9,6 +9,7 @@ export const cameraRouter = Router();
 
 type CameraConfig = { baseUrl: string; user: string; pass: string };
 type ConfigRow = RowDataPacket & { valor: string };
+type LavAccessRow = RowDataPacket & { id_lavanderia: number };
 
 async function resolveCameraConfig(cam: 1 | 2, idLav: number): Promise<CameraConfig> {
   const fallback: CameraConfig =
@@ -40,6 +41,14 @@ async function resolveCameraConfig(cam: 1 | 2, idLav: number): Promise<CameraCon
 
 function resolveCamByLav(idLav: number): 1 | 2 {
   return idLav === 2 ? 2 : 1;
+}
+
+async function userHasLavAccess(idUsuario: number, idLav: number): Promise<boolean> {
+  const [rows] = await db.query<LavAccessRow[]>(
+    "SELECT id_lavanderia FROM usuario_lavanderia WHERE id_usuario = :idUsuario AND id_lavanderia = :idLav LIMIT 1",
+    { idUsuario, idLav },
+  );
+  return Boolean(rows[0]);
 }
 
 function cameraConfigured(cfg: CameraConfig) {
@@ -179,6 +188,36 @@ cameraRouter.post("/audio/play", requireAuth, requireRole(["ADMIN"]), requireLav
   return res.json({ ok: true, raw: text });
 });
 
+cameraRouter.post("/relay/pulse", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idLav = Number(req.auth?.id_lavanderia ?? 1);
+  const cam = resolveCamByLav(idLav);
+  const cfg = await resolveCameraConfig(cam, idLav);
+  if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });
+
+  const kind = String(req.body?.kind ?? "").trim().toLowerCase();
+  let outmask = "";
+  let time = "";
+  if (kind === "door" || kind === "puerta") {
+    outmask = "0x2";
+    time = "3";
+  } else if (kind === "lights" || kind === "luces") {
+    outmask = "0x1";
+    time = "1";
+  } else {
+    return res.status(400).json({ ok: false, error: "BAD_KIND" });
+  }
+
+  const url = buildUrl(`/control/rcontrol?action=sigouthigh&time=${time}&outmask=${encodeURIComponent(outmask)}`, cfg);
+  const fr = await fetchWithTimeout(url, 5000, cfg);
+  if (!fr.ok) return res.status(504).json({ ok: false, error: "CAMERA_TIMEOUT" });
+  const r = fr.response;
+  const text = await r.text();
+  if (!r.ok) return res.status(502).json({ ok: false, error: "CAMERA_UPSTREAM_ERROR" });
+
+  await audit(req, "CAMERA_RELAY_PULSE", `Pulso relé ${kind} (outmask=${outmask},time=${time})`);
+  return res.json({ ok: true, raw: text });
+});
+
 // Stream proxy (no expone credenciales). Image tag friendly.
 cameraRouter.get("/stream.jpg", async (req, res) => {
   try {
@@ -193,6 +232,12 @@ cameraRouter.get("/stream.jpg", async (req, res) => {
     }
 
     const lav = Number(req.query?.lav ?? "1");
+    const idUsuario = Number(payload.sub ?? "0");
+    if (!Number.isFinite(lav) || lav <= 0) return res.status(400).json({ ok: false, error: "BAD_LAVANDERIA" });
+    if (!Number.isFinite(idUsuario) || idUsuario <= 0) return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
+    const hasAccess = await userHasLavAccess(idUsuario, lav);
+    if (!hasAccess) return res.status(403).json({ ok: false, error: "FORBIDDEN_LAVANDERIA" });
+
     const cam = String(req.query?.cam ?? "") ? (String(req.query?.cam) === "2" ? 2 : 1) : resolveCamByLav(lav);
     const cfg = await resolveCameraConfig(cam, lav);
     if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });

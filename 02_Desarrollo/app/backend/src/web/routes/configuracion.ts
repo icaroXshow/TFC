@@ -58,15 +58,31 @@ configuracionRouter.get("/env", requireAuth, requireRole(["ADMIN"]), requireLava
     CAMERA_PASS: "",
     MQTT_URL: "",
   });
-  res.json({ ok: true, env: envCfg });
+  res.json({
+    ok: true,
+    env: {
+      CAMERA_BASE_URL: envCfg.CAMERA_BASE_URL,
+      CAMERA_USER: envCfg.CAMERA_USER,
+      CAMERA_PASS: "",
+      CAMERA_PASS_SET: Boolean(envCfg.CAMERA_PASS),
+      MQTT_URL: envCfg.MQTT_URL,
+    },
+  });
 });
 
 configuracionRouter.put("/env", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = req.auth?.id_lavanderia ?? 1;
+  const current = await getConfigLav<EnvSettings>(idLav, "env_settings", {
+    CAMERA_BASE_URL: "",
+    CAMERA_USER: "",
+    CAMERA_PASS: "",
+    MQTT_URL: "",
+  });
+  const nextPass = String(req.body?.CAMERA_PASS ?? "");
   const envCfg: EnvSettings = {
     CAMERA_BASE_URL: String(req.body?.CAMERA_BASE_URL ?? "").trim(),
     CAMERA_USER: String(req.body?.CAMERA_USER ?? "").trim(),
-    CAMERA_PASS: String(req.body?.CAMERA_PASS ?? ""),
+    CAMERA_PASS: nextPass ? nextPass : current.CAMERA_PASS,
     MQTT_URL: String(req.body?.MQTT_URL ?? "").trim(),
   };
   await setConfigLav(idLav, "env_settings", envCfg, "Ajustes ENV por tienda (demo/admin)");

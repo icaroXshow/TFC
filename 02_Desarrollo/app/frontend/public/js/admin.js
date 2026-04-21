@@ -68,10 +68,8 @@
   const userTempPassword = $("#userTempPassword");
   const iotHint = $("#iotHint");
   const iotSaveSchedule = $("#iotSaveSchedule");
-  const doorOpen = $("#doorOpen");
-  const doorClose = $("#doorClose");
-  const lightsOn = $("#lightsOn");
-  const lightsOff = $("#lightsOff");
+  const doorToggle = $("#doorToggle");
+  const lightsToggle = $("#lightsToggle");
   const fanOn = $("#fanOn");
   const fanOff = $("#fanOff");
   const doorState = $("#iotDoorState");
@@ -271,8 +269,16 @@
         <div class="machine-actions">
           <button type="button" class="btn-primary js-start" data-id="${id}" ${canStart ? "" : "disabled"}>Encender</button>
           <button type="button" class="btn-secondary js-stop" data-id="${id}" ${canStop ? "" : "disabled"}>Apagar</button>
-          <button type="button" class="btn-secondary js-credit" data-id="${id}" ${canCredit ? "" : "disabled"}>Crédito</button>
-          <button type="button" class="btn-secondary js-extend" data-id="${id}" ${canExtend ? "" : "disabled"}>Ampliar</button>
+          ${canCredit ? `<button type="button" class="btn-secondary js-credit" data-id="${id}">Crédito</button>` : ""}
+          ${canExtend ? `<button type="button" class="btn-secondary js-extend" data-id="${id}">Ampliar</button>` : ""}
+        </div>
+        <div class="machine-drawer" data-id="${id}">
+          <p class="machine-drawer-title">Importe</p>
+          <div class="machine-drawer-row">
+            <input type="number" min="0.10" step="0.10" class="input machine-drawer-input" value="1.00" />
+            <button type="button" class="btn-primary js-amount-apply" data-id="${id}" data-mode="">Aplicar</button>
+            <button type="button" class="btn-secondary js-amount-cancel" data-id="${id}">Cancelar</button>
+          </div>
         </div>
       `;
       machinesGrid.appendChild(el);
@@ -594,7 +600,7 @@
     }
 
     // IOT / Programador
-    const isIotView = Boolean(iotSaveSchedule || doorOpen || lightsOn || fanOn);
+    const isIotView = Boolean(iotSaveSchedule || doorToggle || lightsToggle || fanOn);
     let currentIotState = { puerta_abierta: false, luces_encendidas: false, ventilacion_encendida: false };
     const setIotHint = (text) => {
       if (!iotHint) return;
@@ -609,28 +615,33 @@
     const loadIot = async () => {
       if (!isIotView) return;
       setIotHint("");
-      const [stateRes, schRes] = await Promise.all([
+      const [stateRes, schRes, approxRes] = await Promise.all([
         fetch("http://127.0.0.1:8080/api/iot/state", {
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
         }),
         fetch("http://127.0.0.1:8080/api/iot/schedule", {
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
         }),
+        fetch("http://127.0.0.1:8080/api/iot/approx-state", {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        }),
       ]);
-      if (!stateRes.ok || !schRes.ok) {
+      if (!stateRes.ok || !schRes.ok || !approxRes.ok) {
         setIotHint("No hay permiso o backend caído.");
         return;
       }
       const stateData = await stateRes.json();
       const schData = await schRes.json();
+      const approxData = await approxRes.json();
       const st = stateData?.state || {};
+      const approx = approxData?.approx || {};
       currentIotState = {
-        puerta_abierta: Boolean(st.puerta_abierta),
-        luces_encendidas: Boolean(st.luces_encendidas),
+        puerta_abierta: Boolean(approx.puerta_abierta),
+        luces_encendidas: Boolean(approx.luces_encendidas),
         ventilacion_encendida: Boolean(st.ventilacion_encendida),
       };
-      setPill(doorState, st.puerta_abierta);
-      setPill(lightsState, st.luces_encendidas);
+      setPill(doorState, approx.puerta_abierta);
+      setPill(lightsState, approx.luces_encendidas);
       setPill(fanState, st.ventilacion_encendida);
 
       const sc = schData?.schedule || {};
@@ -661,54 +672,46 @@
       return true;
     };
 
-    const updateQuickState = async (patch) => {
-      const r = await fetch("http://127.0.0.1:8080/api/iot/state", {
-        headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
-      });
-      if (!r.ok) throw new Error("STATE_READ_FAILED");
-      const d = await r.json();
-      const curr = d?.state || {};
-      const payload = {
-        puerta_abierta: Boolean(curr.puerta_abierta),
-        luces_encendidas: Boolean(curr.luces_encendidas),
-        ventilacion_encendida: Boolean(curr.ventilacion_encendida),
-        ...patch,
-      };
-      const w = await fetch("http://127.0.0.1:8080/api/iot/state", {
-        method: "PUT",
+    const triggerRelayPulse = async (kind) => {
+      const r = await fetch("http://127.0.0.1:8080/api/camera/relay/pulse", {
+        method: "POST",
         headers: {
           authorization: `Bearer ${token}`,
           "x-lavanderia-id": String(activeLavId),
           "content-type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ kind }),
       });
-      if (!w.ok) throw new Error("STATE_WRITE_FAILED");
+      if (!r.ok) throw new Error("RELAY_FAILED");
+    };
+    const registerRelayToggle = async (device) => {
+      const r = await fetch("http://127.0.0.1:8080/api/iot/relay-action", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "x-lavanderia-id": String(activeLavId),
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ dispositivo: device }),
+      });
+      if (!r.ok) throw new Error("RELAY_LOG_FAILED");
     };
 
     quickDoorBtn?.addEventListener("click", async () => {
       if (!window.confirm("¿Confirmas cambiar estado de puerta?")) return;
       try {
-        const r = await fetch("http://127.0.0.1:8080/api/iot/state", {
-          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
-        });
-        if (!r.ok) throw new Error("STATE_READ_FAILED");
-        const d = await r.json();
-        const curr = Boolean(d?.state?.puerta_abierta);
-        await updateQuickState({ puerta_abierta: !curr });
+        await triggerRelayPulse("door");
+        await registerRelayToggle("puerta");
+        await loadIot();
       } catch {
         window.alert("No se pudo cambiar puerta.");
       }
     });
     quickLightsBtn?.addEventListener("click", async () => {
       try {
-        const r = await fetch("http://127.0.0.1:8080/api/iot/state", {
-          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
-        });
-        if (!r.ok) throw new Error("STATE_READ_FAILED");
-        const d = await r.json();
-        const curr = Boolean(d?.state?.luces_encendidas);
-        await updateQuickState({ luces_encendidas: !curr });
+        await triggerRelayPulse("lights");
+        await registerRelayToggle("luces");
+        await loadIot();
       } catch {
         window.alert("No se pudo cambiar luces.");
       }
@@ -731,17 +734,39 @@
       }
     });
 
-    doorOpen?.addEventListener("click", async () => {
-      await saveState({ puerta_abierta: true });
+    doorToggle?.addEventListener("click", async () => {
+      try {
+        await triggerRelayPulse("door");
+        await registerRelayToggle("puerta");
+        await loadIot();
+      } catch {
+        setIotHint("Error en pulso de puerta.");
+      }
     });
-    doorClose?.addEventListener("click", async () => {
-      await saveState({ puerta_abierta: false });
+    lightsToggle?.addEventListener("click", async () => {
+      try {
+        await triggerRelayPulse("lights");
+        await registerRelayToggle("luces");
+        await loadIot();
+      } catch {
+        setIotHint("Error en pulso de luces.");
+      }
     });
-    lightsOn?.addEventListener("click", async () => {
-      await saveState({ luces_encendidas: true });
+    doorState?.addEventListener("click", async () => {
+      try {
+        await registerRelayToggle("puerta");
+        await loadIot();
+      } catch {
+        setIotHint("Error al actualizar estado aproximado de puerta.");
+      }
     });
-    lightsOff?.addEventListener("click", async () => {
-      await saveState({ luces_encendidas: false });
+    lightsState?.addEventListener("click", async () => {
+      try {
+        await registerRelayToggle("luces");
+        await loadIot();
+      } catch {
+        setIotHint("Error al actualizar estado aproximado de luces.");
+      }
     });
     fanOn?.addEventListener("click", async () => {
       await saveState({ ventilacion_encendida: true });
@@ -1317,22 +1342,47 @@
       const stopBtn = e.target.closest(".js-stop");
       const creditBtn = e.target.closest(".js-credit");
       const extendBtn = e.target.closest(".js-extend");
-      const anyBtn = btn || stopBtn || creditBtn || extendBtn;
-      if (!anyBtn) return;
+      const applyBtn = e.target.closest(".js-amount-apply");
+      const cancelBtn = e.target.closest(".js-amount-cancel");
 
-      const id = Number(anyBtn.getAttribute("data-id"));
-      if (!Number.isFinite(id) || id <= 0) return;
+      const closeAllDrawers = () => {
+        machinesGrid.querySelectorAll(".machine-drawer.is-open").forEach((d) => d.classList.remove("is-open"));
+      };
+
+      if (cancelBtn) {
+        const tile = cancelBtn.closest(".machine-tile");
+        tile?.querySelector(".machine-drawer")?.classList.remove("is-open");
+        return;
+      }
 
       if (creditBtn || extendBtn) {
-        const raw = window.prompt(creditBtn ? "¿Cuánto crédito quieres añadir? (€)" : "¿Cuánto quieres ampliar? (€)", "1");
-        if (raw === null) return;
-        const importe = Number(String(raw).replace(",", "."));
-        if (!Number.isFinite(importe) || importe <= 0) return;
+        const tile = (creditBtn || extendBtn).closest(".machine-tile");
+        if (!tile) return;
+        const drawer = tile.querySelector(".machine-drawer");
+        const title = tile.querySelector(".machine-drawer-title");
+        const apply = tile.querySelector(".js-amount-apply");
+        if (!drawer || !title || !apply) return;
+        closeAllDrawers();
+        const isCredit = Boolean(creditBtn);
+        title.textContent = isCredit ? "Añadir crédito" : "Ampliar tiempo";
+        apply.setAttribute("data-mode", isCredit ? "credito" : "ampliar");
+        drawer.classList.add("is-open");
+        const input = tile.querySelector(".machine-drawer-input");
+        input?.focus();
+        return;
+      }
 
-        anyBtn.disabled = true;
+      if (applyBtn) {
+        const id = Number(applyBtn.getAttribute("data-id"));
+        const mode = String(applyBtn.getAttribute("data-mode") || "");
+        if (!Number.isFinite(id) || id <= 0 || (mode !== "credito" && mode !== "ampliar")) return;
+        const tile = applyBtn.closest(".machine-tile");
+        const input = tile?.querySelector(".machine-drawer-input");
+        const importe = Number(String(input?.value ?? "").replace(",", "."));
+        if (!Number.isFinite(importe) || importe <= 0) return;
+        applyBtn.disabled = true;
         try {
-          const endpoint = creditBtn ? "credito" : "ampliar";
-          const res = await fetch(`http://127.0.0.1:8080/api/maquinas/${id}/${endpoint}`, {
+          const res = await fetch(`http://127.0.0.1:8080/api/maquinas/${id}/${mode}`, {
             method: "POST",
             headers: {
               authorization: `Bearer ${token}`,
@@ -1341,13 +1391,19 @@
             },
             body: JSON.stringify({ importe }),
           });
-          if (!res.ok) throw new Error("EXTEND_FAILED");
+          if (!res.ok) throw new Error("AMOUNT_FAILED");
           await loadMaquinas();
         } catch {
           await loadMaquinas();
         }
         return;
       }
+
+      const anyBtn = btn || stopBtn || creditBtn || extendBtn;
+      if (!anyBtn) return;
+
+      const id = Number(anyBtn.getAttribute("data-id"));
+      if (!Number.isFinite(id) || id <= 0) return;
 
       const action = btn ? "iniciar" : "detener";
       const body = {};

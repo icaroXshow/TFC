@@ -69,10 +69,9 @@
           <div class="iot-grid">
             <article class="iot-tile">
               <h4>Puerta</h4>
-              <p class="iot-status">Estado: <span id="iotDoorState" class="iot-state-pill">—</span></p>
+              <p class="iot-status">Estado: <span id="iotDoorState" class="iot-state-pill iot-state-clickable">—</span></p>
               <div class="iot-actions">
-                <button type="button" class="btn-primary" id="doorOpen">Abrir</button>
-                <button type="button" class="btn-secondary" id="doorClose">Cerrar</button>
+                <button type="button" class="btn-primary" id="doorToggle">Encender / Apagar</button>
               </div>
               <div class="iot-schedule">
                 <label>Auto abrir <input type="time" class="input" id="doorOn" /></label>
@@ -81,10 +80,9 @@
             </article>
             <article class="iot-tile">
               <h4>Luces</h4>
-              <p class="iot-status">Estado: <span id="iotLightsState" class="iot-state-pill">—</span></p>
+              <p class="iot-status">Estado: <span id="iotLightsState" class="iot-state-pill iot-state-clickable">—</span></p>
               <div class="iot-actions">
-                <button type="button" class="btn-primary" id="lightsOn">Encender</button>
-                <button type="button" class="btn-secondary" id="lightsOff">Apagar</button>
+                <button type="button" class="btn-primary" id="lightsToggle">Encender / Apagar</button>
               </div>
               <div class="iot-schedule">
                 <label>Auto encender <input type="time" class="input" id="lightsOnTime" /></label>

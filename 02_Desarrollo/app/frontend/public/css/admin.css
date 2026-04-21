@@ -220,9 +220,9 @@
 ========================================= */
 .admin-main {
   grid-column: 2;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 22px 16px 50px;
+  max-width: none;
+  margin: 0;
+  padding: 22px 28px 50px;
   width: 100%;
 }
 
@@ -475,6 +475,40 @@ body.admin-locked .admin-main {
   flex-wrap: wrap;
 }
 
+.machine-drawer {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-6px);
+  transition: max-height 220ms ease, opacity 180ms ease, transform 180ms ease;
+}
+
+.machine-drawer.is-open {
+  max-height: 160px;
+  opacity: 1;
+  transform: translateY(0);
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.machine-drawer-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+}
+
+.machine-drawer-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.machine-drawer-input {
+  max-width: 120px;
+}
+
 .btn-primary,
 .btn-secondary {
   border-radius: 12px;
@@ -533,6 +567,10 @@ body.admin-locked .admin-main {
   border: 1px solid rgba(255, 255, 255, 0.18);
   font-weight: 800;
   letter-spacing: 0.3px;
+}
+
+.iot-state-clickable {
+  cursor: pointer;
 }
 
 .iot-state-on {

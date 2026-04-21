@@ -36,6 +36,13 @@ type StoreActions = {
   cerrar_tienda: { puerta_abierta: boolean; luces_encendidas: boolean; ventilacion_encendida: boolean };
 };
 
+type RelayAction = {
+  dispositivo: "puerta" | "luces";
+  accion: "toggle";
+  ts: string;
+  by?: number;
+};
+
 function safeJsonParse<T>(raw: string, fallback: T): T {
   try {
     const v = JSON.parse(raw);
@@ -120,6 +127,16 @@ function normalizeSchedule(input: any): IoTSchedule {
   return s;
 }
 
+function deriveApproxStateFromLog(log: RelayAction[]) {
+  let puerta = false;
+  let luces = false;
+  for (const item of log) {
+    if (item.dispositivo === "puerta") puerta = !puerta;
+    if (item.dispositivo === "luces") luces = !luces;
+  }
+  return { puerta_abierta: puerta, luces_encendidas: luces };
+}
+
 iotRouter.get("/state", requireAuth, requireLavanderia, async (req, res) => {
   const idLav = req.auth?.id_lavanderia ?? 1;
   const state = await getConfigLav<IoTState>(
@@ -128,6 +145,34 @@ iotRouter.get("/state", requireAuth, requireLavanderia, async (req, res) => {
     { puerta_abierta: false, luces_encendidas: false, ventilacion_encendida: false },
   );
   res.json({ ok: true, state });
+});
+
+iotRouter.get("/approx-state", requireAuth, requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const log = await getConfigLav<RelayAction[]>(idLav, "iot_action_log", []);
+  const safeLog = Array.isArray(log) ? log : [];
+  const approx = deriveApproxStateFromLog(safeLog);
+  const last = safeLog[safeLog.length - 1] ?? null;
+  res.json({ ok: true, approx, last_action: last });
+});
+
+iotRouter.post("/relay-action", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const raw = String(req.body?.dispositivo ?? "").toLowerCase();
+  if (raw !== "puerta" && raw !== "luces") return res.status(400).json({ ok: false, error: "BAD_DISPOSITIVO" });
+  const prev = await getConfigLav<RelayAction[]>(idLav, "iot_action_log", []);
+  const log = Array.isArray(prev) ? prev.slice(-499) : [];
+  const nextItem: RelayAction = {
+    dispositivo: raw as "puerta" | "luces",
+    accion: "toggle",
+    ts: new Date().toISOString(),
+    by: Number(req.auth?.id_usuario ?? "0") || undefined,
+  };
+  log.push(nextItem);
+  await setConfigLav(idLav, "iot_action_log", log, "Registro aproximado de acciones relé puerta/luces");
+  const approx = deriveApproxStateFromLog(log);
+  await audit(req, "IOT_RELAY_ACTION", `Acción aproximada ${raw}:toggle`);
+  res.json({ ok: true, approx, last_action: nextItem });
 });
 
 iotRouter.put("/state", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
