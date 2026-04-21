@@ -2,6 +2,12 @@
 
 Despliegue **demo/evaluación** (Para poder ejecutar en Windows local).
 
+- Ejecutar (Varias veces si es necesario): 
+
+ ```bash 
+cd 02_Desarrollo/deploy/demo
+powershell.exe -ExecutionPolicy Bypass -File auto_deploy.ps1
+```
 ## MariaDB (demo)
 
 Levanta MariaDB con el esquema desde `context/db/BD_modelo_fisico.sql` y datos mínimos de ejemplo.

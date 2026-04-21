@@ -15,7 +15,7 @@ powershell.exe -ExecutionPolicy Bypass -File auto_deploy.ps1
 ```
 ## Windows (PowerShell)
 
-- Instala Python/Docker si hace falta
+- Instala Python/Docker/Node si hace falta
 - Levanta DB/Adminer (docker)
 - Prepara y inicia Backend (8080, terminal nueva)
 - Inicia Frontend (8081)
