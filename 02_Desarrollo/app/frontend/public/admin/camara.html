@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cámara web · Admin · KWL Aqua</title>
+    <title>Cámara· Admin · KWL Aqua</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -60,25 +60,31 @@
       </header>
 
       <main class="admin-main">
+        <section class="admin-section" style="margin-top: 8px">
+          <div class="iot-actions">
+            <a class="btn-secondary" href="http://es1034.c14.ovh:1055/control/userimage.html" target="_blank" rel="noreferrer">Userimage</a>
+          </div>
+        </section>
         <section class="admin-section">
           <div class="admin-section-head">
             <h3>Cámara</h3>
-            <p>Integración con cámaras (placeholder).</p>
+            <p></p>
           </div>
 
           <article class="admin-card admin-camera-card">
-            <p class="admin-card-title">Stream</p>
-            <p class="admin-card-hint">Proxy backend (sin exponer credenciales).</p>
+            <p class="admin-card-title">Vista en directo</p>
             <div class="admin-camera-frame">
-              <img class="admin-camera-img" id="cameraStream" alt="Cámara tienda" loading="lazy" />
+              <img class="admin-camera-img" id="cameraStream1" alt="Cámara 1" loading="lazy" />
             </div>
-            <p class="admin-card-hint" id="cameraHint">
-              Si no se ve, configura `CAMERA_USER`/`CAMERA_PASS` en `app/backend/.env`.
-            </p>
-            <div class="iot-actions">
+            <p class="admin-card-hint" id="cameraHint"></p>
+            <div class="iot-actions" style="margin-top: 8px; flex-wrap: wrap">
               <button type="button" class="btn-secondary" id="camCenter">Centrar</button>
               <button type="button" class="btn-secondary" id="camZoomIn">Zoom +</button>
               <button type="button" class="btn-secondary" id="camZoomOut">Zoom -</button>
+              <button type="button" class="btn-secondary" id="camZoom1x">1x</button>
+              <button type="button" class="btn-secondary" id="camZoom2x">2x</button>
+              <button type="button" class="btn-secondary" id="camZoom4x">4x</button>
+              <button type="button" class="btn-secondary" id="camZoom8x">8x</button>
             </div>
           </article>
         </section>

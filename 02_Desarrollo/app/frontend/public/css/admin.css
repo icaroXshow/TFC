@@ -190,10 +190,11 @@
 .admin-location {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.85);
+  display: none;
 }
 
 .admin-lav-select {
-  max-width: 240px;
+  width: min(420px, 70vw);
   border-radius: 12px;
   padding: 8px 10px;
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -206,6 +207,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.store-config-link {
+  color: var(--turquesa-claro);
+  text-decoration: underline;
+  font-weight: 700;
 }
 
 /* =========================================
@@ -242,7 +249,8 @@ body.admin-locked .admin-main {
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(0, 0, 0, 0.22);
+  background: rgba(0, 0, 0, 0.35);
+  min-height: 300px;
 }
 
 .admin-camera-img {
@@ -250,12 +258,12 @@ body.admin-locked .admin-main {
   width: 100%;
   height: auto;
   aspect-ratio: 16 / 9;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .admin-hero {
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
+  grid-template-columns: 1.35fr 0.95fr;
   gap: 26px;
   align-items: stretch;
   margin-top: 10px;
@@ -283,8 +291,58 @@ body.admin-locked .admin-main {
 
 .admin-hero-cards {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.admin-card-wide {
+  grid-column: 1 / -1;
+}
+
+.admin-card-mini {
+  min-height: 120px;
+}
+
+.admin-health-card {
+  padding: 14px 16px;
+}
+
+.health-line {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.health-pill {
+  border-radius: 999px;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.health-pill.is-ok {
+  color: #98ffae;
+  border-color: rgba(152, 255, 174, 0.45);
+  background: rgba(152, 255, 174, 0.14);
+}
+
+.health-pill.is-bad {
+  color: #ff7d89;
+  border-color: rgba(255, 125, 137, 0.45);
+  background: rgba(255, 125, 137, 0.14);
+}
+
+.admin-card-cube {
+  width: 62px;
+  height: 62px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  border: 1px solid rgba(40, 240, 200, 0.35);
+  background: rgba(40, 240, 200, 0.12);
 }
 
 .admin-card {
@@ -310,6 +368,11 @@ body.admin-locked .admin-main {
   color: var(--turquesa-claro);
 }
 
+#cardNextFinish {
+  font-size: 34px;
+  line-height: 1.05;
+}
+
 .admin-card-hint {
   margin: 0;
   color: rgba(255, 255, 255, 0.65);
@@ -333,7 +396,7 @@ body.admin-locked .admin-main {
 
 .machines-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 14px;
 }
 
@@ -367,6 +430,15 @@ body.admin-locked .admin-main {
 
 .machine-state {
   margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.machine-timer {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .state-pill {
@@ -399,7 +471,8 @@ body.admin-locked .admin-main {
 .machine-actions {
   margin-top: 14px;
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .btn-primary,
@@ -897,6 +970,10 @@ body.admin-locked .admin-main {
 
 @media (max-width: 980px) {
   .admin-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-hero-cards {
     grid-template-columns: 1fr;
   }
 

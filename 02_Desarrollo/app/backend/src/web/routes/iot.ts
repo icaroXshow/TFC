@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { RowDataPacket, ResultSetHeader } from "mysql2/promise";
 import { db } from "../../db/pool.js";
 import { requireAuth, requireLavanderia, requireRole } from "../auth/middleware.js";
+import { publishMachineCommand } from "../../iot/mqtt.js";
 
 export const iotRouter = Router();
 
@@ -28,6 +29,11 @@ type IoTSchedule = {
   puerta?: IoTScheduleItem;
   luces?: IoTScheduleItem;
   ventilacion?: IoTScheduleItem;
+};
+
+type StoreActions = {
+  abrir_tienda: { puerta_abierta: boolean; luces_encendidas: boolean; ventilacion_encendida: boolean };
+  cerrar_tienda: { puerta_abierta: boolean; luces_encendidas: boolean; ventilacion_encendida: boolean };
 };
 
 function safeJsonParse<T>(raw: string, fallback: T): T {
@@ -148,5 +154,99 @@ iotRouter.put("/schedule", requireAuth, requireRole(["ADMIN"]), requireLavanderi
   await setConfigLav(idLav, "iot_schedule", schedule, "Programación IoT (MVP)");
   await audit(req, "IOT_SET_SCHEDULE", `Horario actualizado: ${JSON.stringify(schedule)}`);
   res.json({ ok: true, schedule });
+});
+
+iotRouter.get("/store-actions", requireAuth, requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const actions = await getConfigLav<StoreActions>(idLav, "iot_store_actions", {
+    abrir_tienda: { puerta_abierta: true, luces_encendidas: true, ventilacion_encendida: true },
+    cerrar_tienda: { puerta_abierta: false, luces_encendidas: false, ventilacion_encendida: false },
+  });
+  res.json({ ok: true, actions });
+});
+
+iotRouter.put("/store-actions", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const input = req.body ?? {};
+  const actions: StoreActions = {
+    abrir_tienda: {
+      puerta_abierta: Boolean(input?.abrir_tienda?.puerta_abierta),
+      luces_encendidas: Boolean(input?.abrir_tienda?.luces_encendidas),
+      ventilacion_encendida: Boolean(input?.abrir_tienda?.ventilacion_encendida),
+    },
+    cerrar_tienda: {
+      puerta_abierta: Boolean(input?.cerrar_tienda?.puerta_abierta),
+      luces_encendidas: Boolean(input?.cerrar_tienda?.luces_encendidas),
+      ventilacion_encendida: Boolean(input?.cerrar_tienda?.ventilacion_encendida),
+    },
+  };
+  await setConfigLav(idLav, "iot_store_actions", actions, "Acciones botones abrir/cerrar tienda");
+  await audit(req, "IOT_SET_STORE_ACTIONS", `Acciones tienda: ${JSON.stringify(actions)}`);
+  res.json({ ok: true, actions });
+});
+
+iotRouter.get("/store-open-machines", requireAuth, requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const maquinas = await getConfigLav<number[]>(idLav, "iot_store_open_machines", []);
+  res.json({ ok: true, maquinas });
+});
+
+iotRouter.put("/store-open-machines", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const raw = Array.isArray(req.body?.maquinas) ? req.body.maquinas : [];
+  const maquinas = [...new Set(raw.map((x: unknown) => Number(x)).filter((x: number) => Number.isFinite(x) && x > 0))];
+  await setConfigLav(idLav, "iot_store_open_machines", maquinas, "Máquinas a encender con botón Abrir");
+  await audit(req, "IOT_SET_STORE_OPEN_MACHINES", `Maquinas abrir tienda: ${JSON.stringify(maquinas)}`);
+  res.json({ ok: true, maquinas });
+});
+
+iotRouter.post("/store/open", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const state = await getConfigLav<IoTState>(idLav, "iot_state", {
+    puerta_abierta: false,
+    luces_encendidas: false,
+    ventilacion_encendida: false,
+  });
+  const actions = await getConfigLav<StoreActions>(idLav, "iot_store_actions", {
+    abrir_tienda: { puerta_abierta: true, luces_encendidas: true, ventilacion_encendida: true },
+    cerrar_tienda: { puerta_abierta: false, luces_encendidas: false, ventilacion_encendida: false },
+  });
+  const next = { ...state, ...actions.abrir_tienda, updated_at: new Date().toISOString() };
+  await setConfigLav(idLav, "iot_state", next, "Estado por abrir tienda");
+  const maquinasCfg = await getConfigLav<number[]>(idLav, "iot_store_open_machines", []);
+  if (maquinasCfg.length) {
+    const idsCsv = maquinasCfg.join(",");
+    const [rows] = await db.query<(RowDataPacket & { id_maquina: number; codigo_visible: string })[]>(
+      "SELECT id_maquina, codigo_visible FROM maquina WHERE id_lavanderia = :idLav AND FIND_IN_SET(id_maquina, :idsCsv) > 0",
+      { idLav, idsCsv },
+    );
+    for (const m of rows) {
+      await db.query<ResultSetHeader>("UPDATE maquina SET estado_actual = 'PAUSADA' WHERE id_maquina = :id", { id: m.id_maquina });
+      publishMachineCommand(m.codigo_visible, {
+        accion: "encender_rele",
+        id_maquina: m.id_maquina,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+  await audit(req, "IOT_STORE_OPEN", `Abrir tienda aplicado: ${JSON.stringify(actions.abrir_tienda)}`);
+  res.json({ ok: true, state: next, maquinas_encendidas: maquinasCfg });
+});
+
+iotRouter.post("/store/close", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const state = await getConfigLav<IoTState>(idLav, "iot_state", {
+    puerta_abierta: false,
+    luces_encendidas: false,
+    ventilacion_encendida: false,
+  });
+  const actions = await getConfigLav<StoreActions>(idLav, "iot_store_actions", {
+    abrir_tienda: { puerta_abierta: true, luces_encendidas: true, ventilacion_encendida: true },
+    cerrar_tienda: { puerta_abierta: false, luces_encendidas: false, ventilacion_encendida: false },
+  });
+  const next = { ...state, ...actions.cerrar_tienda, updated_at: new Date().toISOString() };
+  await setConfigLav(idLav, "iot_state", next, "Estado por cerrar tienda");
+  await audit(req, "IOT_STORE_CLOSE", `Cerrar tienda aplicado: ${JSON.stringify(actions.cerrar_tienda)}`);
+  res.json({ ok: true, state: next });
 });
 

@@ -16,6 +16,7 @@
   const loginUser = $("#authLogin");
   const loginPass = $("#authPassword");
   const loginSubmit = $("#authSubmit");
+  let authError = null;
 
   if (overlay) {
     function showView(id) {
@@ -33,6 +34,7 @@ document.body.classList.add("auth-open");
   footer?.classList.add("footer-auth");
 
   showView("view-login");
+  if (authError) authError.textContent = "";
   setTimeout(() => loginUser?.focus(), 50);
 }
 
@@ -72,13 +74,30 @@ function closeModal() {
       openModal();
     }
 
-    // Login -> backend + token + redirigir a admin
-    loginSubmit?.addEventListener("click", async (e) => {
+    function ensureAuthError() {
+      if (authError) return authError;
+      const loginView = $("#view-login", overlay);
+      if (!loginView) return null;
+      const p = document.createElement("p");
+      p.style.color = "#ffb4b4";
+      p.style.fontSize = "14px";
+      p.style.margin = "8px 0 0";
+      loginView.appendChild(p);
+      authError = p;
+      return p;
+    }
+
+    async function doLogin(e) {
       e.preventDefault();
+      const err = ensureAuthError();
+      if (err) err.textContent = "";
 
       const login = String(loginUser?.value ?? "").trim();
       const password = String(loginPass?.value ?? "");
-      if (!login || !password) return;
+      if (!login || !password) {
+        if (err) err.textContent = "Introduce usuario y contraseña.";
+        return;
+      }
 
       try {
         const res = await fetch(`${API_BASE}/api/auth/login`, {
@@ -86,8 +105,8 @@ function closeModal() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ login, password }),
         });
-        const data = await res.json();
-        if (!res.ok || !data?.token) throw new Error("LOGIN_FAILED");
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.token) throw new Error(data?.error || "LOGIN_FAILED");
 
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ token: data.token, user: data.user }));
         // MVP: si aún no hay lavandería activa, fija a 1 por defecto
@@ -97,9 +116,16 @@ function closeModal() {
         closeModal();
         window.location.href = "admin/inicio.html";
       } catch {
-        // MVP: no UI de error en modal para no romper diseño existente
-        // (se añadirá cuando se diseñe el flujo de auth completo)
+        if (err) err.textContent = "Credenciales inválidas o backend no disponible.";
       }
+    }
+
+    // Login -> backend + token + redirigir a admin
+    loginSubmit?.addEventListener("click", doLogin);
+    [loginUser, loginPass].forEach((el) => {
+      el?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doLogin(e);
+      });
     });
   }
 

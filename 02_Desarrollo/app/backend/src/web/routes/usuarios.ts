@@ -276,3 +276,59 @@ usuariosRouter.post("/:id/desactivar", requireAuth, requireRole(["ADMIN"]), requ
   await audit(req, "USUARIO_DESACTIVAR", idUsuario, `Desactivar usuario ${rows[0].login}`);
   return res.json({ ok: true });
 });
+
+usuariosRouter.get("/:id/lavanderias", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idUsuario = Number(req.params.id);
+  if (!Number.isFinite(idUsuario) || idUsuario <= 0) return res.status(400).json({ ok: false, error: "BAD_USER_ID" });
+
+  const [rows] = await db.query<(import("mysql2/promise").RowDataPacket & { id_lavanderia: number })[]>(
+    "SELECT id_lavanderia FROM usuario_lavanderia WHERE id_usuario = :idUsuario ORDER BY id_lavanderia ASC",
+    { idUsuario },
+  );
+  return res.json({ ok: true, lavanderias: rows.map((r) => Number(r.id_lavanderia)) });
+});
+
+usuariosRouter.put("/:id/lavanderias", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idUsuario = Number(req.params.id);
+  if (!Number.isFinite(idUsuario) || idUsuario <= 0) return res.status(400).json({ ok: false, error: "BAD_USER_ID" });
+
+  const ids = Array.isArray(req.body?.lavanderias) ? req.body.lavanderias.map((x: any) => Number(x)).filter((x: number) => Number.isFinite(x) && x > 0) : [];
+  if (!ids.length) return res.status(400).json({ ok: false, error: "BAD_LAVANDERIAS" });
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query<ResultSetHeader>("DELETE FROM usuario_lavanderia WHERE id_usuario = :idUsuario", { idUsuario });
+    for (const idLav of ids) {
+      await conn.query<ResultSetHeader>(
+        "INSERT INTO usuario_lavanderia (id_usuario, id_lavanderia) VALUES (:idUsuario, :idLav)",
+        { idUsuario, idLav },
+      );
+    }
+    await conn.commit();
+    await audit(req, "USUARIO_SET_LAVANDERIAS", idUsuario, `Tiendas: ${ids.join(",")}`);
+    return res.json({ ok: true });
+  } catch {
+    await conn.rollback();
+    return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+  } finally {
+    conn.release();
+  }
+});
+
+usuariosRouter.delete("/:id", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idUsuario = Number(req.params.id);
+  if (!Number.isFinite(idUsuario) || idUsuario <= 0) return res.status(400).json({ ok: false, error: "BAD_USER_ID" });
+  const currentUserId = Number(req.auth?.id_usuario ?? "0");
+  if (currentUserId && idUsuario === currentUserId) return res.status(409).json({ ok: false, error: "CANNOT_DELETE_SELF" });
+
+  const [rows] = await db.query<UsuarioRow[]>(
+    "SELECT id_usuario, nombre, apellidos, login, password_hash, rol, activo, ultimo_acceso FROM usuario WHERE id_usuario = :idUsuario LIMIT 1",
+    { idUsuario },
+  );
+  if (!rows[0]) return res.status(404).json({ ok: false, error: "USER_NOT_FOUND" });
+
+  await db.query<ResultSetHeader>("DELETE FROM usuario WHERE id_usuario = :idUsuario", { idUsuario });
+  await audit(req, "USUARIO_DELETE", idUsuario, `Eliminar usuario ${rows[0].login}`);
+  return res.json({ ok: true });
+});

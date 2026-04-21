@@ -34,5 +34,15 @@ export const env = {
     baseUrl: process.env.CAMERA_BASE_URL ?? "",
     user: process.env.CAMERA_USER ?? "",
     pass: process.env.CAMERA_PASS ?? "",
+    baseUrl2: process.env.CAMERA2_BASE_URL ?? "",
+    user2: process.env.CAMERA2_USER ?? "",
+    pass2: process.env.CAMERA2_PASS ?? "",
+  },
+
+  mqtt: {
+    url: process.env.MQTT_URL ?? "mqtt://mqtt:1883",
+    user: process.env.MQTT_USER ?? "",
+    pass: process.env.MQTT_PASS ?? "",
+    enabled: (process.env.MQTT_ENABLED ?? "true").toLowerCase() === "true",
   },
 };

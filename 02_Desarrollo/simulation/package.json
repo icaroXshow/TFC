@@ -1,0 +1,11 @@
+{
+  "name": "kwl-simulation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/washing-sim.js"
+  },
+  "dependencies": {
+    "mqtt": "^5.10.4"
+  }
+}

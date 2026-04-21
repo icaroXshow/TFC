@@ -1,43 +1,27 @@
 # simulation
 
-## Descripción
+Simulador MQTT para demo local del TFC.
 
-Simulador de dispositivos del sistema.
+## Qué hace ahora (MVP)
 
-Permite probar el funcionamiento completo sin necesidad de hardware físico.
+- escucha `kwl/maquinas/+/comando`
+- publica estado en `kwl/maquinas/{codigo}/estado`
+- publica eventos en `kwl/maquinas/{codigo}/evento`
+- simula relé (`encender_rele` / `apagar_rele`)
+- `insertar_credito`: si la máquina está encendida arranca lavado o amplía tiempo
+- emite pulsos `PULSO_INICIO` y `PULSO_FIN`
+- ciclo base configurable + ampliación por euro
 
----
+## Arranque manual
 
-## Dispositivos simulados
+```bash
+cd 02_Desarrollo/simulation
+npm install
+npm start
+```
 
-* lavadora
-* ventilador
-* puerta (persiana)
-* luces
+Variables:
 
----
-
-## Funcionalidad
-
-* recepción de comandos vía MQTT
-* envío de estados
-* generación de eventos
-* simulación de comportamientos y errores
-
----
-
-## Objetivo
-
-Facilitar:
-
-* desarrollo sin hardware
-* pruebas del sistema
-* despliegue en entorno de evaluación
-
----
-
-## Notas
-
-El simulador es independiente del entorno.
-
-Su ejecución en el sistema real se define en `server/lxc_sim/`.
+- `MQTT_URL` (por defecto `mqtt://mqtt:1883`)
+- `SIM_CYCLE_SECONDS` (por defecto `120`)
+- `SIM_PLUS_SECONDS_PER_EURO` (por defecto `30`)

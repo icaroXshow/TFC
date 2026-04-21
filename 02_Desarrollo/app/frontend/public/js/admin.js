@@ -5,6 +5,31 @@
   const $ = (s, c = document) => c.querySelector(s);
 
   const cardBackend = $("#cardBackend");
+  const healthLine = $("#healthLine");
+  const cardCajaHoy = $("#cardCajaHoy");
+  const storeOpenBtn = $("#storeOpenBtn");
+  const storeCloseBtn = $("#storeCloseBtn");
+  const storeConfigToggle = $("#storeConfigToggle");
+  const storeConfigDialog = $("#storeConfigDialog");
+  const storeConfigClose = $("#storeConfigClose");
+  const storeConfigSave = $("#storeConfigSave");
+  const storeEnvBtn = $("#storeEnvBtn");
+  const storeEnvDialog = $("#storeEnvDialog");
+  const storeEnvClose = $("#storeEnvClose");
+  const storeEnvSave = $("#storeEnvSave");
+  const envCameraBase = $("#envCameraBase");
+  const envCameraUser = $("#envCameraUser");
+  const envCameraPass = $("#envCameraPass");
+  const envMqttUrl = $("#envMqttUrl");
+  const storeOpenTime = $("#storeOpenTime");
+  const storeCloseTime = $("#storeCloseTime");
+  const storeOpenMachines = $("#storeOpenMachines");
+  const openDoor = $("#openDoor");
+  const openLights = $("#openLights");
+  const openFan = $("#openFan");
+  const closeDoor = $("#closeDoor");
+  const closeLights = $("#closeLights");
+  const closeFan = $("#closeFan");
   const machinesGrid = $("#machinesGrid");
   const logoutBtn = $("#adminLogout");
   const adminApp = $("#adminApp");
@@ -15,8 +40,17 @@
   const camCenter = $("#camCenter");
   const camZoomIn = $("#camZoomIn");
   const camZoomOut = $("#camZoomOut");
+  const camZoom1x = $("#camZoom1x");
+  const camZoom2x = $("#camZoom2x");
+  const camZoom4x = $("#camZoom4x");
+  const camZoom8x = $("#camZoom8x");
   const cameraImg = $("#cameraStream");
+  const cameraImg1 = $("#cameraStream1");
+  const cameraImg2 = $("#cameraStream2");
   const cameraHint = $("#cameraHint");
+  const quickDoorBtn = $("#quickDoorBtn");
+  const quickLightsBtn = $("#quickLightsBtn");
+  const quickAudioBtn = $("#quickAudioBtn");
   const usersTbody = $("#usersTbody");
   const usersSearch = $("#usersSearch");
   const userNewBtn = $("#userNewBtn");
@@ -176,7 +210,7 @@
     lavanderias.forEach((l) => {
       const opt = document.createElement("option");
       opt.value = String(l.id_lavanderia);
-      opt.textContent = l.nombre || `Lavandería ${l.id_lavanderia}`;
+      opt.textContent = formatUbicacion(l);
       if (l.id_lavanderia === activeId) opt.selected = true;
       lavSelect.appendChild(opt);
     });
@@ -222,7 +256,9 @@
       const id = Number(m.id_maquina);
       const canStart = estado === "STOP";
       const canStop = estado === "EN_MARCHA" || estado === "PAUSADA";
-      const canExtend = estado === "EN_MARCHA" || estado === "PAUSADA";
+      const canCredit = estado === "PAUSADA";
+      const canExtend = estado === "EN_MARCHA";
+      const rest = Number(m.minutos_restantes_estimados ?? 0);
       el.innerHTML = `
         <div class="machine-meta">
           <strong>${m.codigo_visible}</strong>
@@ -230,10 +266,12 @@
         </div>
         <div class="machine-state">
           <span class="state-pill ${stateClass(estado)}">${estado}</span>
+          <span class="machine-timer">${rest > 0 ? `~${rest} min` : "—"}</span>
         </div>
         <div class="machine-actions">
-          <button type="button" class="btn-primary js-start" data-id="${id}" ${canStart ? "" : "disabled"}>Iniciar</button>
-          <button type="button" class="btn-secondary js-stop" data-id="${id}" ${canStop ? "" : "disabled"}>Detener</button>
+          <button type="button" class="btn-primary js-start" data-id="${id}" ${canStart ? "" : "disabled"}>Encender</button>
+          <button type="button" class="btn-secondary js-stop" data-id="${id}" ${canStop ? "" : "disabled"}>Apagar</button>
+          <button type="button" class="btn-secondary js-credit" data-id="${id}" ${canCredit ? "" : "disabled"}>Crédito</button>
           <button type="button" class="btn-secondary js-extend" data-id="${id}" ${canExtend ? "" : "disabled"}>Ampliar</button>
         </div>
       `;
@@ -285,8 +323,211 @@
       const healthRes = await fetch("http://127.0.0.1:8080/health");
       const health = await healthRes.json();
       setText(cardBackend, health?.db === "ok" ? "Conectado" : "BD caída");
+      if (healthLine) {
+        const apiOk = Boolean(health?.ok);
+        const dbOk = health?.db === "ok";
+        const mqttOk = Boolean(health?.mqtt?.connected);
+        const iotRunning = String(health?.iot?.scheduler || "running") === "running";
+        healthLine.innerHTML = `
+          <span class="health-pill ${apiOk ? "is-ok" : "is-bad"}">API: ${apiOk ? "OK" : "DOWN"}</span>
+          <span class="health-pill ${dbOk ? "is-ok" : "is-bad"}">BD: ${dbOk ? "OK" : "DOWN"}</span>
+          <span class="health-pill ${mqttOk ? "is-ok" : "is-bad"}">MQTT: ${mqttOk ? "OK" : "DOWN"}</span>
+          <span class="health-pill ${iotRunning ? "is-ok" : "is-bad"}">IoT: ${health?.iot?.scheduler || "DOWN"}</span>
+        `;
+      }
     } catch {
       setText(cardBackend, "Desconectado");
+      if (healthLine) {
+        healthLine.innerHTML = `
+          <span class="health-pill is-bad">API: DOWN</span>
+          <span class="health-pill is-bad">BD: DOWN</span>
+          <span class="health-pill is-bad">MQTT: DOWN</span>
+          <span class="health-pill is-bad">IoT: DOWN</span>
+        `;
+      }
+    }
+    if (cardCajaHoy) {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const date = `${yyyy}-${mm}-${dd}`;
+      const r = await fetch(`http://127.0.0.1:8080/api/caja/dia?date=${encodeURIComponent(date)}`, {
+        headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+      });
+      if (r.ok) {
+        const data = await r.json();
+        const total = Number(data?.total ?? 0);
+        cardCajaHoy.textContent = total.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
+      } else {
+        cardCajaHoy.textContent = "—";
+      }
+    }
+
+    storeConfigToggle?.addEventListener("click", (e) => {
+      e.preventDefault();
+      storeConfigDialog?.showModal();
+    });
+    storeConfigClose?.addEventListener("click", () => {
+      storeConfigDialog?.close();
+    });
+    if (storeConfigSave) {
+      storeConfigSave.addEventListener("click", async () => {
+        storeConfigSave.disabled = true;
+        const actionsPayload = {
+          abrir_tienda: {
+            puerta_abierta: Boolean(openDoor?.checked),
+            luces_encendidas: Boolean(openLights?.checked),
+            ventilacion_encendida: Boolean(openFan?.checked),
+          },
+          cerrar_tienda: {
+            puerta_abierta: Boolean(closeDoor?.checked),
+            luces_encendidas: Boolean(closeLights?.checked),
+            ventilacion_encendida: Boolean(closeFan?.checked),
+          },
+        };
+        const schedulePayload = {
+          puerta: { on: openDoor?.checked ? (storeOpenTime?.value || null) : null, off: closeDoor?.checked ? (storeCloseTime?.value || null) : null },
+          luces: { on: openLights?.checked ? (storeOpenTime?.value || null) : null, off: closeLights?.checked ? (storeCloseTime?.value || null) : null },
+          ventilacion: { on: openFan?.checked ? (storeOpenTime?.value || null) : null, off: closeFan?.checked ? (storeCloseTime?.value || null) : null },
+        };
+        const selectedMachines = storeOpenMachines
+          ? [...storeOpenMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+          : [];
+        const [aRes, sRes, mRes] = await Promise.all([
+          fetch("http://127.0.0.1:8080/api/iot/store-actions", {
+            method: "PUT",
+            headers: {
+              authorization: `Bearer ${token}`,
+              "x-lavanderia-id": String(activeLavId),
+              "content-type": "application/json",
+            },
+            body: JSON.stringify(actionsPayload),
+          }),
+          fetch("http://127.0.0.1:8080/api/iot/schedule", {
+            method: "PUT",
+            headers: {
+              authorization: `Bearer ${token}`,
+              "x-lavanderia-id": String(activeLavId),
+              "content-type": "application/json",
+            },
+            body: JSON.stringify(schedulePayload),
+          }),
+          fetch("http://127.0.0.1:8080/api/iot/store-open-machines", {
+            method: "PUT",
+            headers: {
+              authorization: `Bearer ${token}`,
+              "x-lavanderia-id": String(activeLavId),
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({ maquinas: selectedMachines }),
+          }),
+        ]);
+        storeConfigSave.disabled = false;
+        if (aRes.ok && sRes.ok && mRes.ok) {
+          storeConfigDialog?.close();
+          return;
+        }
+        window.alert("No se pudo guardar la configuración.");
+      });
+    }
+    if (storeConfigDialog) {
+      const [r, s, machinesRes, selectedRes] = await Promise.all([
+        fetch("http://127.0.0.1:8080/api/iot/store-actions", {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        }),
+        fetch("http://127.0.0.1:8080/api/iot/schedule", {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        }),
+        fetch("http://127.0.0.1:8080/api/maquinas", {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        }),
+        fetch("http://127.0.0.1:8080/api/iot/store-open-machines", {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        }),
+      ]);
+      if (r.ok) {
+        const d = await r.json();
+        if (openDoor) openDoor.checked = Boolean(d?.actions?.abrir_tienda?.puerta_abierta);
+        if (openLights) openLights.checked = Boolean(d?.actions?.abrir_tienda?.luces_encendidas);
+        if (openFan) openFan.checked = Boolean(d?.actions?.abrir_tienda?.ventilacion_encendida);
+        if (closeDoor) closeDoor.checked = Boolean(d?.actions?.cerrar_tienda?.puerta_abierta);
+        if (closeLights) closeLights.checked = Boolean(d?.actions?.cerrar_tienda?.luces_encendidas);
+        if (closeFan) closeFan.checked = Boolean(d?.actions?.cerrar_tienda?.ventilacion_encendida);
+      }
+      if (s.ok) {
+        const d = await s.json();
+        if (storeOpenTime) storeOpenTime.value = d?.schedule?.puerta?.on || d?.schedule?.luces?.on || d?.schedule?.ventilacion?.on || "";
+        if (storeCloseTime) storeCloseTime.value = d?.schedule?.puerta?.off || d?.schedule?.luces?.off || d?.schedule?.ventilacion?.off || "";
+      }
+      if (storeOpenMachines) {
+        const allMachines = machinesRes.ok ? (await machinesRes.json())?.maquinas || [] : [];
+        const selectedIds = selectedRes.ok ? (await selectedRes.json())?.maquinas || [] : [];
+        const selected = new Set(selectedIds.map((x) => Number(x)));
+        storeOpenMachines.innerHTML = allMachines
+          .map((m) => `<label><input type="checkbox" value="${m.id_maquina}" ${selected.has(Number(m.id_maquina)) ? "checked" : ""} /> ${m.codigo_visible}</label>`)
+          .join("");
+      }
+    }
+    const loadEnvFromBackend = async () => {
+      const r = await fetch("http://127.0.0.1:8080/api/configuracion/env", {
+        headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+      });
+      if (!r.ok) throw new Error("ENV_LOAD_FAILED");
+      const d = await r.json();
+      if (envCameraBase) envCameraBase.value = d?.env?.CAMERA_BASE_URL || "";
+      if (envCameraUser) envCameraUser.value = d?.env?.CAMERA_USER || "";
+      if (envCameraPass) envCameraPass.value = d?.env?.CAMERA_PASS || "";
+      if (envMqttUrl) envMqttUrl.value = d?.env?.MQTT_URL || "";
+    };
+    storeEnvBtn?.addEventListener("click", async () => {
+      try {
+        await loadEnvFromBackend();
+        storeEnvDialog?.showModal();
+      } catch {
+        window.alert("No se pudieron cargar ajustes.");
+      }
+    });
+    storeEnvClose?.addEventListener("click", () => storeEnvDialog?.close());
+    storeEnvSave?.addEventListener("click", async () => {
+      const next = {
+        CAMERA_BASE_URL: envCameraBase?.value?.trim() || "",
+        CAMERA_USER: envCameraUser?.value?.trim() || "",
+        CAMERA_PASS: envCameraPass?.value || "",
+        MQTT_URL: envMqttUrl?.value?.trim() || "",
+      };
+      const r = await fetch("http://127.0.0.1:8080/api/configuracion/env", {
+        method: "PUT",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "x-lavanderia-id": String(activeLavId),
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(next),
+      });
+      if (!r.ok) {
+        window.alert("No se pudieron guardar ajustes.");
+        return;
+      }
+      storeEnvDialog?.close();
+    });
+    if (storeOpenBtn) {
+      storeOpenBtn.addEventListener("click", async () => {
+        await fetch("http://127.0.0.1:8080/api/iot/store/open", {
+          method: "POST",
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId), "content-type": "application/json" },
+          body: "{}",
+        });
+      });
+    }
+    if (storeCloseBtn) {
+      storeCloseBtn.addEventListener("click", async () => {
+        await fetch("http://127.0.0.1:8080/api/iot/store/close", {
+          method: "POST",
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId), "content-type": "application/json" },
+          body: "{}",
+        });
+      });
     }
 
     // Cámara (si hay botones en esta vista)
@@ -312,21 +553,44 @@
     camZoomOut?.addEventListener("click", async () => {
       await callCamera("/zoom", { mode: "relative", value: -250 });
     });
+    camZoom1x?.addEventListener("click", async () => {
+      await callCamera("/zoom", { mode: "absolute", value: 1000 });
+    });
+    camZoom2x?.addEventListener("click", async () => {
+      await callCamera("/zoom", { mode: "absolute", value: 2000 });
+    });
+    camZoom4x?.addEventListener("click", async () => {
+      await callCamera("/zoom", { mode: "absolute", value: 4000 });
+    });
+    camZoom8x?.addEventListener("click", async () => {
+      await callCamera("/zoom", { mode: "absolute", value: 8000 });
+    });
 
     // Stream: <img> usa token en query param (no Authorization)
-    if (cameraImg) {
+    const cameraTargets = [];
+    if (cameraImg) cameraTargets.push({ el: cameraImg, cam: null });
+    if (cameraImg1) cameraTargets.push({ el: cameraImg1, cam: 1 });
+    if (cameraImg2) cameraTargets.push({ el: cameraImg2, cam: 2 });
+
+    if (cameraTargets.length) {
       const setSnap = () => {
         const cacheBust = Date.now();
-        cameraImg.src = `http://127.0.0.1:8080/api/camera/stream.jpg?t=${encodeURIComponent(token)}&cb=${cacheBust}`;
+        cameraTargets.forEach(({ el, cam }) => {
+          const camParam = cam === 1 || cam === 2 ? `&cam=${cam}` : "";
+          el.src = `http://127.0.0.1:8080/api/camera/stream.jpg?t=${encodeURIComponent(token)}&lav=${encodeURIComponent(
+            String(activeLavId),
+          )}${camParam}&cb=${cacheBust}`;
+        });
       };
       setSnap();
-      // "Vídeo" simple: refresca snapshot.
       window.setInterval(setSnap, 1200);
-      cameraImg.addEventListener("error", () => {
-        if (cameraHint) {
-          cameraHint.textContent = "Cámara no disponible (credenciales o URL no configuradas).";
-        }
-      });
+      cameraTargets.forEach(({ el }) =>
+        el.addEventListener("error", () => {
+          if (cameraHint) {
+            cameraHint.textContent = "Cámara no disponible (credenciales o URL no configuradas).";
+          }
+        }),
+      );
     }
 
     // IOT / Programador
@@ -396,6 +660,76 @@
       await loadIot();
       return true;
     };
+
+    const updateQuickState = async (patch) => {
+      const r = await fetch("http://127.0.0.1:8080/api/iot/state", {
+        headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+      });
+      if (!r.ok) throw new Error("STATE_READ_FAILED");
+      const d = await r.json();
+      const curr = d?.state || {};
+      const payload = {
+        puerta_abierta: Boolean(curr.puerta_abierta),
+        luces_encendidas: Boolean(curr.luces_encendidas),
+        ventilacion_encendida: Boolean(curr.ventilacion_encendida),
+        ...patch,
+      };
+      const w = await fetch("http://127.0.0.1:8080/api/iot/state", {
+        method: "PUT",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "x-lavanderia-id": String(activeLavId),
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!w.ok) throw new Error("STATE_WRITE_FAILED");
+    };
+
+    quickDoorBtn?.addEventListener("click", async () => {
+      if (!window.confirm("¿Confirmas cambiar estado de puerta?")) return;
+      try {
+        const r = await fetch("http://127.0.0.1:8080/api/iot/state", {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        });
+        if (!r.ok) throw new Error("STATE_READ_FAILED");
+        const d = await r.json();
+        const curr = Boolean(d?.state?.puerta_abierta);
+        await updateQuickState({ puerta_abierta: !curr });
+      } catch {
+        window.alert("No se pudo cambiar puerta.");
+      }
+    });
+    quickLightsBtn?.addEventListener("click", async () => {
+      try {
+        const r = await fetch("http://127.0.0.1:8080/api/iot/state", {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        });
+        if (!r.ok) throw new Error("STATE_READ_FAILED");
+        const d = await r.json();
+        const curr = Boolean(d?.state?.luces_encendidas);
+        await updateQuickState({ luces_encendidas: !curr });
+      } catch {
+        window.alert("No se pudo cambiar luces.");
+      }
+    });
+    quickAudioBtn?.addEventListener("click", async () => {
+      if (!window.confirm("¿Reproducir audio en la tienda?")) return;
+      try {
+        const r = await fetch("http://127.0.0.1:8080/api/camera/audio/play", {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ soundfile: "PUBLICIDAD" }),
+        });
+        if (!r.ok) throw new Error("AUDIO_FAILED");
+      } catch {
+        window.alert("No se pudo reproducir audio.");
+      }
+    });
 
     doorOpen?.addEventListener("click", async () => {
       await saveState({ puerta_abierta: true });
@@ -514,9 +848,13 @@
           <td>
             <div class="users-actions-inline">
               <button type="button" class="btn-secondary js-user-edit" data-id="${u.id_usuario}">Editar</button>
+              <button type="button" class="btn-secondary js-user-lavs" data-id="${u.id_usuario}">Tiendas</button>
               <button type="button" class="btn-secondary js-user-toggle" data-id="${u.id_usuario}" ${
                 canToggle ? "" : "disabled"
               }>${u.activo ? "Desactivar" : "Activar"}</button>
+              <button type="button" class="btn-secondary js-user-delete" data-id="${u.id_usuario}" ${
+                canToggle ? "" : "disabled"
+              }>Borrar</button>
             </div>
           </td>
         `;
@@ -567,15 +905,51 @@
 
     usersTbody?.addEventListener("click", async (e) => {
       const editBtn = e.target.closest(".js-user-edit");
+      const lavsBtn = e.target.closest(".js-user-lavs");
       const toggleBtn = e.target.closest(".js-user-toggle");
-      if (!editBtn && !toggleBtn) return;
+      const delBtn = e.target.closest(".js-user-delete");
+      if (!editBtn && !toggleBtn && !lavsBtn && !delBtn) return;
 
-      const id = Number((editBtn || toggleBtn).getAttribute("data-id"));
+      const id = Number((editBtn || toggleBtn || lavsBtn || delBtn).getAttribute("data-id"));
       const user = usersCache.find((x) => Number(x.id_usuario) === id);
       if (!user) return;
 
       if (editBtn) {
         openDialog("edit", user);
+        return;
+      }
+
+      if (lavsBtn) {
+        try {
+          const [allLavRes, userLavRes] = await Promise.all([
+            fetch("http://127.0.0.1:8080/api/lavanderias", {
+              headers: { authorization: `Bearer ${token}` },
+            }),
+            fetch(`http://127.0.0.1:8080/api/usuarios/${id}/lavanderias`, {
+              headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+            }),
+          ]);
+          if (!allLavRes.ok || !userLavRes.ok) throw new Error("LAVS_LOAD_FAILED");
+          const allLav = (await allLavRes.json())?.lavanderias || [];
+          const userLav = (await userLavRes.json())?.lavanderias || [];
+          const hint = allLav.map((l) => `${l.id_lavanderia}:${l.nombre}${userLav.includes(l.id_lavanderia) ? " [x]" : ""}`).join("\n");
+          const raw = window.prompt(`IDs de tiendas (coma):\n${hint}`, userLav.join(","));
+          if (raw === null) return;
+          const ids = raw.split(",").map((x) => Number(x.trim())).filter((x) => Number.isFinite(x) && x > 0);
+          const r = await fetch(`http://127.0.0.1:8080/api/usuarios/${id}/lavanderias`, {
+            method: "PUT",
+            headers: {
+              authorization: `Bearer ${token}`,
+              "x-lavanderia-id": String(activeLavId),
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({ lavanderias: ids }),
+          });
+          if (!r.ok) throw new Error("LAVS_SAVE_FAILED");
+          await loadUsers();
+        } catch {
+          showNote("No se pudieron actualizar tiendas.");
+        }
         return;
       }
 
@@ -598,6 +972,23 @@
           await loadUsers();
         } finally {
           toggleBtn.disabled = false;
+        }
+      }
+
+      if (delBtn) {
+        if (!window.confirm(`¿Borrar usuario ${user.email}?`)) return;
+        try {
+          const r = await fetch(`http://127.0.0.1:8080/api/usuarios/${id}`, {
+            method: "DELETE",
+            headers: {
+              authorization: `Bearer ${token}`,
+              "x-lavanderia-id": String(activeLavId),
+            },
+          });
+          if (!r.ok) throw new Error("DELETE_FAILED");
+          await loadUsers();
+        } catch {
+          showNote("No se pudo borrar el usuario.");
         }
       }
     });
@@ -897,13 +1288,23 @@
         return;
       }
       const data = await res.json();
-      renderMaquinas(data?.maquinas || []);
+      const all = data?.maquinas || [];
+      const isInicio = location.pathname.toLowerCase().endsWith("/admin/inicio.html");
+      renderMaquinas(isInicio ? all.filter((m) => m.estado_actual === "EN_MARCHA") : all);
 
-      // Resumen (si existe)
       const activasEl = document.querySelector("#cardActivas");
+      const nextFinishEl = document.querySelector("#cardNextFinish");
       if (activasEl) {
-        const activas = (data?.maquinas || []).filter((m) => m.estado_actual === "EN_MARCHA").length;
+        const activas = all.filter((m) => m.estado_actual === "EN_MARCHA").length;
         activasEl.textContent = String(activas);
+      }
+      if (nextFinishEl) {
+        const running = all
+          .filter((m) => m.estado_actual === "EN_MARCHA")
+          .map((m) => ({ codigo: m.codigo_visible, min: Number(m.minutos_restantes_estimados ?? Number.MAX_SAFE_INTEGER) }))
+          .filter((m) => Number.isFinite(m.min) && m.min >= 0)
+          .sort((a, b) => a.min - b.min);
+        nextFinishEl.textContent = running.length ? `${running[0].codigo} · ${running[0].min} min` : "—";
       }
     }
 
@@ -914,23 +1315,24 @@
     machinesGrid?.addEventListener("click", async (e) => {
       const btn = e.target.closest(".js-start");
       const stopBtn = e.target.closest(".js-stop");
+      const creditBtn = e.target.closest(".js-credit");
       const extendBtn = e.target.closest(".js-extend");
-      const anyBtn = btn || stopBtn || extendBtn;
+      const anyBtn = btn || stopBtn || creditBtn || extendBtn;
       if (!anyBtn) return;
 
       const id = Number(anyBtn.getAttribute("data-id"));
       if (!Number.isFinite(id) || id <= 0) return;
 
-      // Ampliar pide importe
-      if (extendBtn) {
-        const raw = window.prompt("¿Cuánto quieres ampliar? (euros)", "1");
+      if (creditBtn || extendBtn) {
+        const raw = window.prompt(creditBtn ? "¿Cuánto crédito quieres añadir? (€)" : "¿Cuánto quieres ampliar? (€)", "1");
         if (raw === null) return;
         const importe = Number(String(raw).replace(",", "."));
         if (!Number.isFinite(importe) || importe <= 0) return;
 
         anyBtn.disabled = true;
         try {
-          const res = await fetch(`http://127.0.0.1:8080/api/maquinas/${id}/ampliar`, {
+          const endpoint = creditBtn ? "credito" : "ampliar";
+          const res = await fetch(`http://127.0.0.1:8080/api/maquinas/${id}/${endpoint}`, {
             method: "POST",
             headers: {
               authorization: `Bearer ${token}`,
@@ -947,8 +1349,10 @@
         return;
       }
 
-      anyBtn.disabled = true;
       const action = btn ? "iniciar" : "detener";
+      const body = {};
+
+      anyBtn.disabled = true;
       try {
         const res = await fetch(`http://127.0.0.1:8080/api/maquinas/${id}/${action}`, {
           method: "POST",
@@ -957,7 +1361,7 @@
             "x-lavanderia-id": String(activeLavId),
             "content-type": "application/json",
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify(body),
         });
         if (!res.ok) throw new Error("ACTION_FAILED");
         await loadMaquinas();

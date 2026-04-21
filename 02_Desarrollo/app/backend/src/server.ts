@@ -9,6 +9,7 @@ import { apiRouter } from "./web/api.js";
 import { notFoundHandler, errorHandler } from "./web/errors.js";
 import { db } from "./db/pool.js";
 import { startIoTScheduler } from "./iot/scheduler.js";
+import { getMqttHealth, startMqttBridge } from "./iot/mqtt.js";
 
 // En algunos entornos (WSL/Windows), resolver IPv6 primero puede colgar conexiones HTTP.
 // Forzamos IPv4-first para evitar timeouts "fantasma" en el proxy de cámara.
@@ -54,6 +55,8 @@ app.get("/health", async (_req, res) => {
     ok: true,
     service: "kwl-backend",
     db: dbOk ? "ok" : "down",
+    mqtt: getMqttHealth(),
+    iot: { scheduler: "running" },
     timestamp: new Date().toISOString(),
   });
 });
@@ -67,4 +70,5 @@ app.listen(env.port, env.host, () => {
   // eslint-disable-next-line no-console
   console.log(`kwl-backend listening on http://${env.host}:${env.port}`);
   startIoTScheduler();
+  startMqttBridge();
 });

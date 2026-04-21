@@ -34,7 +34,7 @@
           <div class="admin-nav-group">Domótica</div>
           <a class="admin-nav-item" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
           <a class="admin-nav-item" data-nav="iot" href="/admin/iot.html">Programador</a>
-          <a class="admin-nav-item" data-nav="camara" href="/admin/camara.html">Cámara web</a>
+          <a class="admin-nav-item" data-nav="camara" href="/admin/camara.html">Cámara</a>
 
           <div class="admin-nav-group">Contabilidad</div>
           <a class="admin-nav-item" data-nav="caja" href="/admin/caja.html">Caja</a>
@@ -64,30 +64,51 @@
           <div class="admin-hero-text">
             <p class="admin-kicker">Panel privado</p>
             <h2>Inicio</h2>
-            <p class="admin-sub">Resumen: cámara, máquinas activas y caja del día.</p>
+            <p class="admin-sub">Control en tiempo real de tienda y operaciones.</p>
 
             <article class="admin-card admin-camera-card" aria-label="Stream cámara">
               <div class="admin-camera-frame">
                 <img class="admin-camera-img" id="cameraStream" alt="Cámara tienda" loading="lazy" />
+              </div>
+              <div class="iot-actions" style="margin-top: 10px; flex-wrap: wrap">
+                <button type="button" class="btn-secondary" id="quickDoorBtn">Puerta</button>
+                <button type="button" class="btn-secondary" id="quickLightsBtn">Luces</button>
+                <button type="button" class="btn-secondary" id="quickAudioBtn">Audio</button>
               </div>
             </article>
           </div>
 
           <div class="admin-hero-cards" aria-label="Resumen">
             <article class="admin-card">
-              <p class="admin-card-title">Estado backend</p>
-              <p class="admin-card-value" id="cardBackend">Desconectado</p>
-              <p class="admin-card-hint">API</p>
+              <p class="admin-card-title">Tienda · Control</p>
+              <p class="admin-card-value">
+                <button type="button" class="btn-primary" id="storeOpenBtn">Abrir</button>
+                <button type="button" class="btn-secondary" id="storeCloseBtn">Cerrar</button>
+              </p>
             </article>
             <article class="admin-card">
+              <p class="admin-card-title">Tienda · Ajustes</p>
+              <p class="admin-card-hint">
+                <a href="#" id="storeConfigToggle" class="store-config-link">Configurar</a>
+              </p>
+              <p class="admin-card-value">
+                <button type="button" class="btn-secondary" id="storeEnvBtn">Ajustes</button>
+              </p>
+            </article>
+            <article class="admin-card admin-card-mini">
               <p class="admin-card-title">Máquinas en marcha</p>
-              <p class="admin-card-value" id="cardActivas">—</p>
-              <p class="admin-card-hint">Se calcula desde listado</p>
+              <p class="admin-card-value admin-card-cube" id="cardActivas">—</p>
+              <p class="admin-card-hint"></p>
             </article>
-            <article class="admin-card">
-              <p class="admin-card-title">Caja (hoy)</p>
-              <p class="admin-card-value">—</p>
-              <p class="admin-card-hint">Placeholder</p>
+            <article class="admin-card admin-card-mini">
+              <p class="admin-card-title">Siguiente fin</p>
+              <p class="admin-card-value" id="cardNextFinish">—</p>
+              <p class="admin-card-hint"></p>
+            </article>
+            <article class="admin-card admin-card-wide">
+              <p class="admin-card-title">Caja</p>
+              <p class="admin-card-value" id="cardCajaHoy">—</p>
+              <p class="admin-card-hint"></p>
             </article>
           </div>
         </section>
@@ -95,12 +116,71 @@
         <section class="admin-section">
           <div class="admin-section-head">
             <h3>Máquinas</h3>
-            <p>Atajo al listado.</p>
+            <p></p>
           </div>
           <div class="machines-grid" id="machinesGrid"></div>
         </section>
+
+        <section class="admin-section">
+          <div class="admin-section-head">
+            <h3>Servidor</h3>
+            <p class="admin-card-hint"></p>
+          </div>
+          <div class="admin-card admin-health-card">
+            <div id="healthLine" class="health-line">
+              <span class="health-pill">API: —</span>
+              <span class="health-pill">BD: —</span>
+              <span class="health-pill">MQTT: —</span>
+              <span class="health-pill">IoT: —</span>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
+
+    <dialog class="modal" id="storeConfigDialog">
+      <form method="dialog" class="modal-card">
+        <div class="modal-head">
+          <strong>Configurar tienda</strong>
+          <button type="button" class="modal-close" id="storeConfigClose" aria-label="Cerrar">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="margin:.5rem 0 .2rem">Cerrar tienda:</p>
+          <label><input type="checkbox" id="closeDoor" checked /> Puerta</label>
+          <label><input type="checkbox" id="closeLights" checked /> Luces</label>
+          <label><input type="checkbox" id="closeFan" checked /> Ventilación</label>
+          <label class="field"><span>Hora cerrar</span><input class="input" type="time" id="storeCloseTime" /></label>
+          <p style="margin:.7rem 0 .2rem">Abrir tienda:</p>
+          <label><input type="checkbox" id="openDoor" checked /> Puerta</label>
+          <label><input type="checkbox" id="openLights" checked /> Luces</label>
+          <label><input type="checkbox" id="openFan" checked /> Ventilación</label>
+          <label class="field"><span>Hora abrir</span><input class="input" type="time" id="storeOpenTime" /></label>
+          <p style="margin:.7rem 0 .2rem">Máquinas al abrir tienda:</p>
+          <div id="storeOpenMachines" class="iot-grid"></div>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn-secondary" id="storeConfigSave">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="modal" id="storeEnvDialog">
+      <form method="dialog" class="modal-card">
+        <div class="modal-head">
+          <strong>Ajustes ENV (demo)</strong>
+          <button type="button" class="modal-close" id="storeEnvClose" aria-label="Cerrar">×</button>
+        </div>
+        <div class="modal-body form-grid">
+          <label class="field"><span>CAMERA_BASE_URL</span><input class="input" id="envCameraBase" /></label>
+          <label class="field"><span>CAMERA_USER</span><input class="input" id="envCameraUser" /></label>
+          <label class="field"><span>CAMERA_PASS</span><input class="input" id="envCameraPass" type="password" /></label>
+          <label class="field"><span>MQTT_URL</span><input class="input" id="envMqttUrl" /></label>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn-secondary" id="storeEnvSave">Guardar</button>
+        </div>
+      </form>
+    </dialog>
 
     <script src="/js/app.js"></script>
     <script src="/js/admin.js"></script>
