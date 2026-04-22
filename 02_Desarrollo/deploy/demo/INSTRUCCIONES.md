@@ -47,6 +47,7 @@ docker compose down
 Reset completo de la BD:
 
 ```bash
+cd deploy/demo
 docker compose down -v
 docker compose up -d --build
 ```

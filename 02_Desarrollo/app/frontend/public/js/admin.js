@@ -1,8 +1,21 @@
 (() => {
   const STORAGE_KEY = "kwl_auth";
   const ACTIVE_LAV_KEY = "kwl_lavanderia_activa";
+  const API_BASE = `${window.location.protocol}//${window.location.hostname}:8080`;
+  const RAW_API_PREFIX = "http://127.0.0.1:8080";
+  const RAW_API_PREFIX_LOCALHOST = "http://localhost:8080";
 
   const $ = (s, c = document) => c.querySelector(s);
+  let machineTimerInterval = null;
+
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    if (typeof input === "string") {
+      const patched = input.replaceAll(RAW_API_PREFIX, API_BASE).replaceAll(RAW_API_PREFIX_LOCALHOST, API_BASE);
+      return nativeFetch(patched, init);
+    }
+    return nativeFetch(input, init);
+  };
 
   const cardBackend = $("#cardBackend");
   const healthLine = $("#healthLine");
@@ -44,6 +57,11 @@
   const camZoom2x = $("#camZoom2x");
   const camZoom4x = $("#camZoom4x");
   const camZoom8x = $("#camZoom8x");
+  const camDisplayMode = $("#camDisplayMode");
+  const camDisplayApply = $("#camDisplayApply");
+  const camOpenMobotix = $("#camOpenMobotix");
+  const camOpenAdmin = $("#camOpenAdmin");
+  const camOpenEvents = $("#camOpenEvents");
   const cameraImg = $("#cameraStream");
   const cameraImg1 = $("#cameraStream1");
   const cameraImg2 = $("#cameraStream2");
@@ -51,6 +69,7 @@
   const quickDoorBtn = $("#quickDoorBtn");
   const quickLightsBtn = $("#quickLightsBtn");
   const quickAudioBtn = $("#quickAudioBtn");
+  const quickAudioSound = $("#quickAudioSound");
   const usersTbody = $("#usersTbody");
   const usersSearch = $("#usersSearch");
   const userNewBtn = $("#userNewBtn");
@@ -68,6 +87,7 @@
   const userTempPassword = $("#userTempPassword");
   const iotHint = $("#iotHint");
   const iotSaveSchedule = $("#iotSaveSchedule");
+  const iotLogTbody = $("#iotLogTbody");
   const doorToggle = $("#doorToggle");
   const lightsToggle = $("#lightsToggle");
   const fanOn = $("#fanOn");
@@ -105,10 +125,52 @@
   const repTotal = $("#repTotal");
   const repPage = $("#repPage");
   const repRange = $("#repRange");
+  const logsTbody = $("#logsTbody");
+  const logsHint = $("#logsHint");
+  const logsQuery = $("#logsQuery");
+  const logsAction = $("#logsAction");
+  const logsLoad = $("#logsLoad");
 
   function setText(el, text) {
     if (!el) return;
     el.textContent = text;
+  }
+
+  function confirmNice(title, message, okLabel = "Confirmar", cancelLabel = "Cancelar") {
+    return new Promise((resolve) => {
+      const dlg = document.createElement("dialog");
+      dlg.className = "modal";
+      dlg.innerHTML = `
+        <form method="dialog" class="modal-card" style="max-width:420px">
+          <div class="modal-head">
+            <strong>${title}</strong>
+          </div>
+          <div class="modal-body">
+            <p style="margin:0;color:rgba(255,255,255,.9)">${message}</p>
+          </div>
+          <div class="modal-foot">
+            <button type="button" class="btn-secondary js-cancel">${cancelLabel}</button>
+            <button type="button" class="btn-primary js-ok">${okLabel}</button>
+          </div>
+        </form>
+      `;
+      document.body.appendChild(dlg);
+      const close = (v) => {
+        try {
+          dlg.close();
+        } catch {}
+        dlg.remove();
+        resolve(v);
+      };
+      dlg.querySelector(".js-cancel")?.addEventListener("click", () => close(false));
+      dlg.querySelector(".js-ok")?.addEventListener("click", () => close(true));
+      dlg.addEventListener("cancel", (e) => {
+        e.preventDefault();
+        close(false);
+      });
+      if (typeof dlg.showModal === "function") dlg.showModal();
+      else close(false);
+    });
   }
 
   function loadAuth() {
@@ -160,6 +222,7 @@
     document.querySelectorAll('[data-nav="usuarios"]').forEach((el) => {
       el.style.display = isAdmin ? "" : "none";
     });
+    if (storeEnvBtn) storeEnvBtn.style.display = isAdmin ? "" : "none";
     // Si alguien entra a /admin/usuarios.html sin ser admin: fuera.
     if (!isAdmin && location.pathname.toLowerCase().endsWith("/admin/usuarios.html")) {
       window.location.href = "/admin/inicio.html";
@@ -256,15 +319,37 @@
       const canStop = estado === "EN_MARCHA" || estado === "PAUSADA";
       const canCredit = estado === "PAUSADA";
       const canExtend = estado === "EN_MARCHA";
-      const rest = Number(m.minutos_restantes_estimados ?? 0);
+      const restMin = Number(m.minutos_restantes_estimados ?? 0);
+      const fanEnabled = Boolean(m.ventilador_auto);
+      const restSecFromApi = Number(m.segundos_restantes_estimados ?? NaN);
+      const startAt = m.fecha_hora_inicio ? new Date(m.fecha_hora_inicio).getTime() : NaN;
+      const durationSec = Number(m.duracion_total_programada_min ?? 0) * 60;
+      const nowMs = Date.now();
+      const restSecByDates =
+        Number.isFinite(startAt) && durationSec > 0
+          ? Math.max(0, Math.floor((startAt + durationSec * 1000 - nowMs) / 1000))
+          : 0;
+      const restSec = Number.isFinite(restSecFromApi) ? Math.max(0, Math.floor(restSecFromApi)) : restSecByDates;
+      const mm = Math.floor(restSec / 60);
+      const ss = restSec % 60;
+      const timerLabel = restSec > 0 ? `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}` : (restMin > 0 ? `~${restMin} min` : "—");
       el.innerHTML = `
         <div class="machine-meta">
           <strong>${m.codigo_visible}</strong>
           <span>${tipoLabel(m.tipo_maquina)}</span>
         </div>
         <div class="machine-state">
-          <span class="state-pill ${stateClass(estado)}">${estado}</span>
-          <span class="machine-timer">${rest > 0 ? `~${rest} min` : "—"}</span>
+          <div class="machine-state-left">
+            <span class="state-pill ${stateClass(estado)}">${estado}</span>
+            <span class="state-pill ${fanEnabled ? "state-running" : "state-stop"}">REFRIGERAR ${fanEnabled ? "ON" : "OFF"}</span>
+          </div>
+          <span
+            class="machine-timer"
+            data-codigo="${m.codigo_visible || ""}"
+            data-start="${m.fecha_hora_inicio || ""}"
+            data-duration-min="${Number(m.duracion_total_programada_min ?? 0)}"
+            data-rest-sec="${restSec}"
+          >${timerLabel}</span>
         </div>
         <div class="machine-actions">
           <button type="button" class="btn-primary js-start" data-id="${id}" ${canStart ? "" : "disabled"}>Encender</button>
@@ -272,6 +357,12 @@
           ${canCredit ? `<button type="button" class="btn-secondary js-credit" data-id="${id}">Crédito</button>` : ""}
           ${canExtend ? `<button type="button" class="btn-secondary js-extend" data-id="${id}">Ampliar</button>` : ""}
         </div>
+        <button
+          type="button"
+          class="btn-secondary machine-fan-toggle js-fan-auto-btn"
+          data-id="${id}"
+          data-enabled="${fanEnabled ? "1" : "0"}"
+        >Refrigerar</button>
         <div class="machine-drawer" data-id="${id}">
           <p class="machine-drawer-title">Importe</p>
           <div class="machine-drawer-row">
@@ -283,6 +374,56 @@
       `;
       machinesGrid.appendChild(el);
     });
+    startMachineTimerTick();
+  }
+
+  function startMachineTimerTick() {
+    if (machineTimerInterval) {
+      clearInterval(machineTimerInterval);
+      machineTimerInterval = null;
+    }
+    const update = () => {
+      const timers = document.querySelectorAll(".machine-timer");
+      let nextMinSec = Number.POSITIVE_INFINITY;
+      let nextCode = "";
+      timers.forEach((el) => {
+        const startRaw = el.getAttribute("data-start") || "";
+        const durationMin = Number(el.getAttribute("data-duration-min") || 0);
+        const restSecAttr = Number(el.getAttribute("data-rest-sec") || 0);
+        let secondsLeft = Math.max(0, Math.floor(restSecAttr));
+        if (startRaw && durationMin > 0) {
+          const startMs = new Date(startRaw).getTime();
+          if (Number.isFinite(startMs)) {
+            const endMs = startMs + durationMin * 60 * 1000;
+            secondsLeft = Math.max(0, Math.floor((endMs - Date.now()) / 1000));
+          }
+        }
+        el.setAttribute("data-rest-sec", String(secondsLeft));
+        if (secondsLeft > 0 && secondsLeft < nextMinSec) {
+          nextMinSec = secondsLeft;
+          nextCode = el.getAttribute("data-codigo") || "";
+        }
+        if (secondsLeft <= 0) {
+          el.textContent = "00:00";
+          return;
+        }
+        const mm = Math.floor(secondsLeft / 60);
+        const ss = secondsLeft % 60;
+        el.textContent = `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+      });
+      const nextFinishEl = document.querySelector("#cardNextFinish");
+      if (nextFinishEl) {
+        if (!Number.isFinite(nextMinSec) || nextMinSec === Number.POSITIVE_INFINITY) {
+          nextFinishEl.textContent = "—";
+        } else {
+          const mm = Math.floor(nextMinSec / 60);
+          const ss = nextMinSec % 60;
+          nextFinishEl.textContent = `${nextCode || "—"} · ${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+        }
+      }
+    };
+    update();
+    machineTimerInterval = window.setInterval(update, 1000);
   }
 
   async function init() {
@@ -550,53 +691,83 @@
       return res.ok;
     };
 
+    const reconnectCameraStreams = () => {
+      const streams = [cameraImg, cameraImg1, cameraImg2].filter(Boolean);
+      streams.forEach((el) => {
+        const cam = el.id === "cameraStream2" ? 2 : el.id === "cameraStream1" ? 1 : null;
+        const camParam = cam ? `&cam=${cam}` : "";
+        el.src = `${API_BASE}/api/camera/faststream.mjpg?t=${encodeURIComponent(token)}&lav=${encodeURIComponent(
+          String(activeLavId),
+        )}${camParam}&cb=${Date.now()}`;
+      });
+    };
+
     camCenter?.addEventListener("click", async () => {
-      await callCamera("/ptz/center");
+      const ok = await callCamera("/ptz/center");
+      if (ok) reconnectCameraStreams();
     });
     camZoomIn?.addEventListener("click", async () => {
-      await callCamera("/zoom", { mode: "relative", value: 250 });
+      const ok = await callCamera("/zoom", { mode: "relative", value: 250 });
+      if (ok) reconnectCameraStreams();
     });
     camZoomOut?.addEventListener("click", async () => {
-      await callCamera("/zoom", { mode: "relative", value: -250 });
+      const ok = await callCamera("/zoom", { mode: "relative", value: -250 });
+      if (ok) reconnectCameraStreams();
     });
     camZoom1x?.addEventListener("click", async () => {
-      await callCamera("/zoom", { mode: "absolute", value: 1000 });
+      const ok = await callCamera("/zoom", { mode: "absolute", value: 1000 });
+      if (ok) reconnectCameraStreams();
     });
     camZoom2x?.addEventListener("click", async () => {
-      await callCamera("/zoom", { mode: "absolute", value: 2000 });
+      const ok = await callCamera("/zoom", { mode: "absolute", value: 2000 });
+      if (ok) reconnectCameraStreams();
     });
     camZoom4x?.addEventListener("click", async () => {
-      await callCamera("/zoom", { mode: "absolute", value: 4000 });
+      const ok = await callCamera("/zoom", { mode: "absolute", value: 4000 });
+      if (ok) reconnectCameraStreams();
     });
     camZoom8x?.addEventListener("click", async () => {
-      await callCamera("/zoom", { mode: "absolute", value: 8000 });
+      const ok = await callCamera("/zoom", { mode: "absolute", value: 8000 });
+      if (ok) reconnectCameraStreams();
     });
+    camDisplayApply?.addEventListener("click", async () => {
+      const ok = await callCamera("/display-mode", { mode: String(camDisplayMode?.value || "surround") });
+      if (ok) reconnectCameraStreams();
+    });
+    const openCamUi = (target) => {
+      const url = `${API_BASE}/api/camera/ui/${encodeURIComponent(target)}?t=${encodeURIComponent(
+        token,
+      )}&lav=${encodeURIComponent(String(activeLavId))}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    };
+    camOpenMobotix?.addEventListener("click", () => openCamUi("userimage"));
+    camOpenAdmin?.addEventListener("click", () => openCamUi("admin"));
+    camOpenEvents?.addEventListener("click", () => openCamUi("events"));
 
-    // Stream: <img> usa token en query param (no Authorization)
+    // Cámara: ambas vistas usan MJPEG directo (1 sola conexión por <img>, sin bucles JS).
     const cameraTargets = [];
-    if (cameraImg) cameraTargets.push({ el: cameraImg, cam: null });
-    if (cameraImg1) cameraTargets.push({ el: cameraImg1, cam: 1 });
-    if (cameraImg2) cameraTargets.push({ el: cameraImg2, cam: 2 });
+    if (cameraImg) cameraTargets.push({ el: cameraImg, cam: null, mode: "mjpeg" });
+    if (cameraImg1) cameraTargets.push({ el: cameraImg1, cam: 1, mode: "mjpeg" });
+    if (cameraImg2) cameraTargets.push({ el: cameraImg2, cam: 2, mode: "mjpeg" });
+
+    const setCameraHint = (msg = "") => {
+      if (cameraHint) cameraHint.textContent = msg;
+    };
+
+    const cameraUrl = (cam, cacheBust, mjpeg = false) => {
+      const camParam = cam === 1 || cam === 2 ? `&cam=${cam}` : "";
+      const base = mjpeg ? "/api/camera/faststream.mjpg" : "/api/camera/stream.jpg";
+      return `${API_BASE}${base}?t=${encodeURIComponent(token)}&lav=${encodeURIComponent(String(activeLavId))}${camParam}&cb=${cacheBust}`;
+    };
 
     if (cameraTargets.length) {
-      const setSnap = () => {
-        const cacheBust = Date.now();
-        cameraTargets.forEach(({ el, cam }) => {
-          const camParam = cam === 1 || cam === 2 ? `&cam=${cam}` : "";
-          el.src = `http://127.0.0.1:8080/api/camera/stream.jpg?t=${encodeURIComponent(token)}&lav=${encodeURIComponent(
-            String(activeLavId),
-          )}${camParam}&cb=${cacheBust}`;
-        });
-      };
-      setSnap();
-      window.setInterval(setSnap, 1200);
-      cameraTargets.forEach(({ el }) =>
-        el.addEventListener("error", () => {
-          if (cameraHint) {
-            cameraHint.textContent = "Cámara no disponible (credenciales o URL no configuradas).";
-          }
-        }),
-      );
+      cameraTargets.forEach(({ el, cam, mode }) => {
+        el.src = cameraUrl(cam, Date.now(), mode === "mjpeg");
+        el.addEventListener("load", () => setCameraHint(""));
+        el.addEventListener("error", () =>
+          setCameraHint("Cámara no disponible (revisar URL/credenciales y tienda activa)."),
+        );
+      });
     }
 
     // IOT / Programador
@@ -651,6 +822,34 @@
       if (lightsOffTime) lightsOffTime.value = sc?.luces?.off || "";
       if (fanOnTime) fanOnTime.value = sc?.ventilacion?.on || "";
       if (fanOffTime) fanOffTime.value = sc?.ventilacion?.off || "";
+      await loadIotLog();
+    };
+
+    const loadIotLog = async () => {
+      if (!iotLogTbody) return;
+      const r = await fetch("http://127.0.0.1:8080/api/iot/relay-action-log", {
+        headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+      });
+      if (!r.ok) {
+        iotLogTbody.innerHTML = `<tr><td colspan="4">Sin acceso</td></tr>`;
+        return;
+      }
+      const data = await r.json().catch(() => ({}));
+      const items = Array.isArray(data?.items) ? data.items : [];
+      if (!items.length) {
+        iotLogTbody.innerHTML = `<tr><td colspan="4">Sin acciones registradas</td></tr>`;
+        return;
+      }
+      iotLogTbody.innerHTML = items
+        .map((item) => {
+          const ts = item?.ts ? new Date(item.ts).toLocaleString("es-ES") : "—";
+          const dispositivo = item?.dispositivo || "—";
+          const accion = item?.accion || "—";
+          const origen = item?.origen ? ` · ${item.origen}` : "";
+          const by = item?.by ? `#${item.by}` : "—";
+          return `<tr><td>${ts}</td><td>${dispositivo}</td><td>${accion}${origen}</td><td>${by}</td></tr>`;
+        })
+        .join("");
     };
 
     const saveState = async (nextState) => {
@@ -684,7 +883,7 @@
       });
       if (!r.ok) throw new Error("RELAY_FAILED");
     };
-    const registerRelayToggle = async (device) => {
+    const registerRelayToggle = async (device, origin = "manual") => {
       const r = await fetch("http://127.0.0.1:8080/api/iot/relay-action", {
         method: "POST",
         headers: {
@@ -692,32 +891,34 @@
           "x-lavanderia-id": String(activeLavId),
           "content-type": "application/json",
         },
-        body: JSON.stringify({ dispositivo: device }),
+        body: JSON.stringify({ dispositivo: device, origen: origin }),
       });
       if (!r.ok) throw new Error("RELAY_LOG_FAILED");
     };
 
     quickDoorBtn?.addEventListener("click", async () => {
-      if (!window.confirm("¿Confirmas cambiar estado de puerta?")) return;
+      if (!(await confirmNice("Confirmar acción", "¿Cambiar estado de puerta?"))) return;
       try {
         await triggerRelayPulse("door");
-        await registerRelayToggle("puerta");
+        await registerRelayToggle("puerta", "inicio");
         await loadIot();
       } catch {
         window.alert("No se pudo cambiar puerta.");
       }
     });
     quickLightsBtn?.addEventListener("click", async () => {
+      if (!(await confirmNice("Confirmar acción", "¿Cambiar estado de luces?"))) return;
       try {
         await triggerRelayPulse("lights");
-        await registerRelayToggle("luces");
+        await registerRelayToggle("luces", "inicio");
         await loadIot();
       } catch {
         window.alert("No se pudo cambiar luces.");
       }
     });
     quickAudioBtn?.addEventListener("click", async () => {
-      if (!window.confirm("¿Reproducir audio en la tienda?")) return;
+      const soundfile = String(quickAudioSound?.value || "PUBLICIDAD");
+      if (!(await confirmNice("Confirmar audio", `¿Reproducir "${soundfile}" en la tienda?`))) return;
       try {
         const r = await fetch("http://127.0.0.1:8080/api/camera/audio/play", {
           method: "POST",
@@ -726,9 +927,18 @@
             "x-lavanderia-id": String(activeLavId),
             "content-type": "application/json",
           },
-          body: JSON.stringify({ soundfile: "PUBLICIDAD" }),
+          body: JSON.stringify({ soundfile }),
         });
         if (!r.ok) throw new Error("AUDIO_FAILED");
+        await fetch("http://127.0.0.1:8080/api/iot/relay-action", {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ dispositivo: "audio", accion: "play", origen: "inicio" }),
+        });
       } catch {
         window.alert("No se pudo reproducir audio.");
       }
@@ -737,7 +947,7 @@
     doorToggle?.addEventListener("click", async () => {
       try {
         await triggerRelayPulse("door");
-        await registerRelayToggle("puerta");
+        await registerRelayToggle("puerta", "programador");
         await loadIot();
       } catch {
         setIotHint("Error en pulso de puerta.");
@@ -746,7 +956,7 @@
     lightsToggle?.addEventListener("click", async () => {
       try {
         await triggerRelayPulse("lights");
-        await registerRelayToggle("luces");
+        await registerRelayToggle("luces", "programador");
         await loadIot();
       } catch {
         setIotHint("Error en pulso de luces.");
@@ -1300,6 +1510,73 @@
       await loadCiclos();
     }
 
+    // Logs (Auditoría)
+    const isLogsView = Boolean(logsTbody);
+    if (isLogsView) {
+      const setLogsHint = (text) => {
+        if (!logsHint) return;
+        logsHint.hidden = !text;
+        logsHint.textContent = text || "";
+      };
+      const fmt = (d) => {
+        if (!d) return "—";
+        const dt = new Date(d);
+        if (Number.isNaN(dt.getTime())) return "—";
+        return dt.toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" });
+      };
+      const esc = (v) =>
+        String(v ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+
+      const loadLogs = async () => {
+        setLogsHint("");
+        const qs = new URLSearchParams();
+        qs.set("limit", "200");
+        const q = String(logsQuery?.value ?? "").trim();
+        const action = String(logsAction?.value ?? "").trim();
+        if (q) qs.set("q", q);
+        if (action) qs.set("accion", action);
+
+        const r = await fetch(`http://127.0.0.1:8080/api/auditoria?${qs.toString()}`, {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          setLogsHint(`Error: ${data?.error || "NO_OK"}`);
+          logsTbody.innerHTML = `<tr><td colspan="6">Error al cargar logs</td></tr>`;
+          return;
+        }
+        const items = Array.isArray(data?.items) ? data.items : [];
+        if (!items.length) {
+          logsTbody.innerHTML = `<tr><td colspan="6">Sin registros</td></tr>`;
+          return;
+        }
+        logsTbody.innerHTML = items
+          .map(
+            (it) => `<tr>
+              <td>${esc(fmt(it?.fecha_hora))}</td>
+              <td>${esc(it?.accion || "—")}</td>
+              <td>${esc(it?.usuario_login || "—")}</td>
+              <td>${esc(it?.maquina_codigo || "—")}</td>
+              <td>${esc(it?.detalle || "—")}</td>
+              <td>${esc(it?.ip_origen || "—")}</td>
+            </tr>`,
+          )
+          .join("");
+      };
+
+      logsLoad?.addEventListener("click", loadLogs);
+      logsQuery?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") loadLogs();
+      });
+      logsAction?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") loadLogs();
+      });
+      await loadLogs();
+    }
+
     async function loadMaquinas() {
       const res = await fetch("http://127.0.0.1:8080/api/maquinas", {
         headers: {
@@ -1326,10 +1603,20 @@
       if (nextFinishEl) {
         const running = all
           .filter((m) => m.estado_actual === "EN_MARCHA")
-          .map((m) => ({ codigo: m.codigo_visible, min: Number(m.minutos_restantes_estimados ?? Number.MAX_SAFE_INTEGER) }))
-          .filter((m) => Number.isFinite(m.min) && m.min >= 0)
-          .sort((a, b) => a.min - b.min);
-        nextFinishEl.textContent = running.length ? `${running[0].codigo} · ${running[0].min} min` : "—";
+          .map((m) => ({
+            codigo: m.codigo_visible,
+            sec: Number(m.segundos_restantes_estimados ?? Number.MAX_SAFE_INTEGER),
+          }))
+          .filter((m) => Number.isFinite(m.sec) && m.sec >= 0)
+          .sort((a, b) => a.sec - b.sec);
+        if (!running.length) {
+          nextFinishEl.textContent = "—";
+        } else {
+          const sec = Math.max(0, Math.floor(running[0].sec));
+          const mm = Math.floor(sec / 60);
+          const ss = sec % 60;
+          nextFinishEl.textContent = `${running[0].codigo} · ${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+        }
       }
     }
 
@@ -1424,6 +1711,29 @@
       } catch {
         await loadMaquinas();
       }
+    });
+    machinesGrid?.addEventListener("click", async (e) => {
+      const fanBtn = e.target.closest(".js-fan-auto-btn");
+      if (!fanBtn) return;
+      const id = Number(fanBtn.getAttribute("data-id"));
+      if (!Number.isFinite(id) || id <= 0) return;
+      const enabled = fanBtn.getAttribute("data-enabled") !== "1";
+      fanBtn.disabled = true;
+      const res = await fetch(`http://127.0.0.1:8080/api/maquinas/${id}/ventilador-auto`, {
+        method: "PUT",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "x-lavanderia-id": String(activeLavId),
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ enabled }),
+      });
+      if (!res.ok) {
+        window.alert("No se pudo guardar ventilador auto.");
+        fanBtn.disabled = false;
+        return;
+      }
+      await loadMaquinas();
     });
   }
 

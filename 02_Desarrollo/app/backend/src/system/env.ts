@@ -34,9 +34,13 @@ export const env = {
     baseUrl: process.env.CAMERA_BASE_URL ?? "",
     user: process.env.CAMERA_USER ?? "",
     pass: process.env.CAMERA_PASS ?? "",
+    streamUser: process.env.CAMERA_STREAM_USER ?? process.env.CAMERA_USER ?? "",
+    streamPass: process.env.CAMERA_STREAM_PASS ?? process.env.CAMERA_PASS ?? "",
     baseUrl2: process.env.CAMERA2_BASE_URL ?? "",
     user2: process.env.CAMERA2_USER ?? "",
     pass2: process.env.CAMERA2_PASS ?? "",
+    streamUser2: process.env.CAMERA2_STREAM_USER ?? process.env.CAMERA2_USER ?? "",
+    streamPass2: process.env.CAMERA2_STREAM_PASS ?? process.env.CAMERA2_PASS ?? "",
   },
 
   mqtt: {

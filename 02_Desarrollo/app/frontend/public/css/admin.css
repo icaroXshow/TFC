@@ -263,9 +263,9 @@ body.admin-locked .admin-main {
 
 .admin-hero {
   display: grid;
-  grid-template-columns: 1.35fr 0.95fr;
-  gap: 26px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1.45fr) minmax(360px, 0.75fr);
+  gap: 20px;
+  align-items: start;
   margin-top: 10px;
 }
 
@@ -291,8 +291,15 @@ body.admin-locked .admin-main {
 
 .admin-hero-cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(160px, 210px));
+  align-content: start;
+  align-self: start;
+  grid-auto-rows: min-content;
+  gap: 10px;
+  justify-content: start;
+  width: max-content;
+  max-width: 100%;
+  margin-top: 90px;
 }
 
 .admin-card-wide {
@@ -300,7 +307,28 @@ body.admin-locked .admin-main {
 }
 
 .admin-card-mini {
-  min-height: 120px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.admin-actions-card .iot-actions {
+  flex-wrap: wrap;
+}
+
+.admin-actions-card .admin-card-title {
+  margin-bottom: 0;
+}
+
+.admin-actions-card .admin-card-hint {
+  margin-bottom: 0;
+}
+
+.admin-actions-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .admin-health-card {
@@ -309,7 +337,8 @@ body.admin-locked .admin-main {
 
 .health-line {
   display: flex;
-  gap: 16px;
+  gap: 56px;
+  justify-content: center;
   flex-wrap: wrap;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.92);
@@ -335,8 +364,8 @@ body.admin-locked .admin-main {
 }
 
 .admin-card-cube {
-  width: 62px;
-  height: 62px;
+  width: 40px;
+  height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -408,6 +437,7 @@ body.admin-locked .admin-main {
   border-radius: 18px;
   padding: 14px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  position: relative;
 }
 
 .machine-meta {
@@ -434,6 +464,14 @@ body.admin-locked .admin-main {
   align-items: center;
   gap: 10px;
   justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.machine-state-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .machine-timer {
@@ -473,6 +511,19 @@ body.admin-locked .admin-main {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.machine-fan-toggle {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  padding: 8px 10px;
+  font-size: 12px;
+  z-index: 2;
+}
+
+.machine-tile .machine-drawer.is-open {
+  margin-bottom: 34px;
 }
 
 .machine-drawer {
@@ -537,25 +588,34 @@ body.admin-locked .admin-main {
 
 .iot-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(220px, 300px));
   gap: 14px;
+  justify-content: start;
+}
+
+body[data-breadcrumb*="Programador"] .iot-grid {
+  grid-template-columns: repeat(2, minmax(220px, 300px));
 }
 
 .iot-tile h4 {
   margin: 0 0 12px;
   font-size: 16px;
   letter-spacing: 0.2px;
+  text-align: left;
+  text-transform: uppercase;
 }
 
 .iot-actions {
   display: flex;
   gap: 10px;
+  justify-content: center;
 }
 
 .iot-status {
   margin: 8px 0 10px;
   color: rgba(255, 255, 255, 0.78);
   font-size: 13px;
+  text-align: center;
 }
 
 .iot-state-pill {
@@ -595,6 +655,7 @@ body.admin-locked .admin-main {
   gap: 6px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.75);
+  text-align: center;
 }
 
 .iot-footer {
@@ -607,6 +668,53 @@ body.admin-locked .admin-main {
 .iot-hint {
   color: rgba(255, 255, 255, 0.78);
   font-size: 13px;
+}
+
+.iot-log-wrap {
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.iot-log-wrap h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.iot-log-subtitle {
+  margin: 0 0 12px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+.iot-log-table-wrap {
+  overflow: auto;
+  border-radius: 12px;
+}
+
+.iot-log-table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+}
+
+.iot-log-table th,
+.iot-log-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+}
+
+.iot-log-table thead th {
+  border-top: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
 
 .cash-tabs {
@@ -928,6 +1036,13 @@ body.admin-locked .admin-main {
   background: rgba(0, 0, 0, 0.65);
 }
 
+.modal {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+
 .modal-card {
   width: min(680px, calc(100vw - 28px));
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -967,6 +1082,67 @@ body.admin-locked .admin-main {
   justify-content: flex-end;
   gap: 10px;
   padding: 10px 8px 6px;
+}
+
+.store-config-card {
+  width: min(760px, calc(100vw - 28px));
+}
+
+.store-config-body {
+  display: grid;
+  gap: 14px;
+}
+
+.store-config-section {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 12px;
+}
+
+.store-config-title {
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 13px;
+}
+
+.store-config-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.store-config-checks label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 6px 10px;
+}
+
+.store-config-checks input[type="checkbox"] {
+  accent-color: var(--turquesa-claro);
+}
+
+.store-machines-grid {
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.store-machines-grid label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .form-grid {
@@ -1013,6 +1189,7 @@ body.admin-locked .admin-main {
 
   .admin-hero-cards {
     grid-template-columns: 1fr;
+    margin-top: 0;
   }
 
   .machines-grid {
@@ -1021,6 +1198,10 @@ body.admin-locked .admin-main {
 
   .iot-grid {
     grid-template-columns: 1fr;
+  }
+
+  .store-machines-grid {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
   }
 
   .cash-summary {
@@ -1055,6 +1236,14 @@ body.admin-locked .admin-main {
   }
 
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .store-config-checks {
+    gap: 8px;
+  }
+
+  .store-machines-grid {
     grid-template-columns: 1fr;
   }
 }

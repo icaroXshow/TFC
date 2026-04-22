@@ -78,6 +78,8 @@
 
 #### Modo de visualización
 - Endpoint: `/control/control?no_http_header&set&section=quickcontrol&display_mode=surround`
+
+surround, Normal, Full Image
 - Resultado: Cambia el modo de visualización de la cámara.
 
 ### Ajustes de imagen

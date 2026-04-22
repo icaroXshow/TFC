@@ -23,6 +23,13 @@ docker compose up -d --build
 - Redis host: `127.0.0.1:6379`
 - MQTT host: `127.0.0.1:1883`
 
+## Variables de cámara (doble login opcional)
+
+- `CAMERA_USER` / `CAMERA_PASS`: credenciales para control (PTZ/audio/relés) cámara 1.
+- `CAMERA_STREAM_USER` / `CAMERA_STREAM_PASS`: credenciales para stream cámara 1 (si se dejan vacías usa las de control).
+- `CAMERA2_USER` / `CAMERA2_PASS`: control cámara 2.
+- `CAMERA2_STREAM_USER` / `CAMERA2_STREAM_PASS`: stream cámara 2.
+
 ## Scripts
 
 - Linux/Fedora: `./auto_deploy_fedora.sh [--reset-db] [--sin-abrir]`

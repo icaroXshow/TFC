@@ -63,20 +63,39 @@
         <section class="admin-section">
           <div class="admin-section-head">
             <h3>Logs</h3>
-            <p></p>
+            <p>Auditoria Web</p>
           </div>
 
-          <div class="admin-table">
-            <div class="admin-table-row admin-table-head">
-              <span>Fecha</span>
-              <span>Máquina</span>
-              <span>Evento</span>
-              <span>Nivel</span>
-            </div>
-            <div class="admin-table-row">
-              <span>—</span><span>—</span><span>—</span><span>—</span>
-            </div>
+          <div class="rep-filters">
+            <label>
+              Buscar
+              <input class="input" id="logsQuery" placeholder="Ej: Acción | Detalle | Usuario | Máquina" />
+            </label>
+            <label>
+              Filtrar por acción
+              <input class="input" id="logsAction" placeholder="Ej: MAQUINA_INICIAR | IOT_SCHEDULE_ON | MAQUINA_DETENER | MAQUINA_AMPLIAR " />
+            </label>
+            <button class="btn-primary" id="logsLoad" type="button">Cargar</button>
           </div>
+
+          <div class="cash-table-wrap">
+            <table class="cash-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Acción</th>
+                  <th>Usuario</th>
+                  <th>Máquina</th>
+                  <th>Detalle</th>
+                  <th>IP</th>
+                </tr>
+              </thead>
+              <tbody id="logsTbody">
+                <tr><td colspan="6">Sin datos</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="users-note" id="logsHint" hidden></p>
         </section>
       </main>
     </div>

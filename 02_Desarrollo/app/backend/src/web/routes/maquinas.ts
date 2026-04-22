@@ -2,13 +2,135 @@ import { Router } from "express";
 import { requireAuth, requireLavanderia, requireRole } from "../auth/middleware.js";
 import { db } from "../../db/pool.js";
 import type { MaquinaRow, TarifaRow } from "../../db/types.js";
-import type { ResultSetHeader } from "mysql2/promise";
+import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { publishMachineCommand } from "../../iot/mqtt.js";
 
 export const maquinasRouter = Router();
 
+type ConfigRow = RowDataPacket & { valor: string };
+
+function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    return (JSON.parse(raw) ?? fallback) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+async function getConfigLav<T>(idLav: number, clave: string, fallback: T): Promise<T> {
+  const [rows] = await db.query<ConfigRow[]>(
+    `
+    SELECT valor
+    FROM configuracion
+    WHERE ambito='LAVANDERIA' AND id_lavanderia=:idLav AND clave=:clave
+    LIMIT 1
+    `,
+    { idLav, clave },
+  );
+  return safeJsonParse<T>(rows[0]?.valor, fallback);
+}
+
+async function setConfigLav(idLav: number, clave: string, valor: unknown, descripcion: string) {
+  await db.query<ResultSetHeader>(
+    `
+    INSERT INTO configuracion (ambito, id_lavanderia, clave, valor, descripcion)
+    VALUES ('LAVANDERIA', :idLav, :clave, :valor, :descripcion)
+    ON DUPLICATE KEY UPDATE valor=VALUES(valor), descripcion=VALUES(descripcion)
+    `,
+    { idLav, clave, valor: JSON.stringify(valor), descripcion },
+  );
+}
+
+function fanKey(idMaquina: number) {
+  return String(idMaquina);
+}
+
+async function setFanPendingOff(idLav: number, idMaquina: number, minutes = 5) {
+  const pending = await getConfigLav<Record<string, string | null>>(idLav, "fan_pending_off", {});
+  pending[fanKey(idMaquina)] = new Date(Date.now() + minutes * 60 * 1000).toISOString();
+  await setConfigLav(idLav, "fan_pending_off", pending, "Apagado diferido de ventiladores por máquina");
+}
+
+async function clearFanPendingOff(idLav: number, idMaquina: number) {
+  const pending = await getConfigLav<Record<string, string | null>>(idLav, "fan_pending_off", {});
+  delete pending[fanKey(idMaquina)];
+  await setConfigLav(idLav, "fan_pending_off", pending, "Apagado diferido de ventiladores por máquina");
+}
+
+async function isFanAutoEnabled(idLav: number, idMaquina: number) {
+  const map = await getConfigLav<Record<string, boolean>>(idLav, "fan_auto_enabled", {});
+  return Boolean(map[fanKey(idMaquina)]);
+}
+
 maquinasRouter.get("/", requireAuth, requireLavanderia, async (req, res) => {
   const idLavanderia = req.auth?.id_lavanderia ?? 1;
+
+  // Auto-cierre: si el ciclo llegó a 0, deja de estar EN_MARCHA.
+  const [overdue] = await db.query<(import("mysql2").RowDataPacket & { id_ciclo: number; id_maquina: number })[]>(
+    `
+    SELECT c.id_ciclo, c.id_maquina
+    FROM ciclo c
+    INNER JOIN maquina m ON m.id_maquina = c.id_maquina
+    WHERE m.id_lavanderia = :idLav
+      AND c.estado_ciclo = 'INICIADO'
+      AND m.estado_actual = 'EN_MARCHA'
+      AND DATE_ADD(c.fecha_hora_inicio, INTERVAL c.duracion_total_programada_min MINUTE) <= NOW()
+    `,
+    { idLav: idLavanderia },
+  );
+
+  for (const row of overdue) {
+    await db.query<ResultSetHeader>(
+      "UPDATE ciclo SET estado_ciclo = 'FINALIZADO', fecha_hora_fin = COALESCE(fecha_hora_fin, NOW()) WHERE id_ciclo = :id",
+      { id: row.id_ciclo },
+    );
+    await db.query<ResultSetHeader>("UPDATE maquina SET estado_actual = 'STOP' WHERE id_maquina = :id", { id: row.id_maquina });
+    await setFanPendingOff(idLavanderia, row.id_maquina, 5);
+    await db.query<ResultSetHeader>(
+      `
+      INSERT INTO log_maquina (id_lavanderia, id_maquina, id_ciclo, fecha_hora, tipo_evento, nivel, payload, procesado)
+      VALUES (:idLav, :idMaquina, :idCiclo, NOW(), 'CICLO_FINALIZADO_AUTO', 'INFO', JSON_OBJECT('origen','timer_auto'), 1)
+      `,
+      { idLav: idLavanderia, idMaquina: row.id_maquina, idCiclo: row.id_ciclo },
+    );
+  }
+
+  const pendingOff = await getConfigLav<Record<string, string | null>>(idLavanderia, "fan_pending_off", {});
+  const nowMs = Date.now();
+  const nextPending: Record<string, string | null> = { ...pendingOff };
+  const pendingMachineIds = Object.keys(pendingOff)
+    .map((k) => Number(k))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  if (pendingMachineIds.length) {
+    const idsCsv = pendingMachineIds.join(",");
+    const [machines] = await db.query<(RowDataPacket & { id_maquina: number; codigo_visible: string; estado_actual: string })[]>(
+      "SELECT id_maquina, codigo_visible, estado_actual FROM maquina WHERE id_lavanderia=:idLav AND FIND_IN_SET(id_maquina,:idsCsv)>0",
+      { idLav: idLavanderia, idsCsv },
+    );
+    for (const machine of machines) {
+      const key = fanKey(machine.id_maquina);
+      const due = pendingOff[key];
+      const dueMs = due ? new Date(due).getTime() : Number.NaN;
+      if (!Number.isFinite(dueMs) || dueMs > nowMs) continue;
+      if (machine.estado_actual === "EN_MARCHA") {
+        delete nextPending[key];
+        continue;
+      }
+      publishMachineCommand(machine.codigo_visible, {
+        accion: "ventilador_off",
+        id_maquina: machine.id_maquina,
+        timestamp: new Date().toISOString(),
+      });
+      delete nextPending[key];
+    }
+    if (JSON.stringify(nextPending) !== JSON.stringify(pendingOff)) {
+      await setConfigLav(idLavanderia, "fan_pending_off", nextPending, "Apagado diferido de ventiladores por máquina");
+    }
+  }
+
+  const fanAutoMap = await getConfigLav<Record<string, boolean>>(idLavanderia, "fan_auto_enabled", {});
+
   const [rows] = await db.query<MaquinaRow[]>(
     `
     SELECT
@@ -16,6 +138,10 @@ maquinasRouter.get("/", requireAuth, requireLavanderia, async (req, res) => {
       c.id_ciclo,
       c.fecha_hora_inicio,
       c.duracion_total_programada_min,
+      GREATEST(
+        0,
+        TIMESTAMPDIFF(SECOND, NOW(), DATE_ADD(c.fecha_hora_inicio, INTERVAL c.duracion_total_programada_min MINUTE))
+      ) AS segundos_restantes_estimados,
       GREATEST(
         0,
         TIMESTAMPDIFF(MINUTE, NOW(), DATE_ADD(c.fecha_hora_inicio, INTERVAL c.duracion_total_programada_min MINUTE))
@@ -29,11 +155,52 @@ maquinasRouter.get("/", requireAuth, requireLavanderia, async (req, res) => {
     `,
     { id: idLavanderia },
   );
-  res.json({ ok: true, maquinas: rows });
+  const maquinas = rows.map((m) => ({ ...m, ventilador_auto: Boolean(fanAutoMap[fanKey(Number(m.id_maquina))]) }));
+  res.json({ ok: true, maquinas });
 });
 
 maquinasRouter.get("/:id", requireAuth, (req, res) => {
   res.json({ ok: true, id: req.params.id });
+});
+
+maquinasRouter.put("/:id/ventilador-auto", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idMaquina = Number(req.params.id);
+  if (!Number.isFinite(idMaquina) || idMaquina <= 0) {
+    return res.status(400).json({ ok: false, error: "BAD_MACHINE_ID" });
+  }
+  const enabled = Boolean(req.body?.enabled);
+  const idLavanderia = req.auth?.id_lavanderia ?? 1;
+
+  const [maquinaRows] = await db.query<MaquinaRow[]>(
+    "SELECT id_maquina, id_lavanderia, codigo_visible, tipo_maquina, estado_actual, activa, observaciones FROM maquina WHERE id_maquina=:id LIMIT 1",
+    { id: idMaquina },
+  );
+  const maquina = maquinaRows[0];
+  if (!maquina || maquina.id_lavanderia !== idLavanderia) {
+    return res.status(404).json({ ok: false, error: "MAQUINA_NOT_FOUND" });
+  }
+
+  const map = await getConfigLav<Record<string, boolean>>(idLavanderia, "fan_auto_enabled", {});
+  map[fanKey(idMaquina)] = enabled;
+  await setConfigLav(idLavanderia, "fan_auto_enabled", map, "Encendido automático ventilador por máquina");
+
+  if (!enabled) {
+    await clearFanPendingOff(idLavanderia, idMaquina);
+    publishMachineCommand(maquina.codigo_visible, {
+      accion: "ventilador_off",
+      id_maquina: idMaquina,
+      timestamp: new Date().toISOString(),
+    });
+  } else if (maquina.estado_actual === "EN_MARCHA") {
+    await clearFanPendingOff(idLavanderia, idMaquina);
+    publishMachineCommand(maquina.codigo_visible, {
+      accion: "ventilador_on",
+      id_maquina: idMaquina,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  return res.json({ ok: true, id_maquina: idMaquina, enabled });
 });
 
 maquinasRouter.post(
@@ -186,6 +353,7 @@ maquinasRouter.post(
         "UPDATE maquina SET estado_actual = 'STOP' WHERE id_maquina = :id",
         { id: idMaquina },
       );
+      await setFanPendingOff(idLavanderia, idMaquina, 5);
 
       await conn.query<ResultSetHeader>(
         `
@@ -392,7 +560,18 @@ maquinasRouter.post(
         );
 
         await conn.query<ResultSetHeader>("UPDATE maquina SET estado_actual = 'EN_MARCHA' WHERE id_maquina = :id", { id: idMaquina });
+        if (await isFanAutoEnabled(idLavanderia, idMaquina)) {
+          await clearFanPendingOff(idLavanderia, idMaquina);
+        }
         await conn.commit();
+        if (await isFanAutoEnabled(idLavanderia, idMaquina)) {
+          publishMachineCommand(maquina.codigo_visible, {
+            accion: "ventilador_on",
+            id_maquina: idMaquina,
+            id_ciclo: idCiclo,
+            timestamp: new Date().toISOString(),
+          });
+        }
         publishMachineCommand(maquina.codigo_visible, {
           accion: "insertar_credito",
           id_maquina: idMaquina,

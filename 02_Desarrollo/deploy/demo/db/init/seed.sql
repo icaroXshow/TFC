@@ -73,9 +73,9 @@ SET @mp_s1 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_pueb AND
 INSERT INTO configuracion (ambito, id_lavanderia, clave, valor, descripcion)
 VALUES
   ('LAVANDERIA', @lav_flem, 'iot_state', '{"puerta_abierta": false, "luces_encendidas": true, "ventilacion_encendida": false, "updated_at": "2026-01-01T10:00:00Z"}', 'Estado IoT'),
-  ('LAVANDERIA', @lav_flem, 'iot_schedule', '{"puerta":{"on":"09:00","off":"22:00"},"luces":{"on":"08:30","off":"22:30"},"ventilacion":{"on":"10:00","off":"21:30"}}', 'Horario IoT'),
+  ('LAVANDERIA', @lav_flem, 'iot_schedule', '{"puerta":{"on":"02:10","off":"03:30"},"luces":{"on":"02:20","off":"03:40"},"ventilacion":{"on":"02:30","off":"03:50"}}', 'Horario IoT'),
   ('LAVANDERIA', @lav_pueb, 'iot_state', '{"puerta_abierta": false, "luces_encendidas": false, "ventilacion_encendida": true, "updated_at": "2026-01-01T10:00:00Z"}', 'Estado IoT'),
-  ('LAVANDERIA', @lav_pueb, 'iot_schedule', '{"puerta":{"on":"09:30","off":"21:30"},"luces":{"on":"09:00","off":"22:00"},"ventilacion":{"on":"09:00","off":"22:00"}}', 'Horario IoT');
+  ('LAVANDERIA', @lav_pueb, 'iot_schedule', '{"puerta":{"on":"02:15","off":"03:25"},"luces":{"on":"02:25","off":"03:35"},"ventilacion":{"on":"02:35","off":"03:55"}}', 'Horario IoT');
 
 INSERT INTO ciclo (
   id_maquina, id_tarifa_aplicada, fecha_hora_inicio, fecha_hora_fin, estado_ciclo,

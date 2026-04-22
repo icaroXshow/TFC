@@ -24,8 +24,59 @@ type MaquinaRef = RowDataPacket & {
   codigo_visible: string;
 };
 
+type ConfigRow = RowDataPacket & { valor: string };
+
 let client: MqttClient | null = null;
 let mqttConnected = false;
+
+function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    return (JSON.parse(raw) ?? fallback) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+async function getConfigLav<T>(idLav: number, clave: string, fallback: T): Promise<T> {
+  const [rows] = await db.query<ConfigRow[]>(
+    "SELECT valor FROM configuracion WHERE ambito='LAVANDERIA' AND id_lavanderia=:idLav AND clave=:clave LIMIT 1",
+    { idLav, clave },
+  );
+  return safeJsonParse<T>(rows[0]?.valor, fallback);
+}
+
+async function setConfigLav(idLav: number, clave: string, valor: unknown, descripcion: string) {
+  await db.query<ResultSetHeader>(
+    `
+    INSERT INTO configuracion (ambito, id_lavanderia, clave, valor, descripcion)
+    VALUES ('LAVANDERIA', :idLav, :clave, :valor, :descripcion)
+    ON DUPLICATE KEY UPDATE valor=VALUES(valor), descripcion=VALUES(descripcion)
+    `,
+    { idLav, clave, valor: JSON.stringify(valor), descripcion },
+  );
+}
+
+function fanKey(idMaquina: number) {
+  return String(idMaquina);
+}
+
+async function isFanAutoEnabled(idLav: number, idMaquina: number) {
+  const map = await getConfigLav<Record<string, boolean>>(idLav, "fan_auto_enabled", {});
+  return Boolean(map[fanKey(idMaquina)]);
+}
+
+async function setFanPendingOff(idLav: number, idMaquina: number, minutes = 5) {
+  const pending = await getConfigLav<Record<string, string | null>>(idLav, "fan_pending_off", {});
+  pending[fanKey(idMaquina)] = new Date(Date.now() + minutes * 60 * 1000).toISOString();
+  await setConfigLav(idLav, "fan_pending_off", pending, "Apagado diferido de ventiladores por máquina");
+}
+
+async function clearFanPendingOff(idLav: number, idMaquina: number) {
+  const pending = await getConfigLav<Record<string, string | null>>(idLav, "fan_pending_off", {});
+  delete pending[fanKey(idMaquina)];
+  await setConfigLav(idLav, "fan_pending_off", pending, "Apagado diferido de ventiladores por máquina");
+}
 
 function toMySqlDate(value?: string): string {
   const d = value ? new Date(value) : new Date();
@@ -64,6 +115,11 @@ async function processEstado(codigo: string, data: EstadoPayload) {
   if (!machine) return;
 
   const estado = normalizeEstado(String(data.estado ?? "STOP"));
+  const [prevRows] = await db.query<(RowDataPacket & { estado_actual: string })[]>(
+    "SELECT estado_actual FROM maquina WHERE id_maquina=:id LIMIT 1",
+    { id: machine.id_maquina },
+  );
+  const prevEstado = String(prevRows[0]?.estado_actual || "STOP");
 
   await db.query<ResultSetHeader>(
     `UPDATE maquina SET estado_actual = :estado WHERE id_maquina = :idMaquina`,
@@ -83,6 +139,19 @@ async function processEstado(codigo: string, data: EstadoPayload) {
       codigo,
     },
   );
+
+  if (estado === "EN_MARCHA") {
+    if (await isFanAutoEnabled(machine.id_lavanderia, machine.id_maquina)) {
+      await clearFanPendingOff(machine.id_lavanderia, machine.id_maquina);
+      publishMachineCommand(machine.codigo_visible, {
+        accion: "ventilador_on",
+        id_maquina: machine.id_maquina,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  } else if (prevEstado === "EN_MARCHA") {
+    await setFanPendingOff(machine.id_lavanderia, machine.id_maquina, 5);
+  }
 }
 
 async function processEvento(codigo: string, data: EventoPayload) {
@@ -123,12 +192,21 @@ async function processEvento(codigo: string, data: EventoPayload) {
       `,
       { idMaquina: machine.id_maquina },
     );
+    await setFanPendingOff(machine.id_lavanderia, machine.id_maquina, 5);
   }
 
   if (tipoEvento === "PULSO_INICIO") {
     await db.query<ResultSetHeader>(`UPDATE maquina SET estado_actual = 'EN_MARCHA' WHERE id_maquina = :idMaquina`, {
       idMaquina: machine.id_maquina,
     });
+    if (await isFanAutoEnabled(machine.id_lavanderia, machine.id_maquina)) {
+      await clearFanPendingOff(machine.id_lavanderia, machine.id_maquina);
+      publishMachineCommand(machine.codigo_visible, {
+        accion: "ventilador_on",
+        id_maquina: machine.id_maquina,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
   if (tipoEvento === "PULSO_FIN") {
@@ -145,6 +223,7 @@ async function processEvento(codigo: string, data: EventoPayload) {
       `,
       { idMaquina: machine.id_maquina },
     );
+    await setFanPendingOff(machine.id_lavanderia, machine.id_maquina, 5);
   }
 }
 

@@ -54,6 +54,7 @@
         <button class="admin-burger" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
         <div class="admin-breadcrumbs" id="adminBreadcrumbs"></div>
         <div class="admin-topbar-right">
+          <button type="button" class="btn-secondary" id="storeEnvBtn">Ajustes</button>
           <select class="admin-lav-select" id="adminLavSelect" aria-label="Lavandería activa"></select>
           <span class="admin-location" id="adminLocation">—</span>
         </div>
@@ -64,7 +65,6 @@
           <div class="admin-hero-text">
             <p class="admin-kicker">Panel privado</p>
             <h2>Inicio</h2>
-            <p class="admin-sub">Control en tiempo real de tienda y operaciones.</p>
 
             <article class="admin-card admin-camera-card" aria-label="Stream cámara">
               <div class="admin-camera-frame">
@@ -73,30 +73,31 @@
               <div class="iot-actions" style="margin-top: 10px; flex-wrap: wrap">
                 <button type="button" class="btn-secondary" id="quickDoorBtn">Puerta</button>
                 <button type="button" class="btn-secondary" id="quickLightsBtn">Luces</button>
+                <select class="input" id="quickAudioSound" style="max-width: 220px">
+                  <option value="PUBLICIDAD">Audio · Publicidad</option>
+                  <option value="BIENVENIDA">Audio · Bienvenida</option>
+                  <option value="OFERTA">Audio · Oferta</option>
+                </select>
                 <button type="button" class="btn-secondary" id="quickAudioBtn">Audio</button>
               </div>
             </article>
           </div>
 
           <div class="admin-hero-cards" aria-label="Resumen">
-            <article class="admin-card">
-              <p class="admin-card-title">Tienda · Control</p>
-              <p class="admin-card-value">
+            <article class="admin-card admin-card-wide admin-actions-card">
+              <div class="admin-actions-head">
+                <p class="admin-card-title">Tienda · Control</p>
+                <p class="admin-card-hint">
+                  <a href="#" id="storeConfigToggle" class="store-config-link">Configurar</a>
+                </p>
+              </div>
+              <div class="iot-actions">
                 <button type="button" class="btn-primary" id="storeOpenBtn">Abrir</button>
                 <button type="button" class="btn-secondary" id="storeCloseBtn">Cerrar</button>
-              </p>
-            </article>
-            <article class="admin-card">
-              <p class="admin-card-title">Tienda · Ajustes</p>
-              <p class="admin-card-hint">
-                <a href="#" id="storeConfigToggle" class="store-config-link">Configurar</a>
-              </p>
-              <p class="admin-card-value">
-                <button type="button" class="btn-secondary" id="storeEnvBtn">Ajustes</button>
-              </p>
+              </div>
             </article>
             <article class="admin-card admin-card-mini">
-              <p class="admin-card-title">Máquinas en marcha</p>
+              <p class="admin-card-title">Funcionando</p>
               <p class="admin-card-value admin-card-cube" id="cardActivas">—</p>
               <p class="admin-card-hint"></p>
             </article>
@@ -105,7 +106,7 @@
               <p class="admin-card-value" id="cardNextFinish">—</p>
               <p class="admin-card-hint"></p>
             </article>
-            <article class="admin-card admin-card-wide">
+            <article class="admin-card admin-card-mini">
               <p class="admin-card-title">Caja</p>
               <p class="admin-card-value" id="cardCajaHoy">—</p>
               <p class="admin-card-hint"></p>
@@ -139,27 +140,45 @@
     </div>
 
     <dialog class="modal" id="storeConfigDialog">
-      <form method="dialog" class="modal-card">
+      <form method="dialog" class="modal-card store-config-card">
         <div class="modal-head">
           <strong>Configurar tienda</strong>
           <button type="button" class="modal-close" id="storeConfigClose" aria-label="Cerrar">×</button>
         </div>
-        <div class="modal-body">
-          <p style="margin:.5rem 0 .2rem">Cerrar tienda:</p>
-          <label><input type="checkbox" id="closeDoor" checked /> Puerta</label>
-          <label><input type="checkbox" id="closeLights" checked /> Luces</label>
-          <label><input type="checkbox" id="closeFan" checked /> Ventilación</label>
-          <label class="field"><span>Hora cerrar</span><input class="input" type="time" id="storeCloseTime" /></label>
-          <p style="margin:.7rem 0 .2rem">Abrir tienda:</p>
-          <label><input type="checkbox" id="openDoor" checked /> Puerta</label>
-          <label><input type="checkbox" id="openLights" checked /> Luces</label>
-          <label><input type="checkbox" id="openFan" checked /> Ventilación</label>
-          <label class="field"><span>Hora abrir</span><input class="input" type="time" id="storeOpenTime" /></label>
-          <p style="margin:.7rem 0 .2rem">Máquinas al abrir tienda:</p>
-          <div id="storeOpenMachines" class="iot-grid"></div>
+        <div class="modal-body store-config-body">
+          <section class="store-config-section">
+            <p class="store-config-title">Cierre automático</p>
+            <label class="field">
+              <span>Hora cerrar</span>
+              <input class="input" type="time" id="storeCloseTime" />
+            </label>
+            <div class="store-config-checks">
+              <label><input type="checkbox" id="closeDoor" checked /> Puerta</label>
+              <label><input type="checkbox" id="closeLights" checked /> Luces</label>
+              <label><input type="checkbox" id="closeFan" checked /> Ventilación</label>
+            </div>
+          </section>
+
+          <section class="store-config-section">
+            <p class="store-config-title">Apertura automática</p>
+            <label class="field">
+              <span>Hora apertura</span>
+              <input class="input" type="time" id="storeOpenTime" />
+            </label>
+            <div class="store-config-checks">
+              <label><input type="checkbox" id="openDoor" checked /> Puerta</label>
+              <label><input type="checkbox" id="openLights" checked /> Luces</label>
+              <label><input type="checkbox" id="openFan" checked /> Ventilación</label>
+            </div>
+          </section>
+
+          <section class="store-config-section">
+            <p class="store-config-title">Máquinas al abrir</p>
+            <div id="storeOpenMachines" class="iot-grid store-machines-grid"></div>
+          </section>
         </div>
         <div class="modal-foot">
-          <button type="button" class="btn-secondary" id="storeConfigSave">Guardar</button>
+          <button type="button" class="btn-primary" id="storeConfigSave">Guardar</button>
         </div>
       </form>
     </dialog>
@@ -182,7 +201,7 @@
       </form>
     </dialog>
 
-    <script src="/js/app.js"></script>
-    <script src="/js/admin.js"></script>
+    <script src="/js/app.js?v=20260422a"></script>
+    <script src="/js/admin.js?v=20260422a"></script>
   </body>
 </html>

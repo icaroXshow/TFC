@@ -1,5 +1,6 @@
 import type { RowDataPacket, ResultSetHeader } from "mysql2/promise";
 import { db } from "../db/pool.js";
+import { appendIotActionLog } from "./action-log.js";
 
 type ConfigRow = RowDataPacket & {
   id_lavanderia: number | null;
@@ -164,11 +165,25 @@ export function startIoTScheduler() {
           if (scheduleItem.on && scheduleItem.on === hhmm && shouldRun(last, onKey, dateKey, hhmm)) {
             apply(stateField, true);
             last[onKey] = `${dateKey} ${hhmm}`;
+            await appendIotActionLog(idLav, {
+              dispositivo: stateField === "puerta_abierta" ? "puerta" : stateField === "luces_encendidas" ? "luces" : "ventilacion",
+              accion: "on",
+              ts: new Date().toISOString(),
+              by: 1,
+              origen: "auto_schedule",
+            });
             await auditSystem(idLav, "IOT_SCHEDULE_ON", `${label} ON (${hhmm})`);
           }
           if (scheduleItem.off && scheduleItem.off === hhmm && shouldRun(last, offKey, dateKey, hhmm)) {
             apply(stateField, false);
             last[offKey] = `${dateKey} ${hhmm}`;
+            await appendIotActionLog(idLav, {
+              dispositivo: stateField === "puerta_abierta" ? "puerta" : stateField === "luces_encendidas" ? "luces" : "ventilacion",
+              accion: "off",
+              ts: new Date().toISOString(),
+              by: 1,
+              origen: "auto_schedule",
+            });
             await auditSystem(idLav, "IOT_SCHEDULE_OFF", `${label} OFF (${hhmm})`);
           }
         };
@@ -176,6 +191,23 @@ export function startIoTScheduler() {
         await maybe("Puerta", "puerta_on", "puerta_off", schedule.puerta, "puerta_abierta");
         await maybe("Luces", "luces_on", "luces_off", schedule.luces, "luces_encendidas");
         await maybe("Ventilación", "ventilacion_on", "ventilacion_off", schedule.ventilacion, "ventilacion_encendida");
+
+        if (hhmm === "00:00" && shouldRun(last, "midnight_reset", dateKey, hhmm)) {
+          let midnightChanged = false;
+          if (state.puerta_abierta) {
+            state.puerta_abierta = false;
+            midnightChanged = true;
+          }
+          if (state.luces_encendidas) {
+            state.luces_encendidas = false;
+            midnightChanged = true;
+          }
+          if (midnightChanged) {
+            changed = true;
+            await auditSystem(idLav, "IOT_MIDNIGHT_RESET", "Reset diario 00:00 puerta/luces -> OFF");
+          }
+          last.midnight_reset = `${dateKey} ${hhmm}`;
+        }
 
         if (changed) {
           state.updated_at = new Date().toISOString();
