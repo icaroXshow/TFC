@@ -2,6 +2,7 @@ import mqtt, { type MqttClient } from "mqtt";
 import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { db } from "../db/pool.js";
 import { env } from "../system/env.js";
+import { appendIotActionLog } from "./action-log.js";
 
 type EstadoPayload = {
   id_maquina?: number;
@@ -25,6 +26,8 @@ type MaquinaRef = RowDataPacket & {
 };
 
 type ConfigRow = RowDataPacket & { valor: string };
+type TarifaRow = RowDataPacket & { id_tarifa: number; tiempo_base_minutos: number };
+type CicloOpenRow = RowDataPacket & { id_ciclo: number };
 
 let client: MqttClient | null = null;
 let mqttConnected = false;
@@ -84,20 +87,49 @@ function toMySqlDate(value?: string): string {
   return d.toISOString().slice(0, 19).replace("T", " ");
 }
 
-async function findMachineByCode(codigoVisible: string): Promise<MaquinaRef | null> {
+async function findMachineByCode(codigoVisible: string, idLav?: number): Promise<MaquinaRef | null> {
+  if (Number.isFinite(idLav) && Number(idLav) > 0) {
+    const [rows] = await db.query<MaquinaRef[]>(
+      `
+      SELECT id_maquina, id_lavanderia, codigo_visible
+      FROM maquina
+      WHERE codigo_visible = :codigo
+        AND id_lavanderia = :idLav
+      LIMIT 1
+      `,
+      { codigo: codigoVisible, idLav: Number(idLav) },
+    );
+    return rows[0] ?? null;
+  }
   const [rows] = await db.query<MaquinaRef[]>(
-    `SELECT id_maquina, id_lavanderia, codigo_visible FROM maquina WHERE codigo_visible = :codigo LIMIT 1`,
+    `SELECT id_maquina, id_lavanderia, codigo_visible FROM maquina WHERE codigo_visible = :codigo ORDER BY id_maquina ASC LIMIT 1`,
     { codigo: codigoVisible },
   );
   return rows[0] ?? null;
 }
 
-function parseTopic(topic: string): { codigo: string; kind: "estado" | "evento" } | null {
+function parseTopic(topic: string): { idLav?: number; codigo: string; kind: "estado" | "evento" } | null {
+  const parts = topic.split("/");
+  if (parts[0] !== "kwl" || parts[1] !== "maquinas") return null;
+  if (parts.length === 4 && (parts[3] === "estado" || parts[3] === "evento")) {
+    return { codigo: String(parts[2] || "").toUpperCase(), kind: parts[3] };
+  }
+  if (parts.length === 5 && (parts[4] === "estado" || parts[4] === "evento")) {
+    const idLav = Number(parts[2]);
+    if (!Number.isFinite(idLav) || idLav <= 0) return null;
+    return { idLav, codigo: String(parts[3] || "").toUpperCase(), kind: parts[4] };
+  }
+  return null;
+}
+
+function parseIotTopic(topic: string): { idLav: number; kind: "estado" | "evento" } | null {
   const parts = topic.split("/");
   if (parts.length !== 4) return null;
-  if (parts[0] !== "kwl" || parts[1] !== "maquinas") return null;
+  if (parts[0] !== "kwl" || parts[1] !== "iot") return null;
   if (parts[3] !== "estado" && parts[3] !== "evento") return null;
-  return { codigo: parts[2], kind: parts[3] };
+  const idLav = Number(parts[2]);
+  if (!Number.isFinite(idLav) || idLav <= 0) return null;
+  return { idLav, kind: parts[3] };
 }
 
 function normalizeEstado(raw: string): string {
@@ -110,8 +142,8 @@ function normalizeEstado(raw: string): string {
   return "STOP";
 }
 
-async function processEstado(codigo: string, data: EstadoPayload) {
-  const machine = await findMachineByCode(codigo);
+async function processEstado(idLav: number | undefined, codigo: string, data: EstadoPayload) {
+  const machine = await findMachineByCode(codigo, idLav);
   if (!machine) return;
 
   const estado = normalizeEstado(String(data.estado ?? "STOP"));
@@ -147,19 +179,61 @@ async function processEstado(codigo: string, data: EstadoPayload) {
         accion: "ventilador_on",
         id_maquina: machine.id_maquina,
         timestamp: new Date().toISOString(),
-      });
+      }, machine.id_lavanderia);
     }
   } else if (prevEstado === "EN_MARCHA") {
     await setFanPendingOff(machine.id_lavanderia, machine.id_maquina, 5);
   }
 }
 
-async function processEvento(codigo: string, data: EventoPayload) {
-  const machine = await findMachineByCode(codigo);
+async function processEvento(idLav: number | undefined, codigo: string, data: EventoPayload) {
+  const machine = await findMachineByCode(codigo, idLav);
   if (!machine) return;
 
   const tipoEvento = String(data.tipo_evento ?? "EVENTO_DISPOSITIVO");
   const nivel = String(data.nivel ?? "INFO").toUpperCase();
+  const payload = (data.payload && typeof data.payload === "object" ? (data.payload as Record<string, unknown>) : {}) as Record<
+    string,
+    unknown
+  >;
+
+  const ensureOpenCycle = async () => {
+    const [openRows] = await db.query<CicloOpenRow[]>(
+      "SELECT id_ciclo FROM ciclo WHERE id_maquina = :idMaquina AND estado_ciclo = 'INICIADO' ORDER BY fecha_hora_inicio DESC LIMIT 1",
+      { idMaquina: machine.id_maquina },
+    );
+    if (openRows[0]?.id_ciclo) return openRows[0].id_ciclo;
+    const [tarifaRows] = await db.query<TarifaRow[]>(
+      `
+      SELECT id_tarifa, tiempo_base_minutos
+      FROM tarifa_maquina
+      WHERE id_lavanderia=:idLav
+        AND activa=1
+        AND fecha_inicio_vigencia<=NOW()
+        AND (fecha_fin_vigencia IS NULL OR fecha_fin_vigencia>NOW())
+      ORDER BY fecha_inicio_vigencia DESC
+      LIMIT 1
+      `,
+      { idLav: machine.id_lavanderia },
+    );
+    const tarifa = tarifaRows[0];
+    if (!tarifa) return null;
+    const [ins] = await db.query<ResultSetHeader>(
+      `
+      INSERT INTO ciclo (
+        id_maquina, id_tarifa_aplicada, fecha_hora_inicio, fecha_hora_fin, estado_ciclo,
+        precio_arranque_aplicado, tiempo_base_aplicado_min, minutos_extra_total,
+        importe_cliente_total, importe_bonificado_total, importe_total_aplicado,
+        duracion_total_programada_min, observaciones
+      ) VALUES (
+        :idMaquina, :idTarifa, NOW(), NULL, 'INICIADO',
+        0.00, :tiempoBase, 0, 0.00, 0.00, 0.00, :tiempoBase, 'MQTT auto-cycle'
+      )
+      `,
+      { idMaquina: machine.id_maquina, idTarifa: tarifa.id_tarifa, tiempoBase: Number(tarifa.tiempo_base_minutos || 35) },
+    );
+    return ins.insertId || null;
+  };
 
   await db.query<ResultSetHeader>(
     `
@@ -178,7 +252,7 @@ async function processEvento(codigo: string, data: EventoPayload) {
   );
 
   if (tipoEvento === "CICLO_FINALIZADO") {
-    await db.query<ResultSetHeader>(`UPDATE maquina SET estado_actual = 'STOP' WHERE id_maquina = :idMaquina`, {
+    await db.query<ResultSetHeader>(`UPDATE maquina SET estado_actual = 'PAUSADA' WHERE id_maquina = :idMaquina`, {
       idMaquina: machine.id_maquina,
     });
 
@@ -196,6 +270,7 @@ async function processEvento(codigo: string, data: EventoPayload) {
   }
 
   if (tipoEvento === "PULSO_INICIO") {
+    await ensureOpenCycle();
     await db.query<ResultSetHeader>(`UPDATE maquina SET estado_actual = 'EN_MARCHA' WHERE id_maquina = :idMaquina`, {
       idMaquina: machine.id_maquina,
     });
@@ -205,12 +280,12 @@ async function processEvento(codigo: string, data: EventoPayload) {
         accion: "ventilador_on",
         id_maquina: machine.id_maquina,
         timestamp: new Date().toISOString(),
-      });
+      }, machine.id_lavanderia);
     }
   }
 
   if (tipoEvento === "PULSO_FIN") {
-    await db.query<ResultSetHeader>(`UPDATE maquina SET estado_actual = 'STOP' WHERE id_maquina = :idMaquina`, {
+    await db.query<ResultSetHeader>(`UPDATE maquina SET estado_actual = 'PAUSADA' WHERE id_maquina = :idMaquina`, {
       idMaquina: machine.id_maquina,
     });
     await db.query<ResultSetHeader>(
@@ -225,12 +300,30 @@ async function processEvento(codigo: string, data: EventoPayload) {
     );
     await setFanPendingOff(machine.id_lavanderia, machine.id_maquina, 5);
   }
+
+  if (tipoEvento === "AMPLIACION_APLICADA") {
+    const idCiclo = await ensureOpenCycle();
+    if (idCiclo) {
+      const minutosExtra = Math.max(0, Number(payload.minutos ?? 0));
+      const importeExtra = Math.max(0, Number(payload.importe ?? 0));
+      if (minutosExtra > 0 || importeExtra > 0) {
+        await db.query<ResultSetHeader>(
+          `
+          UPDATE ciclo
+          SET minutos_extra_total = minutos_extra_total + :minutos,
+              importe_bonificado_total = importe_bonificado_total + :importe,
+              importe_total_aplicado = importe_total_aplicado + :importe,
+              duracion_total_programada_min = duracion_total_programada_min + :minutos
+          WHERE id_ciclo = :idCiclo
+          `,
+          { minutos: minutosExtra, importe: importeExtra, idCiclo },
+        );
+      }
+    }
+  }
 }
 
 async function onMessage(topic: string, payload: Buffer) {
-  const parsed = parseTopic(topic);
-  if (!parsed) return;
-
   let data: any;
   try {
     data = JSON.parse(payload.toString("utf8"));
@@ -238,12 +331,35 @@ async function onMessage(topic: string, payload: Buffer) {
     return;
   }
 
-  if (parsed.kind === "estado") {
-    await processEstado(parsed.codigo, data as EstadoPayload);
+  const parsedMachine = parseTopic(topic);
+  if (parsedMachine) {
+    if (parsedMachine.kind === "estado") {
+      await processEstado(parsedMachine.idLav, parsedMachine.codigo, data as EstadoPayload);
+      return;
+    }
+    await processEvento(parsedMachine.idLav, parsedMachine.codigo, data as EventoPayload);
     return;
   }
 
-  await processEvento(parsed.codigo, data as EventoPayload);
+  const parsedIot = parseIotTopic(topic);
+  if (!parsedIot) return;
+  if (parsedIot.kind !== "estado") return;
+
+  const idLav = parsedIot.idLav;
+  const state = {
+    puerta_abierta: Boolean(data?.puerta_abierta),
+    luces_encendidas: Boolean(data?.luces_encendidas),
+    ventilacion_encendida: Boolean(data?.ventilacion_encendida),
+    updated_at: new Date().toISOString(),
+  };
+  await setConfigLav(idLav, "iot_state", state, "Estado IoT (sync MQTT simulador)");
+  await appendIotActionLog(idLav, {
+    dispositivo: "tienda",
+    accion: "sync",
+    ts: new Date().toISOString(),
+    by: 1,
+    origen: "mqtt_sim",
+  });
 }
 
 export function startMqttBridge() {
@@ -261,6 +377,10 @@ export function startMqttBridge() {
     mqttConnected = true;
     client?.subscribe("kwl/maquinas/+/estado");
     client?.subscribe("kwl/maquinas/+/evento");
+    client?.subscribe("kwl/maquinas/+/+/estado");
+    client?.subscribe("kwl/maquinas/+/+/evento");
+    client?.subscribe("kwl/iot/+/estado");
+    client?.subscribe("kwl/iot/+/evento");
   });
   client.on("close", () => {
     mqttConnected = false;
@@ -282,8 +402,50 @@ export function getMqttHealth() {
   };
 }
 
-export function publishMachineCommand(codigoVisible: string, command: Record<string, unknown>) {
+export function publishMachineCommand(codigoVisible: string, command: Record<string, unknown>, idLav?: number) {
   if (!env.mqtt.enabled || !client || !client.connected) return;
-  const topic = `kwl/maquinas/${codigoVisible}/comando`;
+  const topic =
+    Number.isFinite(idLav) && Number(idLav) > 0
+      ? `kwl/maquinas/${Math.trunc(Number(idLav))}/${codigoVisible}/comando`
+      : `kwl/maquinas/${codigoVisible}/comando`;
   client.publish(topic, JSON.stringify(command), { qos: 0 });
+}
+
+export function publishIotCommand(idLav: number, command: Record<string, unknown>) {
+  if (!env.mqtt.enabled || !client || !client.connected) return false;
+  if (!Number.isFinite(idLav) || idLav <= 0) return false;
+  const topic = `kwl/iot/${Math.trunc(idLav)}/comando`;
+  client.publish(topic, JSON.stringify(command), { qos: 0 });
+  return true;
+}
+
+export function publishMachineState(codigoVisible: string, estado: string, timestamp?: string, idLav?: number) {
+  if (!env.mqtt.enabled || !client || !client.connected) return false;
+  const topic =
+    Number.isFinite(idLav) && Number(idLav) > 0
+      ? `kwl/maquinas/${Math.trunc(Number(idLav))}/${String(codigoVisible).toUpperCase()}/estado`
+      : `kwl/maquinas/${String(codigoVisible).toUpperCase()}/estado`;
+  client.publish(topic, JSON.stringify({ estado, timestamp: timestamp || new Date().toISOString() }), { qos: 0 });
+  return true;
+}
+
+export function publishMachineEvent(codigoVisible: string, event: Record<string, unknown>, idLav?: number) {
+  if (!env.mqtt.enabled || !client || !client.connected) return false;
+  const topic =
+    Number.isFinite(idLav) && Number(idLav) > 0
+      ? `kwl/maquinas/${Math.trunc(Number(idLav))}/${String(codigoVisible).toUpperCase()}/evento`
+      : `kwl/maquinas/${String(codigoVisible).toUpperCase()}/evento`;
+  client.publish(topic, JSON.stringify(event), { qos: 0 });
+  return true;
+}
+
+export function publishIotState(
+  idLav: number,
+  state: { puerta_abierta: boolean; luces_encendidas: boolean; ventilacion_encendida: boolean },
+) {
+  if (!env.mqtt.enabled || !client || !client.connected) return false;
+  if (!Number.isFinite(idLav) || idLav <= 0) return false;
+  const topic = `kwl/iot/${Math.trunc(idLav)}/estado`;
+  client.publish(topic, JSON.stringify({ ...state, timestamp: new Date().toISOString(), origen: "gui_sim" }), { qos: 0 });
+  return true;
 }

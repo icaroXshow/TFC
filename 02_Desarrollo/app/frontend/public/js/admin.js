@@ -7,6 +7,8 @@
 
   const $ = (s, c = document) => c.querySelector(s);
   let machineTimerInterval = null;
+  let machinesPollInterval = null;
+  let iotPollInterval = null;
 
   const nativeFetch = window.fetch.bind(window);
   window.fetch = (input, init) => {
@@ -90,6 +92,8 @@
   const iotLogTbody = $("#iotLogTbody");
   const doorToggle = $("#doorToggle");
   const lightsToggle = $("#lightsToggle");
+  const doorScheduleEnabled = $("#doorScheduleEnabled");
+  const lightsScheduleEnabled = $("#lightsScheduleEnabled");
   const fanOn = $("#fanOn");
   const fanOff = $("#fanOff");
   const doorState = $("#iotDoorState");
@@ -287,6 +291,12 @@
     lavSelect.hidden = lavanderias.length <= 1;
   }
 
+  function isSimulatorLav(lav) {
+    const code = String(lav?.codigo || "").toUpperCase();
+    const name = String(lav?.nombre || "").toUpperCase();
+    return code === "SIM-01" || name.includes("SIMULADOR");
+  }
+
   function stateClass(estado) {
     if (estado === "STOP") return "state-stop";
     if (estado === "EN_MARCHA") return "state-running";
@@ -318,7 +328,7 @@
       const canStart = estado === "STOP";
       const canStop = estado === "EN_MARCHA" || estado === "PAUSADA";
       const canCredit = estado === "PAUSADA";
-      const canExtend = estado === "EN_MARCHA";
+      const canExtend = estado === "EN_MARCHA" && Boolean(Number(m.ampliacion_disponible ?? 1));
       const restMin = Number(m.minutos_restantes_estimados ?? 0);
       const fanEnabled = Boolean(m.ventilador_auto);
       const restSecFromApi = Number(m.segundos_restantes_estimados ?? NaN);
@@ -443,6 +453,7 @@
     applyRoleUI(rol);
 
     let activeLavId = getActiveLavanderiaId();
+    let activeLavInfo = null;
     try {
       const l = await fetchLavanderias(token);
       const list = l?.lavanderias || [];
@@ -450,6 +461,7 @@
         // Si el active no está permitido, cae al primero.
         if (!list.some((x) => x.id_lavanderia === activeLavId)) activeLavId = list[0].id_lavanderia;
         setLavUI(list, activeLavId);
+        activeLavInfo = list.find((x) => x.id_lavanderia === activeLavId) || list[0] || null;
 
         lavSelect?.addEventListener("change", () => {
           const next = Number(lavSelect.value);
@@ -785,44 +797,52 @@
     };
     const loadIot = async () => {
       if (!isIotView) return;
-      setIotHint("");
-      const [stateRes, schRes, approxRes] = await Promise.all([
-        fetch("http://127.0.0.1:8080/api/iot/state", {
-          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
-        }),
-        fetch("http://127.0.0.1:8080/api/iot/schedule", {
-          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
-        }),
-        fetch("http://127.0.0.1:8080/api/iot/approx-state", {
-          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
-        }),
-      ]);
-      if (!stateRes.ok || !schRes.ok || !approxRes.ok) {
-        setIotHint("No hay permiso o backend caído.");
-        return;
-      }
-      const stateData = await stateRes.json();
-      const schData = await schRes.json();
-      const approxData = await approxRes.json();
-      const st = stateData?.state || {};
-      const approx = approxData?.approx || {};
-      currentIotState = {
-        puerta_abierta: Boolean(approx.puerta_abierta),
-        luces_encendidas: Boolean(approx.luces_encendidas),
-        ventilacion_encendida: Boolean(st.ventilacion_encendida),
-      };
-      setPill(doorState, approx.puerta_abierta);
-      setPill(lightsState, approx.luces_encendidas);
-      setPill(fanState, st.ventilacion_encendida);
+      if (loadIot._busy) return;
+      loadIot._busy = true;
+      try {
+        setIotHint("");
+        const [stateRes, schRes, approxRes] = await Promise.all([
+          fetch("http://127.0.0.1:8080/api/iot/state", {
+            headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+          }),
+          fetch("http://127.0.0.1:8080/api/iot/schedule", {
+            headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+          }),
+          fetch("http://127.0.0.1:8080/api/iot/approx-state", {
+            headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+          }),
+        ]);
+        if (!stateRes.ok || !schRes.ok || !approxRes.ok) {
+          setIotHint("No hay permiso o backend caído.");
+          return;
+        }
+        const stateData = await stateRes.json();
+        const schData = await schRes.json();
+        const approxData = await approxRes.json();
+        const st = stateData?.state || {};
+        const approx = approxData?.approx || {};
+        currentIotState = {
+          puerta_abierta: Boolean(st.puerta_abierta),
+          luces_encendidas: Boolean(st.luces_encendidas),
+          ventilacion_encendida: Boolean(st.ventilacion_encendida),
+        };
+        setPill(doorState, st.puerta_abierta);
+        setPill(lightsState, st.luces_encendidas);
+        setPill(fanState, st.ventilacion_encendida);
 
-      const sc = schData?.schedule || {};
-      if (doorOn) doorOn.value = sc?.puerta?.on || "";
-      if (doorOff) doorOff.value = sc?.puerta?.off || "";
-      if (lightsOnTime) lightsOnTime.value = sc?.luces?.on || "";
-      if (lightsOffTime) lightsOffTime.value = sc?.luces?.off || "";
-      if (fanOnTime) fanOnTime.value = sc?.ventilacion?.on || "";
-      if (fanOffTime) fanOffTime.value = sc?.ventilacion?.off || "";
-      await loadIotLog();
+        const sc = schData?.schedule || {};
+        if (doorScheduleEnabled) doorScheduleEnabled.checked = Boolean(sc?.puerta?.on || sc?.puerta?.off);
+        if (lightsScheduleEnabled) lightsScheduleEnabled.checked = Boolean(sc?.luces?.on || sc?.luces?.off);
+        if (doorOn) doorOn.value = sc?.puerta?.on || "";
+        if (doorOff) doorOff.value = sc?.puerta?.off || "";
+        if (lightsOnTime) lightsOnTime.value = sc?.luces?.on || "";
+        if (lightsOffTime) lightsOffTime.value = sc?.luces?.off || "";
+        if (fanOnTime) fanOnTime.value = sc?.ventilacion?.on || "";
+        if (fanOffTime) fanOffTime.value = sc?.ventilacion?.off || "";
+        await loadIotLog();
+      } finally {
+        loadIot._busy = false;
+      }
     };
 
     const loadIotLog = async () => {
@@ -872,6 +892,9 @@
     };
 
     const triggerRelayPulse = async (kind) => {
+      if (isSimulatorLav(activeLavInfo)) {
+        return;
+      }
       const r = await fetch("http://127.0.0.1:8080/api/camera/relay/pulse", {
         method: "POST",
         headers: {
@@ -883,7 +906,7 @@
       });
       if (!r.ok) throw new Error("RELAY_FAILED");
     };
-    const registerRelayToggle = async (device, origin = "manual") => {
+    const registerRelayToggle = async (device, origin = "manual", forcedAction = "toggle") => {
       const r = await fetch("http://127.0.0.1:8080/api/iot/relay-action", {
         method: "POST",
         headers: {
@@ -891,16 +914,17 @@
           "x-lavanderia-id": String(activeLavId),
           "content-type": "application/json",
         },
-        body: JSON.stringify({ dispositivo: device, origen: origin }),
+        body: JSON.stringify({ dispositivo: device, origen: origin, accion: forcedAction }),
       });
       if (!r.ok) throw new Error("RELAY_LOG_FAILED");
     };
 
     quickDoorBtn?.addEventListener("click", async () => {
       if (!(await confirmNice("Confirmar acción", "¿Cambiar estado de puerta?"))) return;
+      const nextAction = currentIotState.puerta_abierta ? "off" : "on";
       try {
         await triggerRelayPulse("door");
-        await registerRelayToggle("puerta", "inicio");
+        await registerRelayToggle("puerta", "inicio", nextAction);
         await loadIot();
       } catch {
         window.alert("No se pudo cambiar puerta.");
@@ -908,9 +932,10 @@
     });
     quickLightsBtn?.addEventListener("click", async () => {
       if (!(await confirmNice("Confirmar acción", "¿Cambiar estado de luces?"))) return;
+      const nextAction = currentIotState.luces_encendidas ? "off" : "on";
       try {
         await triggerRelayPulse("lights");
-        await registerRelayToggle("luces", "inicio");
+        await registerRelayToggle("luces", "inicio", nextAction);
         await loadIot();
       } catch {
         window.alert("No se pudo cambiar luces.");
@@ -945,21 +970,23 @@
     });
 
     doorToggle?.addEventListener("click", async () => {
+      const nextAction = currentIotState.puerta_abierta ? "off" : "on";
       try {
         await triggerRelayPulse("door");
-        await registerRelayToggle("puerta", "programador");
+        await registerRelayToggle("puerta", "programador", nextAction);
         await loadIot();
       } catch {
-        setIotHint("Error en pulso de puerta.");
+        setIotHint("Error en cambio de puerta.");
       }
     });
     lightsToggle?.addEventListener("click", async () => {
+      const nextAction = currentIotState.luces_encendidas ? "off" : "on";
       try {
         await triggerRelayPulse("lights");
-        await registerRelayToggle("luces", "programador");
+        await registerRelayToggle("luces", "programador", nextAction);
         await loadIot();
       } catch {
-        setIotHint("Error en pulso de luces.");
+        setIotHint("Error en cambio de luces.");
       }
     });
     doorState?.addEventListener("click", async () => {
@@ -988,8 +1015,12 @@
     iotSaveSchedule?.addEventListener("click", async () => {
       setIotHint("");
       const payload = {
-        puerta: { on: String(doorOn?.value ?? "").trim() || null, off: String(doorOff?.value ?? "").trim() || null },
-        luces: { on: String(lightsOnTime?.value ?? "").trim() || null, off: String(lightsOffTime?.value ?? "").trim() || null },
+        puerta: doorScheduleEnabled?.checked
+          ? { on: String(doorOn?.value ?? "").trim() || null, off: String(doorOff?.value ?? "").trim() || null }
+          : { on: null, off: null },
+        luces: lightsScheduleEnabled?.checked
+          ? { on: String(lightsOnTime?.value ?? "").trim() || null, off: String(lightsOffTime?.value ?? "").trim() || null }
+          : { on: null, off: null },
         ventilacion: { on: String(fanOnTime?.value ?? "").trim() || null, off: String(fanOffTime?.value ?? "").trim() || null },
       };
       const res = await fetch("http://127.0.0.1:8080/api/iot/schedule", {
@@ -1012,6 +1043,10 @@
 
     if (isIotView) {
       await loadIot();
+      if (iotPollInterval) clearInterval(iotPollInterval);
+      iotPollInterval = setInterval(() => {
+        loadIot().catch(() => {});
+      }, 2000);
     }
 
     // Usuarios (solo admin)
@@ -1578,50 +1613,60 @@
     }
 
     async function loadMaquinas() {
-      const res = await fetch("http://127.0.0.1:8080/api/maquinas", {
-        headers: {
-          authorization: `Bearer ${token}`,
-          "x-lavanderia-id": String(activeLavId),
-        },
-      });
-      if (!res.ok) {
-        localStorage.removeItem(STORAGE_KEY);
-        window.location.href = "/index.html#login";
-        return;
-      }
-      const data = await res.json();
-      const all = data?.maquinas || [];
-      const isInicio = location.pathname.toLowerCase().endsWith("/admin/inicio.html");
-      renderMaquinas(isInicio ? all.filter((m) => m.estado_actual === "EN_MARCHA") : all);
-
-      const activasEl = document.querySelector("#cardActivas");
-      const nextFinishEl = document.querySelector("#cardNextFinish");
-      if (activasEl) {
-        const activas = all.filter((m) => m.estado_actual === "EN_MARCHA").length;
-        activasEl.textContent = String(activas);
-      }
-      if (nextFinishEl) {
-        const running = all
-          .filter((m) => m.estado_actual === "EN_MARCHA")
-          .map((m) => ({
-            codigo: m.codigo_visible,
-            sec: Number(m.segundos_restantes_estimados ?? Number.MAX_SAFE_INTEGER),
-          }))
-          .filter((m) => Number.isFinite(m.sec) && m.sec >= 0)
-          .sort((a, b) => a.sec - b.sec);
-        if (!running.length) {
-          nextFinishEl.textContent = "—";
-        } else {
-          const sec = Math.max(0, Math.floor(running[0].sec));
-          const mm = Math.floor(sec / 60);
-          const ss = sec % 60;
-          nextFinishEl.textContent = `${running[0].codigo} · ${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+      if (loadMaquinas._busy) return;
+      loadMaquinas._busy = true;
+      try {
+        const res = await fetch("http://127.0.0.1:8080/api/maquinas", {
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+          },
+        });
+        if (!res.ok) {
+          localStorage.removeItem(STORAGE_KEY);
+          window.location.href = "/index.html#login";
+          return;
         }
+        const data = await res.json();
+        const all = data?.maquinas || [];
+        const isInicio = location.pathname.toLowerCase().endsWith("/admin/inicio.html");
+        renderMaquinas(isInicio ? all.filter((m) => m.estado_actual === "EN_MARCHA") : all);
+
+        const activasEl = document.querySelector("#cardActivas");
+        const nextFinishEl = document.querySelector("#cardNextFinish");
+        if (activasEl) {
+          const activas = all.filter((m) => m.estado_actual === "EN_MARCHA").length;
+          activasEl.textContent = String(activas);
+        }
+        if (nextFinishEl) {
+          const running = all
+            .filter((m) => m.estado_actual === "EN_MARCHA")
+            .map((m) => ({
+              codigo: m.codigo_visible,
+              sec: Number(m.segundos_restantes_estimados ?? Number.MAX_SAFE_INTEGER),
+            }))
+            .filter((m) => Number.isFinite(m.sec) && m.sec >= 0)
+            .sort((a, b) => a.sec - b.sec);
+          if (!running.length) {
+            nextFinishEl.textContent = "—";
+          } else {
+            const sec = Math.max(0, Math.floor(running[0].sec));
+            const mm = Math.floor(sec / 60);
+            const ss = sec % 60;
+            nextFinishEl.textContent = `${running[0].codigo} · ${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+          }
+        }
+      } finally {
+        loadMaquinas._busy = false;
       }
     }
 
     if (machinesGrid) {
       await loadMaquinas();
+      if (machinesPollInterval) clearInterval(machinesPollInterval);
+      machinesPollInterval = setInterval(() => {
+        loadMaquinas().catch(() => {});
+      }, 2000);
     }
 
     machinesGrid?.addEventListener("click", async (e) => {
@@ -1642,22 +1687,34 @@
         return;
       }
 
-      if (creditBtn || extendBtn) {
-        const tile = (creditBtn || extendBtn).closest(".machine-tile");
-        if (!tile) return;
-        const drawer = tile.querySelector(".machine-drawer");
-        const title = tile.querySelector(".machine-drawer-title");
-        const apply = tile.querySelector(".js-amount-apply");
-        if (!drawer || !title || !apply) return;
-        closeAllDrawers();
-        const isCredit = Boolean(creditBtn);
-        title.textContent = isCredit ? "Añadir crédito" : "Ampliar tiempo";
-        apply.setAttribute("data-mode", isCredit ? "credito" : "ampliar");
-        drawer.classList.add("is-open");
-        const input = tile.querySelector(".machine-drawer-input");
-        input?.focus();
-        return;
-      }
+        if (creditBtn || extendBtn) {
+          const tile = (creditBtn || extendBtn).closest(".machine-tile");
+          if (!tile) return;
+          const drawer = tile.querySelector(".machine-drawer");
+          const title = tile.querySelector(".machine-drawer-title");
+          const apply = tile.querySelector(".js-amount-apply");
+          const input = tile.querySelector(".machine-drawer-input");
+          if (!drawer || !title || !apply) return;
+          closeAllDrawers();
+          const isCredit = Boolean(creditBtn);
+          title.textContent = isCredit ? "Añadir crédito" : "Ampliar tiempo";
+          apply.setAttribute("data-mode", isCredit ? "credito" : "ampliar");
+          if (input) {
+            if (isCredit) {
+              input.min = "0.10";
+              input.max = "";
+              input.step = "0.10";
+            } else {
+              input.min = "1.00";
+              input.max = "1.00";
+              input.step = "1.00";
+              input.value = "1.00";
+            }
+          }
+          drawer.classList.add("is-open");
+          input?.focus();
+          return;
+        }
 
       if (applyBtn) {
         const id = Number(applyBtn.getAttribute("data-id"));
@@ -1765,6 +1822,17 @@
         method: "POST",
         headers: { authorization: `Bearer ${token}` },
       }).catch(() => {});
+    }
+  });
+
+  window.addEventListener("beforeunload", () => {
+    if (machinesPollInterval) {
+      clearInterval(machinesPollInterval);
+      machinesPollInterval = null;
+    }
+    if (iotPollInterval) {
+      clearInterval(iotPollInterval);
+      iotPollInterval = null;
     }
   });
 

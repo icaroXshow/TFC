@@ -16,10 +16,12 @@ DELETE FROM lavanderia;
 INSERT INTO lavanderia (nombre, codigo, direccion, ciudad, provincia, activo)
 VALUES
   ('KWL Aqua Fleming', 'FLEM-01', 'Calle Dr. Fleming, 26', 'Ponferrada', 'León', 1),
-  ('KWL Aqua Puebla', 'PUEB-01', 'Av. de la Puebla 30', 'Ponferrada', 'León', 1);
+  ('KWL Aqua Puebla', 'PUEB-01', 'Av. de la Puebla 30', 'Ponferrada', 'León', 1),
+  ('KWL Simulador', 'SIM-01', 'Laboratorio Demo', 'Ponferrada', 'León', 1);
 
 SET @lav_flem = (SELECT id_lavanderia FROM lavanderia WHERE codigo = 'FLEM-01' LIMIT 1);
 SET @lav_pueb = (SELECT id_lavanderia FROM lavanderia WHERE codigo = 'PUEB-01' LIMIT 1);
+SET @lav_sim = (SELECT id_lavanderia FROM lavanderia WHERE codigo = 'SIM-01' LIMIT 1);
 
 INSERT INTO usuario (nombre, apellidos, login, password_hash, rol, activo, ultimo_acceso)
 VALUES
@@ -35,6 +37,7 @@ INSERT INTO usuario_lavanderia (id_usuario, id_lavanderia)
 VALUES
   (@u_admin, @lav_flem),
   (@u_admin, @lav_pueb),
+  (@u_admin, @lav_sim),
   (@u_oper_flem, @lav_flem),
   (@u_oper_pueb, @lav_pueb);
 
@@ -44,10 +47,12 @@ INSERT INTO tarifa_maquina (
 )
 VALUES
   (@lav_flem, 'Tarifa Fleming', 4.00, 35, 1.00, 9, NOW() - INTERVAL 30 DAY, NULL, 1),
-  (@lav_pueb, 'Tarifa Puebla', 4.20, 36, 1.00, 9, NOW() - INTERVAL 30 DAY, NULL, 1);
+  (@lav_pueb, 'Tarifa Puebla', 4.20, 36, 1.00, 9, NOW() - INTERVAL 30 DAY, NULL, 1),
+  (@lav_sim, 'Tarifa Simulador', 4.00, 40, 1.00, 15, NOW() - INTERVAL 30 DAY, NULL, 1);
 
 SET @tarifa_flem = (SELECT id_tarifa FROM tarifa_maquina WHERE id_lavanderia = @lav_flem AND activa = 1 ORDER BY id_tarifa DESC LIMIT 1);
 SET @tarifa_pueb = (SELECT id_tarifa FROM tarifa_maquina WHERE id_lavanderia = @lav_pueb AND activa = 1 ORDER BY id_tarifa DESC LIMIT 1);
+SET @tarifa_sim = (SELECT id_tarifa FROM tarifa_maquina WHERE id_lavanderia = @lav_sim AND activa = 1 ORDER BY id_tarifa DESC LIMIT 1);
 
 INSERT INTO maquina (id_lavanderia, codigo_visible, tipo_maquina, estado_actual, activa, observaciones)
 VALUES
@@ -60,7 +65,12 @@ VALUES
   (@lav_pueb, 'L2', 'LAVADORA', 'STOP', 1, 'Demo'),
   (@lav_pueb, 'L3', 'LAVADORA', 'STOP', 1, 'Demo'),
   (@lav_pueb, 'S1', 'SECADORA', 'EN_MARCHA', 1, 'Demo'),
-  (@lav_pueb, 'S2', 'SECADORA', 'STOP', 1, 'Demo');
+  (@lav_pueb, 'S2', 'SECADORA', 'STOP', 1, 'Demo'),
+  (@lav_sim, 'L1', 'LAVADORA', 'STOP', 1, 'Simulador'),
+  (@lav_sim, 'L2', 'LAVADORA', 'STOP', 1, 'Simulador'),
+  (@lav_sim, 'L3', 'LAVADORA', 'STOP', 1, 'Simulador'),
+  (@lav_sim, 'S1', 'SECADORA', 'STOP', 1, 'Simulador'),
+  (@lav_sim, 'S2', 'SECADORA', 'STOP', 1, 'Simulador');
 
 SET @mf_l1 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_flem AND codigo_visible = 'L1' AND tipo_maquina='LAVADORA' LIMIT 1);
 SET @mf_l2 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_flem AND codigo_visible = 'L2' AND tipo_maquina='LAVADORA' LIMIT 1);
@@ -75,7 +85,10 @@ VALUES
   ('LAVANDERIA', @lav_flem, 'iot_state', '{"puerta_abierta": false, "luces_encendidas": true, "ventilacion_encendida": false, "updated_at": "2026-01-01T10:00:00Z"}', 'Estado IoT'),
   ('LAVANDERIA', @lav_flem, 'iot_schedule', '{"puerta":{"on":"02:10","off":"03:30"},"luces":{"on":"02:20","off":"03:40"},"ventilacion":{"on":"02:30","off":"03:50"}}', 'Horario IoT'),
   ('LAVANDERIA', @lav_pueb, 'iot_state', '{"puerta_abierta": false, "luces_encendidas": false, "ventilacion_encendida": true, "updated_at": "2026-01-01T10:00:00Z"}', 'Estado IoT'),
-  ('LAVANDERIA', @lav_pueb, 'iot_schedule', '{"puerta":{"on":"02:15","off":"03:25"},"luces":{"on":"02:25","off":"03:35"},"ventilacion":{"on":"02:35","off":"03:55"}}', 'Horario IoT');
+  ('LAVANDERIA', @lav_pueb, 'iot_schedule', '{"puerta":{"on":"02:15","off":"03:25"},"luces":{"on":"02:25","off":"03:35"},"ventilacion":{"on":"02:35","off":"03:55"}}', 'Horario IoT'),
+  ('LAVANDERIA', @lav_sim, 'iot_state', '{"puerta_abierta": false, "luces_encendidas": false, "ventilacion_encendida": false, "updated_at": "2026-01-01T10:00:00Z"}', 'Estado IoT'),
+  ('LAVANDERIA', @lav_sim, 'iot_schedule', '{"puerta":{"on":"02:00","off":"03:50"},"luces":{"on":"02:05","off":"03:55"},"ventilacion":{"on":"02:10","off":"03:45"}}', 'Horario IoT'),
+  ('LAVANDERIA', @lav_sim, 'env_settings', '{"CAMERA_BASE_URL":"","CAMERA_USER":"","CAMERA_PASS":"","MQTT_URL":"mqtt://mqtt:1883"}', 'Ajustes por tienda para simulador');
 
 INSERT INTO ciclo (
   id_maquina, id_tarifa_aplicada, fecha_hora_inicio, fecha_hora_fin, estado_ciclo,

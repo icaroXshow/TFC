@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { RowDataPacket, ResultSetHeader } from "mysql2/promise";
 import { db } from "../../db/pool.js";
 import { requireAuth, requireLavanderia, requireRole } from "../auth/middleware.js";
-import { publishMachineCommand } from "../../iot/mqtt.js";
+import { publishIotCommand, publishMachineCommand } from "../../iot/mqtt.js";
 import { appendIotActionLog, getIotActionLog, type IotActionLogItem } from "../../iot/action-log.js";
 
 export const iotRouter = Router();
@@ -160,6 +160,12 @@ function deriveApproxStateFromLog(log: IotActionLogItem[]) {
   return { puerta_abierta: puerta, luces_encendidas: luces };
 }
 
+function nextBool(current: boolean, accion: string): boolean {
+  if (accion === "on") return true;
+  if (accion === "off") return false;
+  return !current;
+}
+
 iotRouter.get("/state", requireAuth, requireLavanderia, async (req, res) => {
   const idLav = req.auth?.id_lavanderia ?? 1;
   const state = await getConfigLav<IoTState>(
@@ -200,6 +206,19 @@ iotRouter.post("/relay-action", requireAuth, requireRole(["ADMIN"]), requireLava
     origen,
   };
   await appendIotActionLog(idLav, nextItem);
+  if (raw === "puerta" || raw === "luces" || raw === "ventilacion") {
+    const state = await getConfigLav<IoTState>(
+      idLav,
+      "iot_state",
+      { puerta_abierta: false, luces_encendidas: false, ventilacion_encendida: false },
+    );
+    if (raw === "puerta") state.puerta_abierta = nextBool(Boolean(state.puerta_abierta), accion);
+    if (raw === "luces") state.luces_encendidas = nextBool(Boolean(state.luces_encendidas), accion);
+    if (raw === "ventilacion") state.ventilacion_encendida = nextBool(Boolean(state.ventilacion_encendida), accion);
+    state.updated_at = new Date().toISOString();
+    await setConfigLav(idLav, "iot_state", state, "Estado manual de IoT (relay-action)");
+    publishIotCommand(idLav, { dispositivo: raw, accion, ts: nextItem.ts, origen });
+  }
   const log = await getIotActionLog(idLav);
   const approx = deriveApproxStateFromLog(log);
   await audit(req, "IOT_RELAY_ACTION", `Acción ${raw}:${accion} (${origen})`);
@@ -210,6 +229,24 @@ iotRouter.put("/state", requireAuth, requireRole(["ADMIN"]), requireLavanderia, 
   const idLav = req.auth?.id_lavanderia ?? 1;
   const state = normalizeState(req.body ?? {});
   await setConfigLav(idLav, "iot_state", state, "Estado manual de IoT (MVP)");
+  publishIotCommand(idLav, {
+    dispositivo: "puerta",
+    accion: state.puerta_abierta ? "on" : "off",
+    ts: new Date().toISOString(),
+    origen: "state_put",
+  });
+  publishIotCommand(idLav, {
+    dispositivo: "luces",
+    accion: state.luces_encendidas ? "on" : "off",
+    ts: new Date().toISOString(),
+    origen: "state_put",
+  });
+  publishIotCommand(idLav, {
+    dispositivo: "ventilacion",
+    accion: state.ventilacion_encendida ? "on" : "off",
+    ts: new Date().toISOString(),
+    origen: "state_put",
+  });
   await audit(req, "IOT_SET_STATE", `Estado actualizado: ${JSON.stringify(state)}`);
   res.json({ ok: true, state });
 });
@@ -289,6 +326,18 @@ iotRouter.post("/store/open", requireAuth, requireRole(["ADMIN"]), requireLavand
   });
   const next = { ...state, ...actions.abrir_tienda, updated_at: new Date().toISOString() };
   await setConfigLav(idLav, "iot_state", next, "Estado por abrir tienda");
+  publishIotCommand(idLav, {
+    dispositivo: "puerta",
+    accion: actions.abrir_tienda.puerta_abierta ? "on" : "off",
+    ts: new Date().toISOString(),
+    origen: "store_open",
+  });
+  publishIotCommand(idLav, {
+    dispositivo: "luces",
+    accion: actions.abrir_tienda.luces_encendidas ? "on" : "off",
+    ts: new Date().toISOString(),
+    origen: "store_open",
+  });
   await appendIotActionLog(idLav, {
     dispositivo: "puerta",
     accion: actions.abrir_tienda.puerta_abierta ? "on" : "off",
@@ -316,7 +365,7 @@ iotRouter.post("/store/open", requireAuth, requireRole(["ADMIN"]), requireLavand
         accion: "encender_rele",
         id_maquina: m.id_maquina,
         timestamp: new Date().toISOString(),
-      });
+      }, idLav);
     }
   }
   await audit(req, "IOT_STORE_OPEN", `Abrir tienda aplicado: ${JSON.stringify(actions.abrir_tienda)}`);
@@ -336,6 +385,18 @@ iotRouter.post("/store/close", requireAuth, requireRole(["ADMIN"]), requireLavan
   });
   const next = { ...state, ...actions.cerrar_tienda, updated_at: new Date().toISOString() };
   await setConfigLav(idLav, "iot_state", next, "Estado por cerrar tienda");
+  publishIotCommand(idLav, {
+    dispositivo: "puerta",
+    accion: actions.cerrar_tienda.puerta_abierta ? "on" : "off",
+    ts: new Date().toISOString(),
+    origen: "store_close",
+  });
+  publishIotCommand(idLav, {
+    dispositivo: "luces",
+    accion: actions.cerrar_tienda.luces_encendidas ? "on" : "off",
+    ts: new Date().toISOString(),
+    origen: "store_close",
+  });
   await appendIotActionLog(idLav, {
     dispositivo: "puerta",
     accion: actions.cerrar_tienda.puerta_abierta ? "on" : "off",

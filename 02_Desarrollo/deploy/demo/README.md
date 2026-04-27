@@ -5,7 +5,8 @@ Despliegue demo local del TFC replicando 3 nodos lógicos:
 - Nodo BD: MariaDB
 - Nodo Core: Nginx + Node.js + Redis (+ soporte WebSocket en proxy)
 - Nodo MQTT: broker MQTT (Mosquitto)
-- Simulador: `mqtt-sim` (lavadora MQTT)
+- Simulador motor: `mqtt-sim` (lavandería ficticia `KWL Simulador`: `L1,L2,L3,S1,S2` + relés por MQTT)
+- Simulador GUI independiente: `mqtt-sim-gui`
 
 ## Arranque
 
@@ -17,6 +18,7 @@ docker compose up -d --build
 ## URLs / puertos
 
 - Frontend (Nginx/Core): `http://127.0.0.1:8081/index.html`
+- Simulador GUI (docker aparte): `http://127.0.0.1:8083`
 - Backend API (Nginx -> Node/Core): `http://127.0.0.1:8080/health`
 - Adminer: `http://127.0.0.1:8082`
 - MariaDB host: `127.0.0.1:3307`
@@ -39,7 +41,13 @@ docker compose up -d --build
 
 En demo local, el nodo lógico **Core** se implementa con 3 contenedores (`core-nginx`, `core-node`, `redis`) dentro de la misma red docker, conservando la separación técnica sin cambiar la arquitectura funcional.
 
-El simulador MQTT se ejecuta como servicio adicional (`mqtt-sim`) y permite demo de ciclo de máquina sin hardware.
+El simulador MQTT se ejecuta como dos servicios:
+- `mqtt-sim`: motor de simulación (headless)
+- `mqtt-sim-gui`: interfaz web independiente para interactuar como hardware real
+
+Uso recomendado:
+- Tienda `KWL Simulador` => pruebas seguras (MQTT simulado, sin hardware real).
+- Tiendas reales => configurar desde botón `Ajustes` (`CAMERA_BASE_URL`, `CAMERA_USER`, `CAMERA_PASS`, `MQTT_URL`).
 
 
 ## Credenciales demo

@@ -1,3 +1,4 @@
+# IMPLEMENTACIONES PEDIDAS POR USUARIO
 ## FRONTEND
 La estructura de la pagina de administracion de la tienda será asi: 
 - INICIO: Inicio (Muestra: Stream de la camara, Maquinas en funcionamiento y caja del dia). 
@@ -24,7 +25,32 @@ La estructura de la pagina de administracion de la tienda será asi:
     **Logs** (Tablas con los logs)
     **Publicaciones**  (Un gestor de la web publica que permita cambiar cosas como horario, about US, contacto y faqs sin tener que tocar codigo)
 
+---
+## SIMULADOR
 
-## Contexto de despliegue (no olvidar)
-- En real: simulador/controlador de lavadora en VM separada, conectado por MQTT como dispositivo real.
-- En demo local: equivalente con contenedor `mqtt-sim` dentro de `deploy/demo/docker-compose.yml`.
+
+# IMPLEMENTACIONES y REVISIONES IMPLEMENTADAS POR CODEX
+## REVISIÓN GENERAL (2026-04-27)
+
+### Estado de la revisión
+- Se hizo revisión estática completa de `app/` y `simulation/`.
+- No se pudo ejecutar `npm run typecheck` ni tests/build en este entorno porque no hay Node operativo (`node: command not found` / WSL1 sin soporte).
+
+### Errores / mejoras detectadas
+- [ ] **API hardcodeada** en frontend: hay muchas llamadas a `http://127.0.0.1:8080` en `app/frontend/public/js/admin.js` y `app/frontend/public/js/app.js`. Debe unificarse en `API_BASE`/config para no romper en servidor real.
+- [ ] **Confirmaciones inconsistentes**: aún queda `window.confirm` en borrado de usuario (`admin.js`), mientras el resto usa modal bonito. Unificar UX.
+- [ ] **Alertas nativas repetidas** (`window.alert`) en varios flujos admin. Sustituir por sistema de notificaciones/modal único.
+- [ ] **Validación final de sincronía tiempo real** (web↔simulador): puerta, luces, estado máquina, crédito y ampliación. Confirmar en runtime con logs MQTT.
+- [ ] **Verificar regla de ampliación cruzada** (si amplía simulador no amplía web y viceversa) en entorno real tras rebuild.
+- [ ] **Checklist de regresión de flujo máquina**:
+  - [ ] STOP → Encender → PAUSADA.
+  - [ ] PAUSADA + crédito suficiente → EN_MARCHA al confirmar inicio.
+  - [ ] Fin ciclo → PAUSADA (no STOP).
+  - [ ] Apagar manual → STOP.
+- [ ] **Revisar estados clicables** en Programador (`doorState`/`lightsState`): ahora pueden registrar toggle al pulsar la píldora de estado; decidir si se mantiene o se desactiva para evitar cambios accidentales.
+
+### MQTT + simulador (pendiente de cierre)
+- [ ] Ejecutar prueba de carga suave (sin cámara real) para verificar que no hay desincronización por polling.
+- [ ] Confirmar que temporizadores web/simulador mantienen deriva máxima <= 1s durante ciclo completo y tras ampliación.
+- [ ] Añadir script de smoke test manual documentado (pasos + resultados esperados) en `deploy/demo/INSTRUCCIONES.md`.
+

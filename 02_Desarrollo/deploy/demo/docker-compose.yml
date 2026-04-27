@@ -35,7 +35,27 @@ services:
     restart: unless-stopped
     environment:
       MQTT_URL: mqtt://mqtt:1883
-      SIM_CYCLE_SECONDS: 90
+      SIM_CYCLE_SECONDS: ${SIM_CYCLE_SECONDS:-2400}
+      SIM_START_MIN_CREDIT: ${SIM_START_MIN_CREDIT:-4}
+      SIM_MACHINE_CODES: ${SIM_MACHINE_CODES:-L1,L2,L3,S1,S2}
+      SIM_LAV_IDS: ${SIM_LAV_IDS:-3}
+    depends_on:
+      - mqtt
+
+  mqtt-sim-gui:
+    build:
+      context: ../../simulation
+      dockerfile: Dockerfile
+    container_name: kwl_demo_mqtt_sim_gui
+    restart: unless-stopped
+    command: ["npm", "run", "start:gui"]
+    environment:
+      MQTT_URL: mqtt://mqtt:1883
+      SIM_MACHINE_CODES: ${SIM_MACHINE_CODES:-L1,L2,L3,S1,S2}
+      SIM_LAV_ID: ${SIM_LAV_ID:-3}
+      SIM_GUI_PORT: ${SIM_GUI_PORT:-8090}
+    ports:
+      - "8083:${SIM_GUI_PORT:-8090}"
     depends_on:
       - mqtt
 

@@ -1,6 +1,7 @@
 import type { RowDataPacket, ResultSetHeader } from "mysql2/promise";
 import { db } from "../db/pool.js";
 import { appendIotActionLog } from "./action-log.js";
+import { publishIotCommand } from "./mqtt.js";
 
 type ConfigRow = RowDataPacket & {
   id_lavanderia: number | null;
@@ -165,6 +166,12 @@ export function startIoTScheduler() {
           if (scheduleItem.on && scheduleItem.on === hhmm && shouldRun(last, onKey, dateKey, hhmm)) {
             apply(stateField, true);
             last[onKey] = `${dateKey} ${hhmm}`;
+            publishIotCommand(idLav, {
+              dispositivo: stateField === "puerta_abierta" ? "puerta" : stateField === "luces_encendidas" ? "luces" : "ventilacion",
+              accion: "on",
+              ts: new Date().toISOString(),
+              origen: "auto_schedule",
+            });
             await appendIotActionLog(idLav, {
               dispositivo: stateField === "puerta_abierta" ? "puerta" : stateField === "luces_encendidas" ? "luces" : "ventilacion",
               accion: "on",
@@ -177,6 +184,12 @@ export function startIoTScheduler() {
           if (scheduleItem.off && scheduleItem.off === hhmm && shouldRun(last, offKey, dateKey, hhmm)) {
             apply(stateField, false);
             last[offKey] = `${dateKey} ${hhmm}`;
+            publishIotCommand(idLav, {
+              dispositivo: stateField === "puerta_abierta" ? "puerta" : stateField === "luces_encendidas" ? "luces" : "ventilacion",
+              accion: "off",
+              ts: new Date().toISOString(),
+              origen: "auto_schedule",
+            });
             await appendIotActionLog(idLav, {
               dispositivo: stateField === "puerta_abierta" ? "puerta" : stateField === "luces_encendidas" ? "luces" : "ventilacion",
               accion: "off",

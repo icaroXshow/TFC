@@ -4,13 +4,18 @@ Simulador MQTT para demo local del TFC.
 
 ## Qué hace ahora (MVP)
 
-- escucha `kwl/maquinas/+/comando`
-- publica estado en `kwl/maquinas/{codigo}/estado`
-- publica eventos en `kwl/maquinas/{codigo}/evento`
+- escucha `kwl/maquinas/{idLav}/{codigo}/comando`
+- publica estado en `kwl/maquinas/{idLav}/{codigo}/estado`
+- publica eventos en `kwl/maquinas/{idLav}/{codigo}/evento`
 - simula relé (`encender_rele` / `apagar_rele`)
-- `insertar_credito`: si la máquina está encendida arranca lavado o amplía tiempo
-- emite pulsos `PULSO_INICIO` y `PULSO_FIN`
+- escucha `kwl/iot/{idLav}/comando` para puerta/luces/ventilación
+- publica estado en `kwl/iot/{idLav}/estado`
+- `insertar_credito`: acumula saldo solo con máquina encendida (`PAUSADA`/`EN_MARCHA`)
+- `confirmar_inicio`: inicia lavado solo desde la máquina simulada cuando el saldo llega al mínimo
+- emite `PULSO_INICIO` al arranque y al terminar cae la señal (estado `STOP`)
 - ciclo base configurable + ampliación por euro
+- para este TFC se deja en lavandería ficticia `KWL Simulador` (id 3) con `L1,L2,L3,S1,S2`
+- no simula cámara (la cámara sigue siendo la real)
 
 ## Arranque manual
 
@@ -23,5 +28,16 @@ npm start
 Variables:
 
 - `MQTT_URL` (por defecto `mqtt://mqtt:1883`)
-- `SIM_CYCLE_SECONDS` (por defecto `120`)
-- `SIM_PLUS_SECONDS_PER_EURO` (por defecto `30`)
+- `SIM_CYCLE_SECONDS` (por defecto `2400`, 40 min)
+- `SIM_PLUS_SECONDS_PER_EURO` (por defecto `900`, +15 min)
+- `SIM_MACHINE_CODES` (por defecto `L1,L2,L3,S1,S2`)
+- `SIM_LAV_IDS` (por defecto `3`)
+- `SIM_START_MIN_CREDIT` (por defecto `4`)
+
+## GUI independiente (docker aparte)
+
+El contenedor `mqtt-sim-gui` sirve una interfaz web para simular:
+- estados/eventos de `L1,L2,L3,S1,S2`
+- relés de puerta/luces/ventilación por lavandería
+
+URL en demo docker: `http://127.0.0.1:8083`

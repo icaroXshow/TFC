@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simulador Panel · KWL Simulador</title>
+    <style>
+      :root{
+        --bg:#120c08;
+        --panel:#1d1611;
+        --panel-2:#17110d;
+        --line:#4f3c2b;
+        --ok:#78f2bc;
+        --bad:#ff7f7f;
+        --warn:#ffc766;
+        --txt:#f4eee8;
+        --mut:#ccb9a9;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        color:var(--txt);
+        font-family: "IBM Plex Mono","Cascadia Code","Consolas",monospace;
+        background:
+          radial-gradient(1000px 420px at 12% -5%,#3a2a1f 0,#1b140f 46%,#120c08 100%),
+          repeating-linear-gradient(0deg,rgba(255,255,255,.02),rgba(255,255,255,.02) 1px,transparent 1px,transparent 3px);
+      }
+      .wrap{max-width:1260px;margin:16px auto;padding:0 14px}
+      h1{
+        margin:0 0 8px;
+        text-transform:uppercase;
+        letter-spacing:.08em;
+        font-size:1.35rem;
+      }
+      .sub{margin:0 0 14px;color:var(--mut)}
+      .grid{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:12px}
+      .card{
+        position:relative;
+        background:linear-gradient(180deg,var(--panel),var(--panel-2));
+        border:1px solid var(--line);
+        border-radius:8px;
+        padding:14px;
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),0 10px 28px rgba(0,0,0,.35);
+      }
+      .card::before{
+        content:"";
+        position:absolute;inset:0;
+        border-radius:8px;
+        pointer-events:none;
+        box-shadow:inset 0 0 24px rgba(255,199,102,.05);
+      }
+      .title{
+        margin:0 0 10px;
+        font-weight:900;
+        text-transform:uppercase;
+        letter-spacing:.08em;
+      }
+      .state{
+        display:inline-flex;align-items:center;gap:8px;
+        border-radius:999px;padding:5px 10px;
+        border:1px solid var(--line);
+        background:rgba(0,0,0,.24);
+        font-weight:800;
+      }
+      .dot{width:8px;height:8px;border-radius:50%;background:var(--mut)}
+      .st-run .dot,.st-on .dot{background:var(--ok); box-shadow:0 0 10px rgba(120,242,188,.8)}
+      .st-stop .dot,.st-off .dot{background:var(--bad); box-shadow:0 0 10px rgba(255,127,127,.8)}
+      .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+      input[type="number"]{
+        width:120px;
+        background:#0e0a08;color:var(--txt);
+        border:1px solid var(--line);
+        border-radius:8px;padding:8px 9px;
+        font-family:inherit;
+      }
+      button{
+        background:#2a1f17;color:var(--txt);
+        border:1px solid #624b36;
+        border-radius:8px;padding:9px 12px;
+        cursor:pointer;font-weight:800;
+        font-family:inherit;
+        text-transform:uppercase;
+        letter-spacing:.05em;
+      }
+      button:hover{filter:brightness(1.08)}
+      button:disabled{opacity:.5;cursor:not-allowed}
+      button.primary{
+        background:linear-gradient(180deg,#7cf2c0,#2fc58e);
+        border-color:#2bb080;color:#0a1712
+      }
+      .mut{color:var(--mut);font-size:13px}
+      .top{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+      .badge{
+        border:1px solid var(--line);
+        border-radius:999px;
+        padding:6px 12px;
+        font-weight:900;
+        background:rgba(0,0,0,.28);
+      }
+      .ok{color:var(--ok)}
+      .bad{color:var(--bad)}
+      @media (max-width:980px){.grid{grid-template-columns:repeat(2,minmax(180px,1fr))}}
+      @media (max-width:680px){.grid{grid-template-columns:1fr}}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>Consola de simulación · Laboratorio</h1>
+          <p class="sub">Entorno aislado para pruebas IoT. Cámara real fuera de simulación.</p>
+        </div>
+        <div id="mqttBadge" class="badge bad">MQTT: OFF</div>
+      </div>
+      <p id="simHint" class="sub" style="margin-top:-6px"></p>
+
+      <div class="grid" id="panelGrid"></div>
+
+      <div class="card" style="margin-top:12px">
+        <p class="title">Relés físicos</p>
+        <div class="row">
+          <div>
+            <div class="mut">Puerta</div>
+            <div id="doorState" class="state st-off"><span class="dot"></span><span>OFF</span></div>
+          </div>
+          <button id="doorToggle" class="primary">Interruptor puerta</button>
+        </div>
+        <div class="row">
+          <div>
+            <div class="mut">Luces</div>
+            <div id="lightsState" class="state st-off"><span class="dot"></span><span>OFF</span></div>
+          </div>
+          <button id="lightsToggle" class="primary">Interruptor luces</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (s) => document.querySelector(s);
+      const grid = $("#panelGrid");
+      const mqttBadge = $("#mqttBadge");
+      const doorState = $("#doorState");
+      const lightsState = $("#lightsState");
+      const simHint = $("#simHint");
+      const START_MIN_CREDIT = 4;
+      let machineCodes = [];
+
+      const setPill = (el, on, onText="ON", offText="OFF") => {
+        el.classList.toggle("st-on", !!on); el.classList.toggle("st-off", !on);
+        el.querySelector("span:last-child").textContent = on ? onText : offText;
+      };
+      const setMachineState = (code, st) => {
+        const el = $(`[data-machine-state="${code}"]`); if (!el) return;
+        const running = String(st || "STOP").toUpperCase() === "EN_MARCHA";
+        el.classList.toggle("st-run", running); el.classList.toggle("st-stop", !running);
+        el.querySelector("span:last-child").textContent = String(st || "STOP").toUpperCase();
+        const btn = $(`[data-confirm="${code}"]`);
+        if (btn) {
+          const stop = String(st || "STOP").toUpperCase() === "STOP";
+          btn.disabled = stop;
+          btn.title = stop ? "Primero enciende relé de máquina (estado PAUSADA)" : "";
+        }
+      };
+
+      async function api(path, body) {
+        const r = await fetch(path, { method: "POST", headers: { "content-type":"application/json" }, body: JSON.stringify(body || {}) });
+        if (!r.ok) {
+          let msg = "REQ_FAIL";
+          try {
+            const d = await r.json();
+            msg = d?.error || msg;
+          } catch {}
+          throw new Error(msg);
+        }
+      }
+
+      function renderMachinePanels() {
+        grid.innerHTML = machineCodes.map((code) => `
+          <article class="card">
+            <p class="title">Máquina ${code}</p>
+            <div class="mut">Estado</div>
+            <div class="state st-stop" data-machine-state="${code}"><span class="dot"></span><span>STOP</span></div>
+            <div class="mut">Temporizador: <strong data-timer="${code}">00:00</strong></div>
+            <div class="mut" style="margin-top:8px">Refrigerar: <strong data-fan="${code}">OFF</strong></div>
+            <div class="mut">Saldo acumulado: <strong data-saldo="${code}">0.00 €</strong></div>
+            <div class="row">
+              <input type="number" min="0.1" step="0.1" value="1.0" data-credit="${code}" />
+              <button class="primary" data-confirm="${code}">Confirmar crédito</button>
+              <button class="btn-secondary" data-start="${code}">Iniciar lavado</button>
+            </div>
+            <div class="mut">Arranque automático al llegar a ${START_MIN_CREDIT.toFixed(2)} €.</div>
+          </article>
+        `).join("");
+      }
+
+      async function loadConfig() {
+        const r = await fetch("/api/config");
+        const d = await r.json();
+        machineCodes = Array.isArray(d?.machine_codes) ? d.machine_codes : ["L1","L2","L3","S1","S2"];
+        renderMachinePanels();
+      }
+
+      async function refreshState() {
+        try {
+          const r = await fetch("/api/state");
+          const d = await r.json();
+          const on = Boolean(d?.mqtt_connected);
+          mqttBadge.textContent = `MQTT: ${on ? "ON" : "OFF"}`;
+          mqttBadge.classList.toggle("ok", on); mqttBadge.classList.toggle("bad", !on);
+          const machines = d?.machines || {};
+          const fans = d?.fan || {};
+          const credit = d?.credit || {};
+          const timer = d?.timer_sec || {};
+          machineCodes.forEach((c) => setMachineState(c, machines[c] || "STOP"));
+          machineCodes.forEach((c) => {
+            const fanEl = $(`[data-fan="${c}"]`);
+            if (fanEl) fanEl.textContent = fans[c] ? "ON" : "OFF";
+            const saldoEl = $(`[data-saldo="${c}"]`);
+            if (saldoEl) saldoEl.textContent = `${Number(credit[c] || 0).toFixed(2)} €`;
+            const startBtn = $(`[data-start="${c}"]`);
+            if (startBtn) {
+              const estado = String(machines[c] || "STOP").toUpperCase();
+              const saldo = Number(credit[c] || 0);
+              startBtn.disabled = !(estado === "PAUSADA" && saldo >= START_MIN_CREDIT);
+            }
+            const timerEl = $(`[data-timer="${c}"]`);
+            if (timerEl) {
+              const sec = Math.max(0, Number(timer[c] || 0));
+              const mm = Math.floor(sec / 60);
+              const ss = sec % 60;
+              timerEl.textContent = `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+            }
+          });
+          setPill(doorState, Boolean(d?.iot?.puerta_abierta));
+          setPill(lightsState, Boolean(d?.iot?.luces_encendidas));
+        } catch {
+          mqttBadge.textContent = "MQTT: OFF";
+          mqttBadge.classList.remove("ok"); mqttBadge.classList.add("bad");
+        }
+      }
+
+      document.addEventListener("click", async (e) => {
+        const confirmBtn = e.target.closest("[data-confirm]");
+        if (confirmBtn) {
+          const code = confirmBtn.getAttribute("data-confirm");
+          const input = $(`[data-credit="${code}"]`);
+          const importe = Number(String(input?.value || "").replace(",", "."));
+          if (!Number.isFinite(importe) || importe <= 0) return;
+          confirmBtn.disabled = true;
+          try { await api("/api/machine/credit", { codigo: code, importe }); simHint.textContent = ""; } catch (err) { simHint.textContent = `Error crédito (${code}): ${err.message}`; } finally { confirmBtn.disabled = false; }
+          return;
+        }
+        const startBtn = e.target.closest("[data-start]");
+        if (startBtn) {
+          const code = startBtn.getAttribute("data-start");
+          startBtn.disabled = true;
+          try { await api("/api/machine/confirm-start", { codigo: code }); simHint.textContent = ""; } catch (err) { simHint.textContent = `Error inicio (${code}): ${err.message}`; } finally { startBtn.disabled = false; }
+          return;
+        }
+      });
+
+      $("#doorToggle").addEventListener("click", () => api("/api/iot/toggle", { dispositivo: "puerta" }).catch(() => {}));
+      $("#lightsToggle").addEventListener("click", () => api("/api/iot/toggle", { dispositivo: "luces" }).catch(() => {}));
+
+      loadConfig().then(refreshState).catch(() => {});
+      setInterval(refreshState, 1200);
+    </script>
+  </body>
+  </html>

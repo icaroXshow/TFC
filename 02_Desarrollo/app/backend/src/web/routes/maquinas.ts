@@ -85,7 +85,7 @@ maquinasRouter.get("/", requireAuth, requireLavanderia, async (req, res) => {
       "UPDATE ciclo SET estado_ciclo = 'FINALIZADO', fecha_hora_fin = COALESCE(fecha_hora_fin, NOW()) WHERE id_ciclo = :id",
       { id: row.id_ciclo },
     );
-    await db.query<ResultSetHeader>("UPDATE maquina SET estado_actual = 'STOP' WHERE id_maquina = :id", { id: row.id_maquina });
+    await db.query<ResultSetHeader>("UPDATE maquina SET estado_actual = 'PAUSADA' WHERE id_maquina = :id", { id: row.id_maquina });
     await setFanPendingOff(idLavanderia, row.id_maquina, 5);
     await db.query<ResultSetHeader>(
       `
@@ -121,7 +121,7 @@ maquinasRouter.get("/", requireAuth, requireLavanderia, async (req, res) => {
         accion: "ventilador_off",
         id_maquina: machine.id_maquina,
         timestamp: new Date().toISOString(),
-      });
+      }, idLavanderia);
       delete nextPending[key];
     }
     if (JSON.stringify(nextPending) !== JSON.stringify(pendingOff)) {
@@ -138,6 +138,12 @@ maquinasRouter.get("/", requireAuth, requireLavanderia, async (req, res) => {
       c.id_ciclo,
       c.fecha_hora_inicio,
       c.duracion_total_programada_min,
+      c.minutos_extra_total,
+      CASE
+        WHEN c.id_ciclo IS NULL THEN 0
+        WHEN c.minutos_extra_total > 0 THEN 0
+        ELSE 1
+      END AS ampliacion_disponible,
       GREATEST(
         0,
         TIMESTAMPDIFF(SECOND, NOW(), DATE_ADD(c.fecha_hora_inicio, INTERVAL c.duracion_total_programada_min MINUTE))
@@ -190,14 +196,14 @@ maquinasRouter.put("/:id/ventilador-auto", requireAuth, requireRole(["ADMIN"]), 
       accion: "ventilador_off",
       id_maquina: idMaquina,
       timestamp: new Date().toISOString(),
-    });
+    }, idLavanderia);
   } else if (maquina.estado_actual === "EN_MARCHA") {
     await clearFanPendingOff(idLavanderia, idMaquina);
     publishMachineCommand(maquina.codigo_visible, {
       accion: "ventilador_on",
       id_maquina: idMaquina,
       timestamp: new Date().toISOString(),
-    });
+    }, idLavanderia);
   }
 
   return res.json({ ok: true, id_maquina: idMaquina, enabled });
@@ -215,7 +221,7 @@ maquinasRouter.post(
     }
 
     const idLavanderia = req.auth?.id_lavanderia ?? 1;
-    const idUsuario = Number(req.auth?.id_usuario ?? "0");
+    const idUsuario = Number(req.auth?.id_usuario ?? "0") || 1;
 
     const conn = await db.getConnection();
     try {
@@ -284,7 +290,7 @@ maquinasRouter.post(
         accion: "encender_rele",
         id_maquina: idMaquina,
         timestamp: new Date().toISOString(),
-      });
+      }, idLavanderia);
       return res.json({ ok: true, maquina: { ...maquina, estado_actual: "PAUSADA" } });
     } catch (e) {
       try {
@@ -389,7 +395,7 @@ maquinasRouter.post(
         id_maquina: idMaquina,
         id_ciclo: idCiclo,
         timestamp: new Date().toISOString(),
-      });
+      }, idLavanderia);
       return res.json({ ok: true, id_ciclo: idCiclo, maquina: { ...maquina, estado_actual: "STOP" } });
     } catch {
       try {
@@ -458,7 +464,7 @@ maquinasRouter.post(
       accion: "reiniciar_maquina",
       id_maquina: idMaquina,
       timestamp: new Date().toISOString(),
-    });
+    }, idLavanderia);
 
     return res.json({ ok: true, maquina });
   },
@@ -478,118 +484,72 @@ maquinasRouter.post(
     const idLavanderia = req.auth?.id_lavanderia ?? 1;
     const idUsuario = Number(req.auth?.id_usuario ?? "0");
 
-    const conn = await db.getConnection();
-    try {
-      await conn.beginTransaction();
-
-      const [maquinaRows] = await conn.query<MaquinaRow[]>(
-        "SELECT id_maquina, id_lavanderia, codigo_visible, tipo_maquina, estado_actual, activa, observaciones FROM maquina WHERE id_maquina = :id FOR UPDATE",
-        { id: idMaquina },
-      );
-      const maquina = maquinaRows[0];
-      if (!maquina || maquina.id_lavanderia !== idLavanderia) {
-        await conn.rollback();
-        return res.status(404).json({ ok: false, error: "MAQUINA_NOT_FOUND" });
-      }
-      if (maquina.estado_actual !== "PAUSADA") {
-        await conn.rollback();
-        return res.status(409).json({ ok: false, error: "MAQUINA_NO_ENCENDIDA", estado: maquina.estado_actual });
-      }
-
-      const [abiertoRows] = await conn.query<(import("mysql2").RowDataPacket & { id_ciclo: number; id_tarifa_aplicada: number })[]>(
-        "SELECT id_ciclo, id_tarifa_aplicada FROM ciclo WHERE id_maquina = :idMaquina AND estado_ciclo = 'INICIADO' ORDER BY fecha_hora_inicio DESC LIMIT 1 FOR UPDATE",
-        { idMaquina },
-      );
-      const cicloAbierto = abiertoRows[0];
-      if (cicloAbierto) {
-        await conn.rollback();
-        return res.status(409).json({ ok: false, error: "USA_AMPLIAR_EN_MARCHA", estado: maquina.estado_actual });
-      }
-      {
-        const [tarifaRows] = await conn.query<TarifaRow[]>(
-          `
-          SELECT id_tarifa, id_lavanderia, nombre, precio_arranque, tiempo_base_minutos, importe_incremento, minutos_por_incremento
-          FROM tarifa_maquina
-          WHERE id_lavanderia = :idLav
-            AND activa = 1
-            AND fecha_inicio_vigencia <= NOW()
-            AND (fecha_fin_vigencia IS NULL OR fecha_fin_vigencia > NOW())
-          ORDER BY fecha_inicio_vigencia DESC
-          LIMIT 1
-          `,
-          { idLav: idLavanderia },
-        );
-        const tarifa = tarifaRows[0];
-        if (!tarifa) {
-          await conn.rollback();
-          return res.status(409).json({ ok: false, error: "SIN_TARIFA_VIGENTE" });
-        }
-
-        const [cicloRes] = await conn.query<ResultSetHeader>(
-          `
-          INSERT INTO ciclo (
-            id_maquina, id_tarifa_aplicada, fecha_hora_inicio, fecha_hora_fin, estado_ciclo,
-            precio_arranque_aplicado, tiempo_base_aplicado_min, minutos_extra_total,
-            importe_cliente_total, importe_bonificado_total, importe_total_aplicado, duracion_total_programada_min, observaciones
-          ) VALUES (
-            :idMaquina, :idTarifa, NOW(), NULL, 'INICIADO',
-            :precioArranque, :tiempoBase, 0, 0.00, :importeBonificado, :importeTotal, :duracionTotal, 'Crédito web (arranque)'
-          )
-          `,
-          {
-            idMaquina,
-            idTarifa: tarifa.id_tarifa,
-            precioArranque: tarifa.precio_arranque,
-            tiempoBase: tarifa.tiempo_base_minutos,
-            importeBonificado: importe,
-            importeTotal: importe,
-            duracionTotal: Number(tarifa.tiempo_base_minutos),
-          },
-        );
-        const idCiclo = cicloRes.insertId;
-
-        await conn.query<ResultSetHeader>(
-          `
-          INSERT INTO movimiento_maquina (
-            id_lavanderia, id_maquina, id_ciclo, id_usuario, fecha_hora, tipo_movimiento, origen_movimiento, importe, minutos_extra_generados, es_bonificacion, descripcion
-          ) VALUES (
-            :idLav, :idMaquina, :idCiclo, :idUsuario, NOW(), 'ARRANQUE', 'WEB_MANUAL', :importe, 0, 1, 'Crédito web para iniciar ciclo'
-          )
-          `,
-          { idLav: idLavanderia, idMaquina, idCiclo, idUsuario: idUsuario || null, importe },
-        );
-
-        await conn.query<ResultSetHeader>("UPDATE maquina SET estado_actual = 'EN_MARCHA' WHERE id_maquina = :id", { id: idMaquina });
-        if (await isFanAutoEnabled(idLavanderia, idMaquina)) {
-          await clearFanPendingOff(idLavanderia, idMaquina);
-        }
-        await conn.commit();
-        if (await isFanAutoEnabled(idLavanderia, idMaquina)) {
-          publishMachineCommand(maquina.codigo_visible, {
-            accion: "ventilador_on",
-            id_maquina: idMaquina,
-            id_ciclo: idCiclo,
-            timestamp: new Date().toISOString(),
-          });
-        }
-        publishMachineCommand(maquina.codigo_visible, {
-          accion: "insertar_credito",
-          id_maquina: idMaquina,
-          id_ciclo: idCiclo,
-          importe,
-          timestamp: new Date().toISOString(),
-        });
-        return res.json({ ok: true, id_ciclo: idCiclo, importe_aplicado: importe });
-      }
-
-    } catch {
-      try {
-        await conn.rollback();
-      } catch {}
-      return res.status(500).json({ ok: false, error: "INTERNAL_ERROR" });
-    } finally {
-      conn.release();
+    const [maquinaRows] = await db.query<MaquinaRow[]>(
+      "SELECT id_maquina, id_lavanderia, codigo_visible, tipo_maquina, estado_actual, activa, observaciones FROM maquina WHERE id_maquina = :id LIMIT 1",
+      { id: idMaquina },
+    );
+    const maquina = maquinaRows[0];
+    if (!maquina || maquina.id_lavanderia !== idLavanderia) {
+      return res.status(404).json({ ok: false, error: "MAQUINA_NOT_FOUND" });
     }
+    if (maquina.estado_actual !== "PAUSADA") {
+      return res.status(409).json({ ok: false, error: "MAQUINA_NO_ENCENDIDA", estado: maquina.estado_actual });
+    }
+
+    const [tarifaRows] = await db.query<TarifaRow[]>(
+      `
+      SELECT id_tarifa, id_lavanderia, nombre, precio_arranque, tiempo_base_minutos, importe_incremento, minutos_por_incremento
+      FROM tarifa_maquina
+      WHERE id_lavanderia = :idLav
+        AND activa = 1
+        AND fecha_inicio_vigencia <= NOW()
+        AND (fecha_fin_vigencia IS NULL OR fecha_fin_vigencia > NOW())
+      ORDER BY fecha_inicio_vigencia DESC
+      LIMIT 1
+      `,
+      { idLav: idLavanderia },
+    );
+    if (!tarifaRows[0]) return res.status(409).json({ ok: false, error: "SIN_TARIFA_VIGENTE" });
+
+    await db.query<ResultSetHeader>(
+      `
+      INSERT INTO log_maquina (id_lavanderia, id_maquina, id_ciclo, fecha_hora, tipo_evento, nivel, payload, procesado)
+      VALUES (:idLav, :idMaquina, NULL, NOW(), 'CREDITO_ACUMULADO_WEB', 'INFO', JSON_OBJECT('origen','web_admin','importe',:importe), 1)
+      `,
+      { idLav: idLavanderia, idMaquina, importe },
+    );
+    await db.query<ResultSetHeader>(
+      `
+      INSERT INTO auditoria (
+        id_usuario, id_lavanderia, id_maquina, id_ciclo,
+        fecha_hora, accion, entidad_afectada, id_entidad_afectada, detalle, ip_origen
+      ) VALUES (
+        :idUsuario, :idLav, :idMaquina, NULL,
+        NOW(), 'MAQUINA_CREDITO', 'maquina', :idMaquina, :detalle, :ip
+      )
+      `,
+      {
+        idUsuario,
+        idLav: idLavanderia,
+        idMaquina,
+        detalle: `Crédito acumulado ${importe}€ en ${maquina.codigo_visible} (sin arranque)`,
+        ip: req.ip ?? null,
+      },
+    );
+
+    publishMachineCommand(
+      maquina.codigo_visible,
+      {
+        accion: "insertar_credito",
+        id_maquina: idMaquina,
+        importe,
+        timestamp: new Date().toISOString(),
+        origen: "web_admin",
+      },
+      idLavanderia,
+    );
+
+    return res.json({ ok: true, importe_aplicado: importe, estado_maquina: maquina.estado_actual });
   },
 );
 
@@ -637,15 +597,19 @@ maquinasRouter.post(
       }
 
       const [cicloRows] = await conn.query<
-        (import("mysql2").RowDataPacket & { id_ciclo: number; id_tarifa_aplicada: number })[]
+        (import("mysql2").RowDataPacket & { id_ciclo: number; id_tarifa_aplicada: number; minutos_extra_total: number })[]
       >(
-        "SELECT id_ciclo, id_tarifa_aplicada FROM ciclo WHERE id_maquina = :idMaquina AND estado_ciclo = 'INICIADO' ORDER BY fecha_hora_inicio DESC LIMIT 1 FOR UPDATE",
+        "SELECT id_ciclo, id_tarifa_aplicada, minutos_extra_total FROM ciclo WHERE id_maquina = :idMaquina AND estado_ciclo = 'INICIADO' ORDER BY fecha_hora_inicio DESC LIMIT 1 FOR UPDATE",
         { idMaquina },
       );
       const ciclo = cicloRows[0];
       if (!ciclo) {
         await conn.rollback();
         return res.status(409).json({ ok: false, error: "SIN_CICLO_ABIERTO" });
+      }
+      if (Number(ciclo.minutos_extra_total ?? 0) > 0) {
+        await conn.rollback();
+        return res.status(409).json({ ok: false, error: "AMPLIACION_YA_APLICADA" });
       }
 
       const [tarifaRows] = await conn.query<TarifaRow[]>(
@@ -675,6 +639,11 @@ maquinasRouter.post(
         await conn.rollback();
         return res.status(400).json({ ok: false, error: "IMPORTE_INSUFICIENTE_INCREMENTO" });
       }
+      if (incrementos !== 1) {
+        await conn.rollback();
+        return res.status(400).json({ ok: false, error: "AMPLIACION_SOLO_UN_INCREMENTO" });
+      }
+
       const minutosExtra = incrementos * incMin;
       const importeAplicado = Number((incrementos * incImporte).toFixed(2));
 
@@ -773,7 +742,7 @@ maquinasRouter.post(
         importe: importeAplicado,
         minutos_extra: minutosExtra,
         timestamp: new Date().toISOString(),
-      });
+      }, idLavanderia);
       return res.json({
         ok: true,
         id_ciclo: ciclo.id_ciclo,

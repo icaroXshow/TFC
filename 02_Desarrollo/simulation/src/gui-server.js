@@ -1,0 +1,166 @@
+import express from "express";
+import mqtt from "mqtt";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const MQTT_URL = process.env.MQTT_URL || "mqtt://mqtt:1883";
+const PORT = Number(process.env.SIM_GUI_PORT || "8090");
+const SIM_MACHINE_CODES = String(process.env.SIM_MACHINE_CODES || "L1,L2,L3,S1,S2")
+  .split(",")
+  .map((x) => x.trim().toUpperCase())
+  .filter(Boolean);
+const SIM_LAV_ID = Number(process.env.SIM_LAV_ID || "3");
+
+const app = express();
+app.use(express.json({ limit: "256kb" }));
+
+let mqttConnected = false;
+const machineState = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, "STOP"]));
+const fanState = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, false]));
+const iotState = { puerta_abierta: false, luces_encendidas: false, ventilacion_encendida: false };
+const machineCredit = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, 0]));
+const machineTimer = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, 0]));
+let lastUpdate = new Date().toISOString();
+
+const mqttClient = mqtt.connect(MQTT_URL, { reconnectPeriod: 3000, connectTimeout: 5000 });
+mqttClient.on("connect", () => {
+  mqttConnected = true;
+  mqttClient.subscribe(`kwl/maquinas/${SIM_LAV_ID}/+/estado`);
+  mqttClient.subscribe(`kwl/maquinas/${SIM_LAV_ID}/+/evento`);
+  mqttClient.subscribe(`kwl/iot/${SIM_LAV_ID}/estado`);
+});
+mqttClient.on("close", () => {
+  mqttConnected = false;
+});
+mqttClient.on("error", () => {
+  mqttConnected = false;
+});
+mqttClient.on("message", (topic, payloadBuf) => {
+  let data;
+  try {
+    data = JSON.parse(payloadBuf.toString("utf8"));
+  } catch {
+    return;
+  }
+  const parts = topic.split("/");
+  if (parts[0] === "kwl" && parts[1] === "maquinas" && Number(parts[2]) === SIM_LAV_ID && parts[4] === "estado") {
+    const code = String(parts[3] || "").toUpperCase();
+    if (!SIM_MACHINE_CODES.includes(code)) return;
+    machineState[code] = String(data?.estado || "STOP").toUpperCase();
+    const secs = Number(data?.segundos_restantes_estimados ?? Number.NaN);
+    if (Number.isFinite(secs) && secs >= 0) machineTimer[code] = Math.floor(secs);
+    if (machineState[code] !== "EN_MARCHA") machineTimer[code] = 0;
+    lastUpdate = new Date().toISOString();
+    return;
+  }
+  if (parts[0] === "kwl" && parts[1] === "maquinas" && Number(parts[2]) === SIM_LAV_ID && parts[4] === "evento") {
+    const code = String(parts[3] || "").toUpperCase();
+    if (!SIM_MACHINE_CODES.includes(code)) return;
+    const tipo = String(data?.tipo_evento || "").toUpperCase();
+    if (tipo === "VENTILADOR_ON") fanState[code] = true;
+    if (tipo === "VENTILADOR_OFF") fanState[code] = false;
+    if (tipo === "CREDITO_ACUMULADO") {
+      const saldo = Number(data?.payload?.saldo ?? Number.NaN);
+      if (Number.isFinite(saldo) && saldo >= 0) machineCredit[code] = Number(saldo.toFixed(2));
+    }
+    if (tipo === "CICLO_INICIADO") machineCredit[code] = 0;
+    if (tipo === "AMPLIACION_APLICADA") {
+      const extraMin = Number(data?.payload?.minutos ?? 0);
+      if (Number.isFinite(extraMin) && extraMin > 0) machineTimer[code] = Math.max(0, Number(machineTimer[code] || 0) + Math.floor(extraMin * 60));
+    }
+    if (tipo === "CICLO_FINALIZADO") machineTimer[code] = 0;
+    if (tipo === "CREDITO_RECHAZADO_APAGADA") {
+      // no cambia saldo ni estado, solo feedback por evento
+    }
+    lastUpdate = new Date().toISOString();
+    return;
+  }
+  if (parts[0] === "kwl" && parts[1] === "iot" && Number(parts[2]) === SIM_LAV_ID && parts[3] === "estado") {
+    iotState.puerta_abierta = Boolean(data?.puerta_abierta);
+    iotState.luces_encendidas = Boolean(data?.luces_encendidas);
+    iotState.ventilacion_encendida = Boolean(data?.ventilacion_encendida);
+    lastUpdate = new Date().toISOString();
+  }
+});
+
+const nowIso = () => new Date().toISOString();
+
+setInterval(() => {
+  for (const c of SIM_MACHINE_CODES) {
+    if (String(machineState[c] || "").toUpperCase() === "EN_MARCHA") {
+      machineTimer[c] = Math.max(0, Number(machineTimer[c] || 0) - 1);
+    }
+  }
+}, 1000);
+
+function publish(topic, payload) {
+  if (!mqttConnected) return false;
+  mqttClient.publish(topic, JSON.stringify(payload), { qos: 0 });
+  return true;
+}
+
+app.get("/health", (_req, res) => {
+  res.json({ ok: true, mqtt: { connected: mqttConnected, url: MQTT_URL }, machine_codes: SIM_MACHINE_CODES, lav_id: SIM_LAV_ID });
+});
+
+app.get("/api/config", (_req, res) => {
+  res.json({ ok: true, machine_codes: SIM_MACHINE_CODES, lav_id: SIM_LAV_ID });
+});
+
+app.get("/api/state", (_req, res) => {
+  res.json({
+    ok: true,
+    mqtt_connected: mqttConnected,
+    machines: machineState,
+    fan: fanState,
+    iot: iotState,
+    credit: machineCredit,
+    timer_sec: machineTimer,
+    last_update: lastUpdate,
+  });
+});
+
+app.post("/api/machine/credit", (req, res) => {
+  const codigo = String(req.body?.codigo ?? "").trim().toUpperCase();
+  const importe = Number(req.body?.importe ?? 0);
+  if (!SIM_MACHINE_CODES.includes(codigo)) return res.status(400).json({ ok: false, error: "BAD_CODIGO" });
+  if (!Number.isFinite(importe) || importe <= 0) return res.status(400).json({ ok: false, error: "BAD_IMPORTE" });
+  const estado = String(machineState[codigo] || "STOP").toUpperCase();
+  if (estado === "STOP") return res.status(409).json({ ok: false, error: "MACHINE_STOPPED_NEEDS_PAUSED" });
+  const ok = publish(`kwl/maquinas/${SIM_LAV_ID}/${codigo}/comando`, {
+    accion: "insertar_credito",
+    importe,
+    timestamp: nowIso(),
+    origen: "sim_gui",
+  });
+  if (!ok) return res.status(503).json({ ok: false, error: "MQTT_NOT_CONNECTED" });
+  return res.json({ ok: true });
+});
+
+app.post("/api/machine/confirm-start", (req, res) => {
+  const codigo = String(req.body?.codigo ?? "").trim().toUpperCase();
+  if (!SIM_MACHINE_CODES.includes(codigo)) return res.status(400).json({ ok: false, error: "BAD_CODIGO" });
+  const ok = publish(`kwl/maquinas/${SIM_LAV_ID}/${codigo}/comando`, {
+    accion: "confirmar_inicio",
+    timestamp: nowIso(),
+    origen: "sim_gui",
+  });
+  if (!ok) return res.status(503).json({ ok: false, error: "MQTT_NOT_CONNECTED" });
+  return res.json({ ok: true });
+});
+
+app.post("/api/iot/toggle", (req, res) => {
+  const dispositivo = String(req.body?.dispositivo ?? "").toLowerCase();
+  if (!["puerta", "luces"].includes(dispositivo)) return res.status(400).json({ ok: false, error: "BAD_DISPOSITIVO" });
+  const ok = publish(`kwl/iot/${SIM_LAV_ID}/comando`, { dispositivo, accion: "toggle", ts: nowIso(), origen: "sim_gui" });
+  if (!ok) return res.status(503).json({ ok: false, error: "MQTT_NOT_CONNECTED" });
+  return res.json({ ok: true });
+});
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, "../public")));
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`sim-gui listening on http://0.0.0.0:${PORT}`);
+});
