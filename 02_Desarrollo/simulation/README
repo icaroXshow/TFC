@@ -21,7 +21,7 @@ Simulador MQTT para demo local del TFC.
 
 ```bash
 cd 02_Desarrollo/simulation
-npm install
+npm ci
 npm start
 ```
 

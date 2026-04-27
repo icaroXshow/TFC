@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editor Web · Admin · KWL Aqua</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/componentes.css" />
+    <link rel="stylesheet" href="/css/admin.css?v=20260428e" />
+  </head>
+
+  <body data-breadcrumb="Gestión|Editor Web">
+    <div class="admin-layout" id="adminApp">
+      <aside class="admin-sidebar" aria-label="Menú lateral">
+        <div class="admin-brand">
+          <img src="/assets/Logo_KWL.png" alt="KWL Aqua" class="admin-brand-logo" />
+          <div class="admin-brand-text">
+            <strong>KWL Aqua</strong>
+            <span>Panel admin</span>
+          </div>
+        </div>
+
+        <nav class="admin-nav" aria-label="Navegación">
+          <a class="admin-nav-item" data-nav="inicio" href="/admin/inicio.html">Inicio</a>
+
+          <div class="admin-nav-group">Domótica</div>
+          <a class="admin-nav-item" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
+          <a class="admin-nav-item" data-nav="iot" href="/admin/iot.html">Programador</a>
+          <a class="admin-nav-item" data-nav="camara" href="/admin/camara.html">Cámara</a>
+
+          <div class="admin-nav-group">Contabilidad</div>
+          <a class="admin-nav-item" data-nav="caja" href="/admin/caja.html">Caja</a>
+          <a class="admin-nav-item" data-nav="informes" href="/admin/informes.html">Informes</a>
+
+          <div class="admin-nav-group">Gestión</div>
+          <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
+          <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
+          <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
+        </nav>
+
+        <div class="admin-sidebar-bottom">
+          <a class="admin-logout" id="adminLogout" href="/index.html">Cerrar sesión</a>
+        </div>
+      </aside>
+
+      <header class="admin-topbar">
+        <button class="admin-burger" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
+        <div class="admin-breadcrumbs" id="adminBreadcrumbs"></div>
+        <div class="admin-topbar-right">
+          <select class="admin-lav-select" id="adminLavSelect" aria-label="Lavandería activa"></select>
+          <span class="admin-location" id="adminLocation">—</span>
+        </div>
+      </header>
+
+      <main class="admin-main">
+        <section class="admin-hero">
+          <div class="admin-hero-text">
+            <h2>Editor Web</h2>
+            <p class="admin-card-hint">Edita textos visibles en la web pública sin tocar código.</p>
+          </div>
+        </section>
+
+        <section class="admin-section">
+          <form id="webEditorForm" class="admin-card web-editor-form">
+            <section class="web-editor-visibility">
+              <p class="web-editor-visibility-title">Visibilidad de paneles</p>
+              <div class="web-editor-visibility-grid">
+                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelNav" checked /> Navegación y marca</label>
+                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelInicio" checked /> Página Inicio</label>
+                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelAbout" checked /> Página About</label>
+                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelContacto" checked /> Página Contacto</label>
+                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelFaqs" checked /> Página FAQs</label>
+                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelFooter" checked /> Footer y horarios</label>
+              </div>
+            </section>
+
+            <details class="web-editor-panel" id="webPanelNav" open>
+              <summary>Navegación y marca</summary>
+              <div class="form-grid">
+                <label class="field"><span>Marca</span><input class="input" id="web_brand_name" /></label>
+                <label class="field"><span>Nav Inicio</span><input class="input" id="web_nav_inicio" /></label>
+                <label class="field"><span>Nav About</span><input class="input" id="web_nav_about" /></label>
+                <label class="field"><span>Nav Contacto</span><input class="input" id="web_nav_contacto" /></label>
+                <label class="field"><span>Nav FAQs</span><input class="input" id="web_nav_faqs" /></label>
+              </div>
+            </details>
+
+            <details class="web-editor-panel" id="webPanelInicio" open>
+              <summary>Página Inicio</summary>
+              <div class="form-grid">
+                <label class="field"><span>Inicio Bienvenida</span><input class="input" id="web_inicio_bienvenida" /></label>
+                <label class="field"><span>Inicio Título</span><input class="input" id="web_inicio_titulo" /></label>
+                <label class="field"><span>Inicio Subtítulo</span><input class="input" id="web_inicio_subtitulo" /></label>
+              </div>
+            </details>
+
+            <details class="web-editor-panel" id="webPanelAbout" open>
+              <summary>Página About</summary>
+              <div class="form-grid">
+                <label class="field"><span>About título</span><input class="input" id="web_about_titulo" /></label>
+                <label class="field"><span>About subtítulo</span><input class="input" id="web_about_subtitulo" /></label>
+                <label class="field"><span>About párrafo 1</span><input class="input" id="web_about_parrafo_1" /></label>
+                <label class="field"><span>About párrafo 2</span><input class="input" id="web_about_parrafo_2" /></label>
+              </div>
+            </details>
+
+            <details class="web-editor-panel" id="webPanelContacto" open>
+              <summary>Página Contacto</summary>
+              <div class="form-grid">
+                <label class="field"><span>Contacto Título</span><input class="input" id="web_contacto_titulo" /></label>
+                <label class="field"><span>Contacto Subtítulo</span><input class="input" id="web_contacto_subtitulo" /></label>
+                <label class="field"><span>Teléfono</span><input class="input" id="web_contacto_telefono" /></label>
+                <label class="field"><span>Email</span><input class="input" id="web_contacto_email" /></label>
+                <label class="field"><span>Dirección</span><input class="input" id="web_direccion_texto" /></label>
+                <label class="field"><span>Mapa URL (iframe)</span><input class="input" id="web_mapa_url" /></label>
+              </div>
+            </details>
+
+            <details class="web-editor-panel" id="webPanelFaqs" open>
+              <summary>Página FAQs</summary>
+              <div class="form-grid">
+                <label class="field"><span>FAQ 1 pregunta</span><input class="input" id="web_faq_q1" /></label>
+                <label class="field"><span>FAQ 1 respuesta</span><input class="input" id="web_faq_a1" /></label>
+                <label class="field"><span>FAQ 2 pregunta</span><input class="input" id="web_faq_q2" /></label>
+                <label class="field"><span>FAQ 2 respuesta</span><input class="input" id="web_faq_a2" /></label>
+                <label class="field"><span>FAQ 3 pregunta</span><input class="input" id="web_faq_q3" /></label>
+                <label class="field"><span>FAQ 3 respuesta</span><input class="input" id="web_faq_a3" /></label>
+                <label class="field"><span>FAQ 4 pregunta</span><input class="input" id="web_faq_q4" /></label>
+                <label class="field"><span>FAQ 4 respuesta</span><input class="input" id="web_faq_a4" /></label>
+                <label class="field"><span>FAQ 5 pregunta</span><input class="input" id="web_faq_q5" /></label>
+                <label class="field"><span>FAQ 5 respuesta</span><input class="input" id="web_faq_a5" /></label>
+                <label class="field"><span>FAQ 6 pregunta</span><input class="input" id="web_faq_q6" /></label>
+                <label class="field"><span>FAQ 6 respuesta</span><input class="input" id="web_faq_a6" /></label>
+              </div>
+            </details>
+
+            <details class="web-editor-panel" id="webPanelFooter" open>
+              <summary>Footer y horarios</summary>
+              <div class="form-grid">
+                <label class="field"><span>Footer título horario</span><input class="input" id="web_footer_titulo_horario" /></label>
+                <label class="field"><span>Footer título mapa</span><input class="input" id="web_footer_titulo_mapa" /></label>
+                <label class="field"><span>Footer copy</span><input class="input" id="web_footer_copy" /></label>
+                <label class="field"><span>Lunes</span><input class="input" id="web_horario_lunes" /></label>
+                <label class="field"><span>Martes</span><input class="input" id="web_horario_martes" /></label>
+                <label class="field"><span>Miércoles</span><input class="input" id="web_horario_miercoles" /></label>
+                <label class="field"><span>Jueves</span><input class="input" id="web_horario_jueves" /></label>
+                <label class="field"><span>Viernes</span><input class="input" id="web_horario_viernes" /></label>
+                <label class="field"><span>Sábado</span><input class="input" id="web_horario_sabado" /></label>
+                <label class="field"><span>Domingo</span><input class="input" id="web_horario_domingo" /></label>
+              </div>
+            </details>
+
+            <div>
+              <button type="submit" class="btn-primary" id="webEditorSave">Guardar cambios web</button>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <script src="/js/app.js?v=20260428e"></script>
+    <script src="/js/admin.js?v=20260428e"></script>
+  </body>
+</html>

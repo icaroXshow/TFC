@@ -4,11 +4,13 @@
 
 Actualizar el frontend en tiempo real sin recargar.
 
+Estado actual: documentado para evolución. El runtime actual usa polling HTTP sobre API.
+
 ---
 
 ## Flujo
 
-Backend recibe evento → emite WebSocket → frontend actualiza
+Futuro: Backend recibe evento → emite WebSocket → frontend actualiza
 
 ---
 
@@ -38,4 +40,5 @@ Backend recibe evento → emite WebSocket → frontend actualiza
 El frontend:
 
 - carga inicial por API
-- actualiza por WebSocket
+- en versión actual actualiza por polling HTTP
+- en evolución actualizará por WebSocket

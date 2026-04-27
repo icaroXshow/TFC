@@ -30,3 +30,7 @@ Evitar incoherencias entre:
 - simulador
 
 Todo desarrollo posterior debe basarse en lo definido aquí.
+
+Revisión aplicada (2026-04-28):
+- API IoT ampliada con configuración separada de máquinas para apertura/cierre de tienda.
+- Estado en tiempo real: polling HTTP operativo; WebSocket sigue documentado como evolución.

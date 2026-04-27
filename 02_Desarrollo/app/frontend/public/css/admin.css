@@ -1145,6 +1145,82 @@ body[data-breadcrumb*="Programador"] .iot-grid {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.web-editor-form {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.web-editor-visibility {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 12px;
+}
+
+.web-editor-visibility-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.web-editor-visibility-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.web-editor-visibility-grid label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.web-editor-visibility-grid input[type="checkbox"] {
+  accent-color: var(--turquesa-claro);
+}
+
+.web-editor-panel {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.web-editor-panel > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 12px 14px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: rgba(255, 255, 255, 0.94);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.web-editor-panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+.web-editor-panel > summary::after {
+  content: "▾";
+  float: right;
+  opacity: 0.8;
+}
+
+.web-editor-panel:not([open]) > summary::after {
+  content: "▸";
+}
+
+.web-editor-panel .form-grid {
+  padding: 12px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1204,6 +1280,10 @@ body[data-breadcrumb*="Programador"] .iot-grid {
     grid-template-columns: repeat(2, minmax(140px, 1fr));
   }
 
+  .web-editor-visibility-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .cash-summary {
     grid-template-columns: 1fr;
   }
@@ -1244,6 +1324,10 @@ body[data-breadcrumb*="Programador"] .iot-grid {
   }
 
   .store-machines-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .web-editor-visibility-grid {
     grid-template-columns: 1fr;
   }
 }

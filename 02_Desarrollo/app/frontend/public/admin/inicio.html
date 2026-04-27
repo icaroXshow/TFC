@@ -43,6 +43,7 @@
           <div class="admin-nav-group">Gestión</div>
           <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
           <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
+          <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
         </nav>
 
         <div class="admin-sidebar-bottom">
@@ -155,7 +156,6 @@
             <div class="store-config-checks">
               <label><input type="checkbox" id="closeDoor" checked /> Puerta</label>
               <label><input type="checkbox" id="closeLights" checked /> Luces</label>
-              <label><input type="checkbox" id="closeFan" checked /> Ventilación</label>
             </div>
           </section>
 
@@ -168,13 +168,16 @@
             <div class="store-config-checks">
               <label><input type="checkbox" id="openDoor" checked /> Puerta</label>
               <label><input type="checkbox" id="openLights" checked /> Luces</label>
-              <label><input type="checkbox" id="openFan" checked /> Ventilación</label>
             </div>
           </section>
 
           <section class="store-config-section">
             <p class="store-config-title">Máquinas al abrir</p>
             <div id="storeOpenMachines" class="iot-grid store-machines-grid"></div>
+          </section>
+          <section class="store-config-section">
+            <p class="store-config-title">Máquinas al cerrar</p>
+            <div id="storeCloseMachines" class="iot-grid store-machines-grid"></div>
           </section>
         </div>
         <div class="modal-foot">
@@ -201,7 +204,7 @@
       </form>
     </dialog>
 
-    <script src="/js/app.js?v=20260422a"></script>
-    <script src="/js/admin.js?v=20260422a"></script>
+    <script src="/js/app.js?v=20260428e"></script>
+    <script src="/js/admin.js?v=20260428e"></script>
   </body>
 </html>

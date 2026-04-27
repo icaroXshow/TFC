@@ -11,12 +11,22 @@ function parseCsv(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
+const nodeEnv = process.env.NODE_ENV ?? "development";
+const corsOriginsRaw = parseCsv(process.env.CORS_ORIGIN);
+const tokenSecret = required("AUTH_TOKEN_SECRET", process.env.AUTH_TOKEN_SECRET);
+
+if (nodeEnv === "production" && tokenSecret.includes("cambiar-esta-clave")) {
+  throw new Error("AUTH_TOKEN_SECRET must be changed in production");
+}
+
 export const env = {
-  nodeEnv: process.env.NODE_ENV ?? "development",
+  nodeEnv,
   host: process.env.HOST ?? "0.0.0.0",
   port: Number(process.env.PORT ?? "8080"),
 
-  corsOrigins: parseCsv(process.env.CORS_ORIGIN),
+  corsOrigins: corsOriginsRaw.filter((origin) => origin !== "*" && origin !== "null"),
+  corsAllowAllOrigins: corsOriginsRaw.includes("*") && nodeEnv !== "production",
+  corsAllowNullOrigin: corsOriginsRaw.includes("null") && nodeEnv !== "production",
 
   db: {
     host: process.env.DB_HOST ?? "127.0.0.1",
@@ -27,7 +37,7 @@ export const env = {
   },
 
   auth: {
-    tokenSecret: required("AUTH_TOKEN_SECRET", process.env.AUTH_TOKEN_SECRET),
+    tokenSecret,
   },
 
   camera: {
@@ -48,5 +58,15 @@ export const env = {
     user: process.env.MQTT_USER ?? "",
     pass: process.env.MQTT_PASS ?? "",
     enabled: (process.env.MQTT_ENABLED ?? "true").toLowerCase() === "true",
+  },
+
+  redis: {
+    host: process.env.REDIS_HOST ?? "redis",
+    port: Number(process.env.REDIS_PORT ?? "6379"),
+    password: process.env.REDIS_PASSWORD ?? "",
+    db: Number(process.env.REDIS_DB ?? "0"),
+    enabled: (process.env.REDIS_ENABLED ?? "true").toLowerCase() === "true",
+    timeoutMs: Number(process.env.REDIS_TIMEOUT_MS ?? "500"),
+    keyPrefix: process.env.REDIS_KEY_PREFIX ?? "kwl",
   },
 };

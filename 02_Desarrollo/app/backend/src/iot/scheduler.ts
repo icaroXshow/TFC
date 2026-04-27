@@ -231,8 +231,9 @@ export function startIoTScheduler() {
           await setConfigLav(idLav, "iot_last", last, "Últimas ejecuciones Programador IoT");
         }
       }
-    } catch {
-      // MVP: sin ruido
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("IoT scheduler tick failed", err);
     } finally {
       running = false;
     }
@@ -240,6 +241,9 @@ export function startIoTScheduler() {
 
   setInterval(tick, intervalMs).unref();
   // Primer tick al arrancar
-  tick().catch(() => {});
+  tick().catch((err) => {
+    // eslint-disable-next-line no-console
+    console.error("IoT scheduler initial tick failed", err);
+  });
 }
 

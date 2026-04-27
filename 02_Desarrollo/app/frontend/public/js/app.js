@@ -2,9 +2,29 @@
   const $ = (s, c = document) => c.querySelector(s);
   const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
 
-  const API_BASE = "http://127.0.0.1:8080";
+  const API_BASE = `${window.location.protocol}//${window.location.hostname}:8080`;
   const AUTH_STORAGE_KEY = "kwl_auth";
   const ACTIVE_LAV_KEY = "kwl_lavanderia_activa";
+  const PUBLIC_WEB_KEY_ATTR = "data-web-key";
+
+  async function loadPublicWebContent() {
+    try {
+      const res = await fetch(`${API_BASE}/api/configuracion/web-public`);
+      if (!res.ok) return;
+      const data = await res.json().catch(() => ({}));
+      const content = data?.contenido || {};
+      document.querySelectorAll(`[${PUBLIC_WEB_KEY_ATTR}]`).forEach((el) => {
+        const key = el.getAttribute(PUBLIC_WEB_KEY_ATTR);
+        if (!key) return;
+        if (content[key] == null) return;
+        if (el.tagName === "IFRAME") {
+          el.setAttribute("src", String(content[key]));
+          return;
+        }
+        el.textContent = String(content[key]);
+      });
+    } catch {}
+  }
 
   // ================================
   // MODAL AUTH (solo si existe)
@@ -133,6 +153,7 @@ function closeModal() {
 // ACTIVAR BOTONES MENU
 // ================================
 document.addEventListener("DOMContentLoaded", () => {
+  loadPublicWebContent();
   const links = Array.from(document.querySelectorAll("nav a[href]"));
   if (!links.length) return;
 

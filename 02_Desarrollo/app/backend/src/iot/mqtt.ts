@@ -81,6 +81,15 @@ async function clearFanPendingOff(idLav: number, idMaquina: number) {
   await setConfigLav(idLav, "fan_pending_off", pending, "Apagado diferido de ventiladores por máquina");
 }
 
+async function hasManualPriority(idLav: number, idMaquina: number) {
+  const map = await getConfigLav<Record<string, string | null>>(idLav, "machine_manual_priority_until", {});
+  const until = map[String(idMaquina)];
+  if (!until) return false;
+  const untilMs = new Date(until).getTime();
+  if (!Number.isFinite(untilMs)) return false;
+  return Date.now() < untilMs;
+}
+
 function toMySqlDate(value?: string): string {
   const d = value ? new Date(value) : new Date();
   if (Number.isNaN(d.getTime())) return new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -145,6 +154,9 @@ function normalizeEstado(raw: string): string {
 async function processEstado(idLav: number | undefined, codigo: string, data: EstadoPayload) {
   const machine = await findMachineByCode(codigo, idLav);
   if (!machine) return;
+  if (await hasManualPriority(machine.id_lavanderia, machine.id_maquina)) {
+    return;
+  }
 
   const estado = normalizeEstado(String(data.estado ?? "STOP"));
   const [prevRows] = await db.query<(RowDataPacket & { estado_actual: string })[]>(
@@ -205,7 +217,7 @@ async function processEvento(idLav: number | undefined, codigo: string, data: Ev
     if (openRows[0]?.id_ciclo) return openRows[0].id_ciclo;
     const [tarifaRows] = await db.query<TarifaRow[]>(
       `
-      SELECT id_tarifa, tiempo_base_minutos
+      SELECT id_tarifa, precio_arranque, tiempo_base_minutos
       FROM tarifa_maquina
       WHERE id_lavanderia=:idLav
         AND activa=1
@@ -227,12 +239,34 @@ async function processEvento(idLav: number | undefined, codigo: string, data: Ev
         duracion_total_programada_min, observaciones
       ) VALUES (
         :idMaquina, :idTarifa, NOW(), NULL, 'INICIADO',
-        0.00, :tiempoBase, 0, 0.00, 0.00, 0.00, :tiempoBase, 'MQTT auto-cycle'
+        :precioArranque, :tiempoBase, 0, :precioArranque, 0.00, :precioArranque, :tiempoBase, 'MQTT auto-cycle'
       )
       `,
-      { idMaquina: machine.id_maquina, idTarifa: tarifa.id_tarifa, tiempoBase: Number(tarifa.tiempo_base_minutos || 35) },
+      {
+        idMaquina: machine.id_maquina,
+        idTarifa: tarifa.id_tarifa,
+        tiempoBase: Number(tarifa.tiempo_base_minutos || 35),
+        precioArranque: Number(tarifa.precio_arranque || 0),
+      },
     );
-    return ins.insertId || null;
+    const idCiclo = ins.insertId || null;
+    const precioArranque = Number(tarifa.precio_arranque || 0);
+    if (idCiclo && precioArranque > 0) {
+      await db.query<ResultSetHeader>(
+        `
+        INSERT INTO movimiento_maquina (
+          id_lavanderia, id_maquina, id_ciclo, id_usuario, fecha_hora,
+          tipo_movimiento, origen_movimiento, importe, minutos_extra_generados,
+          es_bonificacion, descripcion
+        ) VALUES (
+          :idLav, :idMaquina, :idCiclo, NULL, NOW(),
+          'ARRANQUE', 'MONEDERO', :importe, 0, 0, 'Arranque detectado por MQTT'
+        )
+        `,
+        { idLav: machine.id_lavanderia, idMaquina: machine.id_maquina, idCiclo, importe: precioArranque },
+      );
+    }
+    return idCiclo;
   };
 
   await db.query<ResultSetHeader>(
@@ -385,12 +419,17 @@ export function startMqttBridge() {
   client.on("close", () => {
     mqttConnected = false;
   });
-  client.on("error", () => {
+  client.on("error", (err) => {
     mqttConnected = false;
+    // eslint-disable-next-line no-console
+    console.error("MQTT bridge error", err);
   });
 
   client.on("message", (topic, payload) => {
-    onMessage(topic, payload).catch(() => {});
+    onMessage(topic, payload).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error("MQTT message processing failed", { topic, err });
+    });
   });
 }
 

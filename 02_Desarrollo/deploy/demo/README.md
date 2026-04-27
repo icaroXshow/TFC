@@ -3,7 +3,7 @@
 Despliegue demo local del TFC replicando 3 nodos lógicos:
 
 - Nodo BD: MariaDB
-- Nodo Core: Nginx + Node.js + Redis (+ soporte WebSocket en proxy)
+- Nodo Core: Nginx + Node.js + Redis incluido para la demo
 - Nodo MQTT: broker MQTT (Mosquitto)
 - Simulador motor: `mqtt-sim` (lavandería ficticia `KWL Simulador`: `L1,L2,L3,S1,S2` + relés por MQTT)
 - Simulador GUI independiente: `mqtt-sim-gui`
@@ -12,7 +12,15 @@ Despliegue demo local del TFC replicando 3 nodos lógicos:
 
 ```bash
 cd 02_Desarrollo/deploy/demo
-docker compose up -d --build
+./auto_deploy_fedora.sh
+```
+
+Opciones:
+
+```bash
+./auto_deploy_fedora.sh --reset-db
+./auto_deploy_fedora.sh --smoke
+./auto_deploy_fedora.sh --reset-db --smoke --sin-abrir
 ```
 
 ## URLs / puertos
@@ -34,8 +42,10 @@ docker compose up -d --build
 
 ## Scripts
 
-- Linux/Fedora: `./auto_deploy_fedora.sh [--reset-db] [--sin-abrir]`
-- Windows: `powershell -ExecutionPolicy Bypass -File .\\auto_deploy.ps1 [--reset-db] [--sin-abrir]`
+- Linux/Fedora: `./auto_deploy_fedora.sh [--reset-db] [--smoke] [--sin-abrir]`
+- Windows: `powershell -ExecutionPolicy Bypass -File .\\auto_deploy.ps1 [--reset-db] [--smoke] [--sin-abrir]`
+
+Los instaladores validan dependencias mínimas, crean `.env` desde `.env.example` si falta, levantan la demo y validan disponibilidad básica (`/health` + `index.html`).
 
 ## Nota de arquitectura lógica
 
@@ -54,7 +64,7 @@ Uso recomendado:
 
 - `admin@gmail.com` / `admin` (ADMIN, Ponferrada)
 - `operador@gmail.com` / `admin` (OPERADOR, Ponferrada)
-- `admin2@gmail.com` / `admin` (ADMIN, Bembibre)
+- `operador2@gmail.com` / `admin` (OPERADOR, Bembibre)
 
 
 En despliegue real, el simulador irá en una VM separada (como controlador); en demo local se representa con el contenedor `mqtt-sim`.

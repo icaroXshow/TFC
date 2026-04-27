@@ -17,7 +17,7 @@ INSERT INTO lavanderia (nombre, codigo, direccion, ciudad, provincia, activo)
 VALUES
   ('KWL Aqua Fleming', 'FLEM-01', 'Calle Dr. Fleming, 26', 'Ponferrada', 'León', 1),
   ('KWL Aqua Puebla', 'PUEB-01', 'Av. de la Puebla 30', 'Ponferrada', 'León', 1),
-  ('KWL Simulador', 'SIM-01', 'Laboratorio Demo', 'Ponferrada', 'León', 1);
+  ('KWL Simulador', 'SIM-01', 'SIMULADOR', 'Ponferrada', 'León', 1);
 
 SET @lav_flem = (SELECT id_lavanderia FROM lavanderia WHERE codigo = 'FLEM-01' LIMIT 1);
 SET @lav_pueb = (SELECT id_lavanderia FROM lavanderia WHERE codigo = 'PUEB-01' LIMIT 1);
@@ -25,7 +25,7 @@ SET @lav_sim = (SELECT id_lavanderia FROM lavanderia WHERE codigo = 'SIM-01' LIM
 
 INSERT INTO usuario (nombre, apellidos, login, password_hash, rol, activo, ultimo_acceso)
 VALUES
-  ('Admin', 'Global', 'admin@gmail.com', @pwd_admin, 'ADMIN', 1, NOW() - INTERVAL 30 MINUTE),
+  ('Admin', 'Global', 'admin@gmail.com', @pwd_admin, 'ADMIN', 1, NOW() - INTERVAL 60 MINUTE),
   ('Operador', 'Fleming', 'operador@gmail.com', @pwd_admin, 'OPERADOR', 1, NOW() - INTERVAL 1 DAY),
   ('Operador', 'Puebla', 'operador2@gmail.com', @pwd_admin, 'OPERADOR', 1, NOW() - INTERVAL 3 HOUR);
 
@@ -79,6 +79,11 @@ SET @mf_s1 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_flem AND
 SET @mf_s2 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_flem AND codigo_visible = 'S2' AND tipo_maquina='SECADORA' LIMIT 1);
 SET @mp_l1 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_pueb AND codigo_visible = 'L1' AND tipo_maquina='LAVADORA' LIMIT 1);
 SET @mp_s1 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_pueb AND codigo_visible = 'S1' AND tipo_maquina='SECADORA' LIMIT 1);
+SET @ms_l1 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_sim AND codigo_visible = 'L1' AND tipo_maquina='LAVADORA' LIMIT 1);
+SET @ms_l2 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_sim AND codigo_visible = 'L2' AND tipo_maquina='LAVADORA' LIMIT 1);
+SET @ms_l3 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_sim AND codigo_visible = 'L3' AND tipo_maquina='LAVADORA' LIMIT 1);
+SET @ms_s1 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_sim AND codigo_visible = 'S1' AND tipo_maquina='SECADORA' LIMIT 1);
+SET @ms_s2 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_sim AND codigo_visible = 'S2' AND tipo_maquina='SECADORA' LIMIT 1);
 
 INSERT INTO configuracion (ambito, id_lavanderia, clave, valor, descripcion)
 VALUES
@@ -103,7 +108,23 @@ VALUES
   (@mf_s2, @tarifa_flem, NOW() - INTERVAL 12 HOUR, NOW() - INTERVAL 12 HOUR + INTERVAL 35 MINUTE, 'FINALIZADO', 4.00, 35, 0, 4.00, 0.00, 4.00, 35, 'Seed'),
   (@mf_l2, @tarifa_flem, NOW() - INTERVAL 20 MINUTE, NULL, 'INICIADO', 4.00, 35, 0, 0.00, 4.00, 4.00, 35, 'Seed'),
   (@mp_l1, @tarifa_pueb, NOW() - INTERVAL 30 HOUR, NOW() - INTERVAL 30 HOUR + INTERVAL 36 MINUTE, 'FINALIZADO', 4.20, 36, 0, 4.20, 0.00, 4.20, 36, 'Seed'),
-  (@mp_s1, @tarifa_pueb, NOW() - INTERVAL 15 MINUTE, NULL, 'INICIADO', 4.20, 36, 0, 0.00, 4.20, 4.20, 36, 'Seed');
+  (@mp_s1, @tarifa_pueb, NOW() - INTERVAL 15 MINUTE, NULL, 'INICIADO', 4.20, 36, 0, 0.00, 4.20, 4.20, 36, 'Seed'),
+  -- Simulador: histórico amplio para Informes (evolución y tramos)
+  (@ms_l1, @tarifa_sim, NOW() - INTERVAL 80 DAY, NOW() - INTERVAL 80 DAY + INTERVAL 40 MINUTE, 'FINALIZADO', 4.00, 40, 0, 4.00, 0.00, 4.00, 40, 'Seed Sim'),
+  (@ms_l2, @tarifa_sim, NOW() - INTERVAL 65 DAY, NOW() - INTERVAL 65 DAY + INTERVAL 55 MINUTE, 'FINALIZADO', 4.00, 40, 15, 5.00, 0.00, 5.00, 55, 'Seed Sim'),
+  (@ms_l3, @tarifa_sim, NOW() - INTERVAL 50 DAY, NOW() - INTERVAL 50 DAY + INTERVAL 40 MINUTE, 'FINALIZADO', 4.00, 40, 0, 4.00, 0.00, 4.00, 40, 'Seed Sim'),
+  (@ms_s1, @tarifa_sim, NOW() - INTERVAL 35 DAY, NOW() - INTERVAL 35 DAY + INTERVAL 40 MINUTE, 'FINALIZADO', 4.00, 40, 0, 4.00, 0.00, 4.00, 40, 'Seed Sim'),
+  (@ms_s2, @tarifa_sim, NOW() - INTERVAL 28 DAY, NOW() - INTERVAL 28 DAY + INTERVAL 55 MINUTE, 'FINALIZADO', 4.00, 40, 15, 5.00, 0.00, 5.00, 55, 'Seed Sim'),
+  (@ms_l1, @tarifa_sim, NOW() - INTERVAL 21 DAY, NOW() - INTERVAL 21 DAY + INTERVAL 40 MINUTE, 'FINALIZADO', 4.00, 40, 0, 4.00, 0.00, 4.00, 40, 'Seed Sim'),
+  (@ms_l2, @tarifa_sim, NOW() - INTERVAL 14 DAY, NOW() - INTERVAL 14 DAY + INTERVAL 40 MINUTE, 'FINALIZADO', 4.00, 40, 0, 4.00, 0.00, 4.00, 40, 'Seed Sim'),
+  (@ms_l3, @tarifa_sim, NOW() - INTERVAL 9 DAY, NOW() - INTERVAL 9 DAY + INTERVAL 55 MINUTE, 'FINALIZADO', 4.00, 40, 15, 5.00, 0.00, 5.00, 55, 'Seed Sim'),
+  (@ms_s1, @tarifa_sim, NOW() - INTERVAL 6 DAY, NOW() - INTERVAL 6 DAY + INTERVAL 40 MINUTE, 'FINALIZADO', 4.00, 40, 0, 4.00, 0.00, 4.00, 40, 'Seed Sim'),
+  (@ms_s2, @tarifa_sim, NOW() - INTERVAL 4 DAY, NOW() - INTERVAL 4 DAY + INTERVAL 40 MINUTE, 'FINALIZADO', 4.00, 40, 0, 4.00, 0.00, 4.00, 40, 'Seed Sim'),
+  (@ms_l1, @tarifa_sim, NOW() - INTERVAL 3 DAY, NOW() - INTERVAL 3 DAY + INTERVAL 40 MINUTE, 'FINALIZADO', 4.00, 40, 0, 4.00, 0.00, 4.00, 40, 'Seed Sim'),
+  (@ms_l2, @tarifa_sim, NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 2 DAY + INTERVAL 55 MINUTE, 'FINALIZADO', 4.00, 40, 15, 5.00, 0.00, 5.00, 55, 'Seed Sim'),
+  (@ms_l3, @tarifa_sim, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY + INTERVAL 40 MINUTE, 'FINALIZADO', 4.00, 40, 0, 4.00, 0.00, 4.00, 40, 'Seed Sim'),
+  (@ms_s1, @tarifa_sim, NOW() - INTERVAL 18 HOUR, NOW() - INTERVAL 18 HOUR + INTERVAL 40 MINUTE, 'FINALIZADO', 4.00, 40, 0, 4.00, 0.00, 4.00, 40, 'Seed Sim'),
+  (@ms_s2, @tarifa_sim, NOW() - INTERVAL 12 HOUR, NOW() - INTERVAL 12 HOUR + INTERVAL 55 MINUTE, 'FINALIZADO', 4.00, 40, 15, 5.00, 0.00, 5.00, 55, 'Seed Sim');
 
 SET @cf_l1 = (SELECT id_ciclo FROM ciclo WHERE id_maquina = @mf_l1 ORDER BY id_ciclo DESC LIMIT 1);
 SET @cf_l2 = (SELECT id_ciclo FROM ciclo WHERE id_maquina = @mf_l2 ORDER BY id_ciclo DESC LIMIT 1);
@@ -112,6 +133,11 @@ SET @cf_s1 = (SELECT id_ciclo FROM ciclo WHERE id_maquina = @mf_s1 ORDER BY id_c
 SET @cf_s2 = (SELECT id_ciclo FROM ciclo WHERE id_maquina = @mf_s2 ORDER BY id_ciclo DESC LIMIT 1);
 SET @cp_l1 = (SELECT id_ciclo FROM ciclo WHERE id_maquina = @mp_l1 ORDER BY id_ciclo DESC LIMIT 1);
 SET @cp_s1 = (SELECT id_ciclo FROM ciclo WHERE id_maquina = @mp_s1 ORDER BY id_ciclo DESC LIMIT 1);
+SET @cs_l1 = (SELECT id_ciclo FROM ciclo WHERE id_maquina = @ms_l1 ORDER BY id_ciclo DESC LIMIT 1);
+SET @cs_l2 = (SELECT id_ciclo FROM ciclo WHERE id_maquina = @ms_l2 ORDER BY id_ciclo DESC LIMIT 1);
+SET @cs_l3 = (SELECT id_ciclo FROM ciclo WHERE id_maquina = @ms_l3 ORDER BY id_ciclo DESC LIMIT 1);
+SET @cs_s1 = (SELECT id_ciclo FROM ciclo WHERE id_maquina = @ms_s1 ORDER BY id_ciclo DESC LIMIT 1);
+SET @cs_s2 = (SELECT id_ciclo FROM ciclo WHERE id_maquina = @ms_s2 ORDER BY id_ciclo DESC LIMIT 1);
 
 INSERT INTO movimiento_maquina (
   id_lavanderia, id_maquina, id_ciclo, id_usuario, fecha_hora,
@@ -124,7 +150,14 @@ VALUES
   (@lav_flem, @mf_l3, @cf_l3, @u_oper_flem, NOW() - INTERVAL 36 HOUR, 'ARRANQUE', 'MONEDERO', 4.00, 0, 0, 'Seed'),
   (@lav_flem, @mf_s1, @cf_s1, @u_oper_flem, NOW() - INTERVAL 1 DAY, 'ARRANQUE', 'MONEDERO', 4.00, 0, 0, 'Seed'),
   (@lav_flem, @mf_s2, @cf_s2, @u_oper_flem, NOW() - INTERVAL 12 HOUR, 'ARRANQUE', 'MONEDERO', 4.00, 0, 0, 'Seed'),
-  (@lav_pueb, @mp_l1, @cp_l1, @u_oper_pueb, NOW() - INTERVAL 30 HOUR, 'ARRANQUE', 'MONEDERO', 4.20, 0, 0, 'Seed');
+  (@lav_pueb, @mp_l1, @cp_l1, @u_oper_pueb, NOW() - INTERVAL 30 HOUR, 'ARRANQUE', 'MONEDERO', 4.20, 0, 0, 'Seed'),
+  (@lav_sim, @ms_l1, @cs_l1, @u_admin, NOW() - INTERVAL 3 DAY, 'ARRANQUE', 'WEB_MANUAL', 4.00, 0, 0, 'Seed Sim'),
+  (@lav_sim, @ms_l2, @cs_l2, @u_admin, NOW() - INTERVAL 2 DAY, 'ARRANQUE', 'WEB_MANUAL', 4.00, 0, 0, 'Seed Sim'),
+  (@lav_sim, @ms_l2, @cs_l2, @u_admin, NOW() - INTERVAL 2 DAY + INTERVAL 10 MINUTE, 'AMPLIACION_TIEMPO', 'WEB_MANUAL', 1.00, 15, 0, 'Seed Sim'),
+  (@lav_sim, @ms_l3, @cs_l3, @u_admin, NOW() - INTERVAL 1 DAY, 'ARRANQUE', 'WEB_MANUAL', 4.00, 0, 0, 'Seed Sim'),
+  (@lav_sim, @ms_s1, @cs_s1, @u_admin, NOW() - INTERVAL 18 HOUR, 'ARRANQUE', 'WEB_MANUAL', 4.00, 0, 0, 'Seed Sim'),
+  (@lav_sim, @ms_s2, @cs_s2, @u_admin, NOW() - INTERVAL 12 HOUR, 'ARRANQUE', 'WEB_MANUAL', 4.00, 0, 0, 'Seed Sim'),
+  (@lav_sim, @ms_s2, @cs_s2, @u_admin, NOW() - INTERVAL 11 HOUR + INTERVAL 35 MINUTE, 'AMPLIACION_TIEMPO', 'WEB_MANUAL', 1.00, 15, 0, 'Seed Sim');
 
 INSERT INTO log_maquina (id_lavanderia, id_maquina, id_ciclo, fecha_hora, tipo_evento, nivel, payload, procesado)
 VALUES

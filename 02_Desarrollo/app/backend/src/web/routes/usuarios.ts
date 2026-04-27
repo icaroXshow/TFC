@@ -40,6 +40,14 @@ async function audit(req: any, accion: string, idEntidad: number, detalle: strin
   );
 }
 
+async function userBelongsToLav(idUsuario: number, idLavanderia: number) {
+  const [rows] = await db.query<(import("mysql2/promise").RowDataPacket & { total: number })[]>(
+    "SELECT COUNT(*) AS total FROM usuario_lavanderia WHERE id_usuario = :idUsuario AND id_lavanderia = :idLavanderia",
+    { idUsuario, idLavanderia },
+  );
+  return Number(rows[0]?.total ?? 0) > 0;
+}
+
 usuariosRouter.get("/", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLavanderia = req.auth?.id_lavanderia ?? 1;
   const [rows] = await db.query<UsuarioRow[]>(
@@ -279,11 +287,19 @@ usuariosRouter.post("/:id/desactivar", requireAuth, requireRole(["ADMIN"]), requ
 
 usuariosRouter.get("/:id/lavanderias", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idUsuario = Number(req.params.id);
+  const idLavanderia = req.auth?.id_lavanderia ?? 1;
   if (!Number.isFinite(idUsuario) || idUsuario <= 0) return res.status(400).json({ ok: false, error: "BAD_USER_ID" });
+  if (!(await userBelongsToLav(idUsuario, idLavanderia))) return res.status(404).json({ ok: false, error: "USER_NOT_FOUND" });
 
   const [rows] = await db.query<(import("mysql2/promise").RowDataPacket & { id_lavanderia: number })[]>(
-    "SELECT id_lavanderia FROM usuario_lavanderia WHERE id_usuario = :idUsuario ORDER BY id_lavanderia ASC",
-    { idUsuario },
+    `
+    SELECT ul.id_lavanderia
+    FROM usuario_lavanderia ul
+    INNER JOIN usuario_lavanderia admin_lav ON admin_lav.id_lavanderia = ul.id_lavanderia
+    WHERE ul.id_usuario = :idUsuario AND admin_lav.id_usuario = :adminId
+    ORDER BY ul.id_lavanderia ASC
+    `,
+    { idUsuario, adminId: Number(req.auth?.id_usuario ?? "0") },
   );
   return res.json({ ok: true, lavanderias: rows.map((r) => Number(r.id_lavanderia)) });
 });
@@ -292,8 +308,36 @@ usuariosRouter.put("/:id/lavanderias", requireAuth, requireRole(["ADMIN"]), requ
   const idUsuario = Number(req.params.id);
   if (!Number.isFinite(idUsuario) || idUsuario <= 0) return res.status(400).json({ ok: false, error: "BAD_USER_ID" });
 
-  const ids = Array.isArray(req.body?.lavanderias) ? req.body.lavanderias.map((x: any) => Number(x)).filter((x: number) => Number.isFinite(x) && x > 0) : [];
+  const idLavanderiaActual = req.auth?.id_lavanderia ?? 1;
+  const adminId = Number(req.auth?.id_usuario ?? "0");
+  const ids: number[] = [...new Set<number>(Array.isArray(req.body?.lavanderias) ? req.body.lavanderias.map((x: any) => Number(x)).filter((x: number) => Number.isFinite(x) && x > 0) : [])];
   if (!ids.length) return res.status(400).json({ ok: false, error: "BAD_LAVANDERIAS" });
+  if (!(await userBelongsToLav(idUsuario, idLavanderiaActual))) return res.status(404).json({ ok: false, error: "USER_NOT_FOUND" });
+
+  const [unauthorizedCurrent] = await db.query<(import("mysql2/promise").RowDataPacket & { total: number })[]>(
+    `
+    SELECT COUNT(*) AS total
+    FROM usuario_lavanderia ul
+    LEFT JOIN usuario_lavanderia admin_lav
+      ON admin_lav.id_lavanderia = ul.id_lavanderia
+     AND admin_lav.id_usuario = :adminId
+    WHERE ul.id_usuario = :idUsuario
+      AND admin_lav.id_usuario IS NULL
+    `,
+    { idUsuario, adminId },
+  );
+  if (Number(unauthorizedCurrent[0]?.total ?? 0) > 0) {
+    return res.status(403).json({ ok: false, error: "FORBIDDEN_LAVANDERIA" });
+  }
+
+  const idsCsv = ids.join(",");
+  const [allowedRows] = await db.query<(import("mysql2/promise").RowDataPacket & { total: number })[]>(
+    "SELECT COUNT(DISTINCT id_lavanderia) AS total FROM usuario_lavanderia WHERE id_usuario = :adminId AND FIND_IN_SET(id_lavanderia, :idsCsv) > 0",
+    { adminId, idsCsv },
+  );
+  if (Number(allowedRows[0]?.total ?? 0) !== ids.length) {
+    return res.status(403).json({ ok: false, error: "FORBIDDEN_LAVANDERIA" });
+  }
 
   const conn = await db.getConnection();
   try {
@@ -318,17 +362,45 @@ usuariosRouter.put("/:id/lavanderias", requireAuth, requireRole(["ADMIN"]), requ
 
 usuariosRouter.delete("/:id", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idUsuario = Number(req.params.id);
+  const idLavanderia = req.auth?.id_lavanderia ?? 1;
   if (!Number.isFinite(idUsuario) || idUsuario <= 0) return res.status(400).json({ ok: false, error: "BAD_USER_ID" });
   const currentUserId = Number(req.auth?.id_usuario ?? "0");
   if (currentUserId && idUsuario === currentUserId) return res.status(409).json({ ok: false, error: "CANNOT_DELETE_SELF" });
 
   const [rows] = await db.query<UsuarioRow[]>(
-    "SELECT id_usuario, nombre, apellidos, login, password_hash, rol, activo, ultimo_acceso FROM usuario WHERE id_usuario = :idUsuario LIMIT 1",
-    { idUsuario },
+    `
+    SELECT u.id_usuario, u.nombre, u.apellidos, u.login, u.password_hash, u.rol, u.activo, u.ultimo_acceso
+    FROM usuario u
+    INNER JOIN usuario_lavanderia ul ON ul.id_usuario = u.id_usuario
+    WHERE u.id_usuario = :idUsuario AND ul.id_lavanderia = :idLav
+    LIMIT 1
+    `,
+    { idUsuario, idLav: idLavanderia },
   );
   if (!rows[0]) return res.status(404).json({ ok: false, error: "USER_NOT_FOUND" });
 
-  await db.query<ResultSetHeader>("DELETE FROM usuario WHERE id_usuario = :idUsuario", { idUsuario });
-  await audit(req, "USUARIO_DELETE", idUsuario, `Eliminar usuario ${rows[0].login}`);
-  return res.json({ ok: true });
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query<ResultSetHeader>(
+      "DELETE FROM usuario_lavanderia WHERE id_usuario = :idUsuario AND id_lavanderia = :idLav",
+      { idUsuario, idLav: idLavanderia },
+    );
+    const [remaining] = await conn.query<(import("mysql2/promise").RowDataPacket & { total: number })[]>(
+      "SELECT COUNT(*) AS total FROM usuario_lavanderia WHERE id_usuario = :idUsuario",
+      { idUsuario },
+    );
+    const disabled = Number(remaining[0]?.total ?? 0) === 0;
+    if (disabled) {
+      await conn.query<ResultSetHeader>("UPDATE usuario SET activo = 0 WHERE id_usuario = :idUsuario", { idUsuario });
+    }
+    await conn.commit();
+    await audit(req, "USUARIO_DELETE", idUsuario, `Quitar usuario ${rows[0].login} de lavandería ${idLavanderia}`);
+    return res.json({ ok: true, removed_from_lavanderia: true, disabled });
+  } catch {
+    await conn.rollback();
+    return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+  } finally {
+    conn.release();
+  }
 });

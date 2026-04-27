@@ -10,6 +10,7 @@ import { notFoundHandler, errorHandler } from "./web/errors.js";
 import { db } from "./db/pool.js";
 import { startIoTScheduler } from "./iot/scheduler.js";
 import { getMqttHealth, startMqttBridge } from "./iot/mqtt.js";
+import { getRedisHealthSnapshot, redisPingOk } from "./cache/redis.js";
 
 // En algunos entornos (WSL/Windows), resolver IPv6 primero puede colgar conexiones HTTP.
 // Forzamos IPv4-first para evitar timeouts "fantasma" en el proxy de cámara.
@@ -30,11 +31,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(
   cors({
     origin(origin, cb) {
-      // Permite:
-      // - sin Origin (curl, server-side)
-      // - Origin "null" (file://)
-      if (!origin || origin === "null") return cb(null, true);
-      if (!env.corsOrigins.length) return cb(null, true);
+      // Permite peticiones server-side/sin Origin (curl, health checks).
+      if (!origin) return cb(null, true);
+      // Origin null solo en desarrollo/demo local cuando se declara explícitamente.
+      if (origin === "null") return cb(null, env.corsAllowNullOrigin);
+      // El comodín se acepta solo fuera de producción para evitar CORS demasiado permisivo.
+      if (env.corsAllowAllOrigins) return cb(null, true);
       if (env.corsOrigins.includes(origin)) return cb(null, true);
       return cb(new Error("CORS_BLOCKED"));
     },
@@ -45,16 +47,19 @@ app.use(morgan("dev"));
 
 app.get("/health", async (_req, res) => {
   let dbOk = false;
+  let redisOk = false;
   try {
     await db.query("SELECT 1");
     dbOk = true;
   } catch {
     dbOk = false;
   }
+  redisOk = await redisPingOk();
   res.json({
     ok: true,
     service: "kwl-backend",
     db: dbOk ? "ok" : "down",
+    redis: getRedisHealthSnapshot(redisOk),
     mqtt: getMqttHealth(),
     iot: { scheduler: "running" },
     timestamp: new Date().toISOString(),

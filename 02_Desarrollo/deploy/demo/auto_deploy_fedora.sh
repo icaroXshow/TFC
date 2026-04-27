@@ -3,6 +3,7 @@ set -Eeuo pipefail
 
 RESET_DB=0
 SIN_ABRIR=0
+RUN_SMOKE=0
 
 usage() {
   cat <<'AYUDA'
@@ -12,6 +13,7 @@ Uso:
 Opciones:
   --reset-db   Borra el volumen de MariaDB y recrea datos demo
   --sin-abrir  No abre el navegador al finalizar
+  --smoke      Ejecuta validación rápida tras levantar (soft_load_test)
   -h, --help   Muestra esta ayuda
 AYUDA
 }
@@ -20,6 +22,7 @@ while (($#)); do
   case "$1" in
     --reset-db) RESET_DB=1 ;;
     --sin-abrir) SIN_ABRIR=1 ;;
+    --smoke) RUN_SMOKE=1 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "[X] Opción no reconocida: $1" >&2; usage; exit 1 ;;
   esac
@@ -27,6 +30,27 @@ while (($#)); do
 done
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+require_cmd() {
+  local cmd="$1"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "[X] Falta comando requerido: $cmd" >&2
+    exit 1
+  fi
+}
+
+ensure_env_file() {
+  if [[ -f "$SCRIPT_DIR/.env" ]]; then
+    return
+  fi
+  if [[ -f "$SCRIPT_DIR/.env.example" ]]; then
+    cp "$SCRIPT_DIR/.env.example" "$SCRIPT_DIR/.env"
+    echo "[i] Se creó .env desde .env.example"
+    return
+  fi
+  echo "[X] No existe .env ni .env.example en $SCRIPT_DIR" >&2
+  exit 1
+}
 
 docker_compose() {
   (cd "$SCRIPT_DIR" && docker compose "$@")
@@ -47,6 +71,10 @@ wait_http() {
     sleep 2
   done
 }
+
+require_cmd docker
+require_cmd curl
+ensure_env_file
 
 if [[ "$RESET_DB" -eq 1 ]]; then
   docker_compose down -v
@@ -72,6 +100,15 @@ echo "Backend : http://127.0.0.1:8080/health"
 echo "Adminer : http://127.0.0.1:8082"
 echo "MQTT    : mqtt://127.0.0.1:1883"
 echo "Redis   : redis://127.0.0.1:6379"
+
+if [[ "$RUN_SMOKE" -eq 1 ]]; then
+  if [[ -x "$SCRIPT_DIR/scripts/soft_load_test.sh" ]]; then
+    echo "[i] Ejecutando smoke test..."
+    (cd "$SCRIPT_DIR" && ./scripts/soft_load_test.sh)
+  else
+    echo "[!] No se encontró scripts/soft_load_test.sh ejecutable"
+  fi
+fi
 
 if [[ "$SIN_ABRIR" -eq 0 ]] && command -v xdg-open >/dev/null 2>&1; then
   xdg-open "http://127.0.0.1:8081/index.html" >/dev/null 2>&1 || true

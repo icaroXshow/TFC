@@ -22,7 +22,8 @@ Construir una versión funcional mínima que permita validar la arquitectura com
 - auditoría de acciones críticas
 - registro técnico de eventos
 - contabilidad operativa en base de datos
-- actualización en tiempo real mediante WebSockets
+- refresco de estado en panel por API (polling)
+- caché operativa con Redis para estado/configuración IoT
 - despliegue en entorno real y entorno demo
 
 ---
@@ -48,4 +49,4 @@ El MVP se considera válido si permite demostrar el flujo completo:
 3. se envía un comando al dispositivo
 4. el dispositivo responde con estado/evento
 5. el backend registra y actualiza
-6. el frontend refleja el cambio en tiempo real
+6. el frontend refleja el cambio por refresco API (y WebSocket como evolución)

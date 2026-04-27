@@ -200,7 +200,7 @@ Infraestructura
 
 Backend
 
-- PHP
+- Node
 - Nginx
 - Redis
 

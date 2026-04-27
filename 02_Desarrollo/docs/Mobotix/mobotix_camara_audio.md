@@ -1,6 +1,6 @@
 # Cámara y audio
 
-> Base URL: `http://es1034.c14.ovh:1055`
+> Base URL: `http://CAMERA_HOST:PORT`
 >
 > Los endpoints están escritos en formato relativo.
 

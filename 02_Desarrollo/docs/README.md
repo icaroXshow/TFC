@@ -33,3 +33,9 @@ Servir como apoyo para:
 
 - `docs/desarrollo/bitacora.md` → registro de cambios explicados (TFC)
 - `docs/decisiones/decision_backend_node.md` → por qué Node.js en backend
+
+Últimas actualizaciones relevantes en bitácora:
+- Informes completos (ciclos + evolución + tramos)
+- Editor Web ampliado (About + FAQs)
+- Redis activo como caché operativa en backend IoT
+- Instaladores demo robustecidos (`auto_deploy_fedora.sh` / `auto_deploy.ps1`)

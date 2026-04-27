@@ -10,7 +10,7 @@
 * definición conceptual del sistema
 * despliegue en entorno real y entorno de evaluación
 
-El sistema está diseñado como una arquitectura distribuida basada en eventos, donde los dispositivos físicos (o simulados) se comunican con el backend mediante MQTT, y los paneles web reciben actualizaciones en tiempo real.
+El sistema está diseñado como una arquitectura distribuida basada en eventos, donde los dispositivos físicos (o simulados) se comunican con el backend mediante MQTT. En la versión actual los paneles web consultan la API; Redis se usa para caché de estado/configuración IoT y WebSockets quedan como evolución de tiempo real.
 
 ---
 
@@ -21,9 +21,9 @@ El sistema se compone de los siguientes elementos:
 * **Backend**: gestiona la lógica, usuarios, máquinas y eventos
 * **Frontend**: interfaz web de control y monitorización
 * **MariaDB**: persistencia de datos
-* **Redis**: caché y soporte para tiempo real
+* **Redis**: caché activa de estado/configuración IoT y base para evolución de tiempo real
 * **MQTT**: comunicación con dispositivos (ESP32 o simulador)
-* **WebSockets**: actualización en tiempo real de los paneles
+* **WebSockets**: previstos para una iteración posterior
 * **Simulador**: permite probar el sistema sin hardware físico
 
 ### Flujo general
@@ -35,10 +35,11 @@ Dispositivos (ESP32 / Simulación)
         ↓
       Backend
    ├── MariaDB (persistencia)
-   ├── Redis (estado en tiempo real)
-   └── WebSockets
+   └── API HTTP
         ↓
      Frontend
+
+Redis activo para lecturas rápidas de IoT; WebSockets evolución prevista para actualización push.
 ```
 
 ---
@@ -130,12 +131,12 @@ Despliegue del sistema en distintos entornos:
 
 ## Redis en el sistema
 
-Redis se utiliza como:
+Redis se usa actualmente como caché de apoyo para:
 
-* **caché** de estados de acceso frecuente
-* **soporte para tiempo real**, permitiendo propagar cambios rápidamente hacia los paneles web mediante WebSockets
+* caché de estados de acceso frecuente
+* soporte de tiempo real junto con WebSockets
 
-Esto evita consultas constantes a la base de datos y mejora la capacidad de respuesta del sistema.
+Redis no sustituye a MariaDB: si Redis falla, el backend sigue operando con BD (fallback).
 
 ---
 
@@ -167,3 +168,27 @@ Para entender el sistema, se recomienda seguir este orden:
 3. `app/`
 4. `simulation/`
 5. `deploy/`
+
+---
+
+## Despliegue demo recomendado
+
+Ruta rápida (Linux/Fedora):
+
+```bash
+cd 02_Desarrollo/deploy/demo
+./auto_deploy_fedora.sh --smoke
+```
+
+Ruta rápida (Windows PowerShell):
+
+```powershell
+cd 02_Desarrollo/deploy/demo
+powershell -ExecutionPolicy Bypass -File .\auto_deploy.ps1 --smoke
+```
+
+Los instaladores:
+- validan prerequisitos básicos
+- crean `.env` desde `.env.example` si falta
+- levantan `docker compose`
+- verifican `health` y frontend

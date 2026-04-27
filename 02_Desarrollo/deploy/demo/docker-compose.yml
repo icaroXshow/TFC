@@ -75,7 +75,7 @@ services:
       DB_USER: root
       DB_PASSWORD: ${MARIADB_ROOT_PASSWORD:-demo}
       DB_NAME: kwl_lavanderia
-      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-change-this-secret}
+      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-kwl-demo-cambiar-esta-clave-en-produccion-32chars}
       MQTT_ENABLED: "true"
       MQTT_URL: mqtt://mqtt:1883
       CAMERA_BASE_URL: ${CAMERA_BASE_URL:-}

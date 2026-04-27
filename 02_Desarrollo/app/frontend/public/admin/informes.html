@@ -43,6 +43,7 @@
           <div class="admin-nav-group">Gestión</div>
           <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
           <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
+          <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
         </nav>
 
         <div class="admin-sidebar-bottom">
@@ -135,17 +136,87 @@
           </div>
 
           <div class="reports-view" data-view="evolucion" hidden>
-            <div class="admin-empty">Evolución: siguiente (gráficos + comparativas).</div>
+            <div class="reports-tabs" role="tablist" aria-label="Comparativas evolución">
+              <button type="button" class="reports-tab is-active" data-evtab="semanal" aria-selected="true">Semanal</button>
+              <button type="button" class="reports-tab" data-evtab="mensual" aria-selected="false">Mensual</button>
+              <button type="button" class="reports-tab" data-evtab="anual" aria-selected="false">Anual</button>
+            </div>
+            <div class="reports-filters">
+              <label>Semana (día referencia)
+                <input type="date" class="input" id="evWeekDate" />
+              </label>
+              <label>Mes
+                <input type="month" class="input" id="evMonth" />
+              </label>
+              <label>Año
+                <input type="number" class="input" id="evYear" min="2020" max="2100" />
+              </label>
+              <button type="button" class="btn-primary" id="evLoad">Comparar</button>
+            </div>
+            <div class="reports-meta">
+              <div class="cash-card"><span>Actual</span><strong id="evCurrentLabel">—</strong></div>
+              <div class="cash-card"><span>Anterior</span><strong id="evPrevLabel">—</strong></div>
+              <div class="cash-card"><span>Δ total</span><strong id="evDeltaTotal">—</strong></div>
+              <div class="cash-card"><span>Δ ciclos</span><strong id="evDeltaCycles">—</strong></div>
+            </div>
+            <div class="reports-table-wrap">
+              <table class="reports-table" aria-label="Tabla de evolución">
+                <thead>
+                  <tr>
+                    <th>Máquina</th>
+                    <th>Total actual</th>
+                    <th>Total anterior</th>
+                    <th>Δ total</th>
+                    <th>Ciclos actual</th>
+                    <th>Ciclos anterior</th>
+                    <th>Δ ciclos</th>
+                  </tr>
+                </thead>
+                <tbody id="evTbody"></tbody>
+              </table>
+            </div>
+            <div class="reports-table-wrap">
+              <table class="reports-table" aria-label="Gráfico evolución" id="evChartTable"></table>
+            </div>
+            <div class="reports-pager"><span class="reports-hint" id="evHint" aria-live="polite"></span></div>
           </div>
 
           <div class="reports-view" data-view="estadisticas" hidden>
-            <div class="admin-empty">Estadísticas: siguiente (tramos por horas/mes/año).</div>
+            <div class="reports-tabs" role="tablist" aria-label="Tramos estadísticas">
+              <button type="button" class="reports-tab is-active" data-sttab="diario" aria-selected="true">Diaria</button>
+              <button type="button" class="reports-tab" data-sttab="mensual" aria-selected="false">Mensual</button>
+              <button type="button" class="reports-tab" data-sttab="anual" aria-selected="false">Anual</button>
+            </div>
+            <div class="reports-filters">
+              <label>Día
+                <input type="date" class="input" id="stDate" />
+              </label>
+              <label>Mes
+                <input type="month" class="input" id="stMonth" />
+              </label>
+              <label>Año
+                <input type="number" class="input" id="stYear" min="2020" max="2100" />
+              </label>
+              <button type="button" class="btn-primary" id="stLoad">Ver tramos</button>
+            </div>
+            <div class="reports-meta">
+              <div class="cash-card"><span>Periodo</span><strong id="stPeriod">—</strong></div>
+              <div class="cash-card"><span>Total</span><strong id="stTotal">—</strong></div>
+              <div class="cash-card"><span>Ciclos</span><strong id="stCycles">—</strong></div>
+            </div>
+            <div class="reports-table-wrap" style="overflow:auto">
+              <table class="reports-table" aria-label="Tabla tramos" id="stTable"></table>
+            </div>
+            <div class="reports-table-wrap">
+              <table class="reports-table" aria-label="Gráfico tramos" id="stChartTable"></table>
+            </div>
+            <div class="reports-pager"><span class="reports-hint" id="stHint" aria-live="polite"></span></div>
           </div>
         </section>
       </main>
     </div>
 
-    <script src="/js/app.js"></script>
-    <script src="/js/admin.js"></script>
+    <script src="/js/app.js?v=20260428e"></script>
+    <script src="/js/admin.js?v=20260428e"></script>
   </body>
 </html>

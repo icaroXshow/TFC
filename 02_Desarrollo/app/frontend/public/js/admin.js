@@ -2,22 +2,11 @@
   const STORAGE_KEY = "kwl_auth";
   const ACTIVE_LAV_KEY = "kwl_lavanderia_activa";
   const API_BASE = `${window.location.protocol}//${window.location.hostname}:8080`;
-  const RAW_API_PREFIX = "http://127.0.0.1:8080";
-  const RAW_API_PREFIX_LOCALHOST = "http://localhost:8080";
 
   const $ = (s, c = document) => c.querySelector(s);
   let machineTimerInterval = null;
   let machinesPollInterval = null;
   let iotPollInterval = null;
-
-  const nativeFetch = window.fetch.bind(window);
-  window.fetch = (input, init) => {
-    if (typeof input === "string") {
-      const patched = input.replaceAll(RAW_API_PREFIX, API_BASE).replaceAll(RAW_API_PREFIX_LOCALHOST, API_BASE);
-      return nativeFetch(patched, init);
-    }
-    return nativeFetch(input, init);
-  };
 
   const cardBackend = $("#cardBackend");
   const healthLine = $("#healthLine");
@@ -39,12 +28,11 @@
   const storeOpenTime = $("#storeOpenTime");
   const storeCloseTime = $("#storeCloseTime");
   const storeOpenMachines = $("#storeOpenMachines");
+  const storeCloseMachines = $("#storeCloseMachines");
   const openDoor = $("#openDoor");
   const openLights = $("#openLights");
-  const openFan = $("#openFan");
   const closeDoor = $("#closeDoor");
   const closeLights = $("#closeLights");
-  const closeFan = $("#closeFan");
   const machinesGrid = $("#machinesGrid");
   const logoutBtn = $("#adminLogout");
   const adminApp = $("#adminApp");
@@ -134,6 +122,8 @@
   const logsQuery = $("#logsQuery");
   const logsAction = $("#logsAction");
   const logsLoad = $("#logsLoad");
+  const webEditorForm = $("#webEditorForm");
+  const webEditorSave = $("#webEditorSave");
 
   function setText(el, text) {
     if (!el) return;
@@ -177,6 +167,38 @@
     });
   }
 
+  function notifyNice(message, title = "Aviso") {
+    const dlg = document.createElement("dialog");
+    dlg.className = "modal";
+    dlg.innerHTML = `
+      <form method="dialog" class="modal-card" style="max-width:420px">
+        <div class="modal-head">
+          <strong>${title}</strong>
+        </div>
+        <div class="modal-body">
+          <p style="margin:0;color:rgba(255,255,255,.9)">${message}</p>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn-primary js-ok">Aceptar</button>
+        </div>
+      </form>
+    `;
+    document.body.appendChild(dlg);
+    const close = () => {
+      try {
+        dlg.close();
+      } catch {}
+      dlg.remove();
+    };
+    dlg.querySelector(".js-ok")?.addEventListener("click", close);
+    dlg.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      close();
+    });
+    if (typeof dlg.showModal === "function") dlg.showModal();
+    else close();
+  }
+
   function loadAuth() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -213,6 +235,7 @@
       ["informes", "/admin/informes.html"],
       ["usuarios", "/admin/usuarios.html"],
       ["logs", "/admin/logs.html"],
+      ["editor-web", "/admin/editor-web.html"],
     ];
     const current = navMap.find(([, url]) => path.endsWith(url));
     const key = current?.[0] ?? null;
@@ -231,6 +254,23 @@
     if (!isAdmin && location.pathname.toLowerCase().endsWith("/admin/usuarios.html")) {
       window.location.href = "/admin/inicio.html";
     }
+  }
+
+  function ensureEditorWebNavLink() {
+    const nav = document.querySelector(".admin-nav");
+    if (!nav) return;
+    if (nav.querySelector('[data-nav="editor-web"]')) return;
+    const a = document.createElement("a");
+    a.className = "admin-nav-item";
+    a.setAttribute("data-nav", "editor-web");
+    a.setAttribute("href", "/admin/editor-web.html");
+    a.textContent = "Editor Web";
+    const logs = nav.querySelector('[data-nav="logs"]');
+    if (logs?.parentElement === nav) {
+      logs.insertAdjacentElement("afterend", a);
+      return;
+    }
+    nav.appendChild(a);
   }
 
   function setBreadcrumbs() {
@@ -256,7 +296,7 @@
   }
 
   async function fetchLavanderias(token) {
-    const res = await fetch("http://127.0.0.1:8080/api/lavanderias", {
+    const res = await fetch(`${API_BASE}/api/lavanderias`, {
       headers: { authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error("LAVANDERIAS_FAILED");
@@ -448,6 +488,7 @@
     }
 
     lockUI(false);
+    ensureEditorWebNavLink();
     setActiveNav();
     setBreadcrumbs();
     applyRoleUI(rol);
@@ -479,7 +520,7 @@
       if (lavSelect) lavSelect.hidden = true;
     }
     try {
-      const healthRes = await fetch("http://127.0.0.1:8080/health");
+      const healthRes = await fetch(`${API_BASE}/health`);
       const health = await healthRes.json();
       setText(cardBackend, health?.db === "ok" ? "Conectado" : "BD caída");
       if (healthLine) {
@@ -511,7 +552,7 @@
       const mm = String(d.getMonth() + 1).padStart(2, "0");
       const dd = String(d.getDate()).padStart(2, "0");
       const date = `${yyyy}-${mm}-${dd}`;
-      const r = await fetch(`http://127.0.0.1:8080/api/caja/dia?date=${encodeURIComponent(date)}`, {
+      const r = await fetch(`${API_BASE}/api/caja/dia?date=${encodeURIComponent(date)}`, {
         headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
       });
       if (r.ok) {
@@ -530,78 +571,98 @@
     storeConfigClose?.addEventListener("click", () => {
       storeConfigDialog?.close();
     });
+    const buildStoreConfigPayloads = () => {
+      const actionsPayload = {
+        abrir_tienda: {
+          puerta_abierta: Boolean(openDoor?.checked),
+          luces_encendidas: Boolean(openLights?.checked),
+        },
+        cerrar_tienda: {
+          puerta_abierta: Boolean(closeDoor?.checked),
+          luces_encendidas: Boolean(closeLights?.checked),
+        },
+      };
+      const schedulePayload = {
+        puerta: { on: openDoor?.checked ? (storeOpenTime?.value || null) : null, off: closeDoor?.checked ? (storeCloseTime?.value || null) : null },
+        luces: { on: openLights?.checked ? (storeOpenTime?.value || null) : null, off: closeLights?.checked ? (storeCloseTime?.value || null) : null },
+      };
+      const selectedOpenMachines = storeOpenMachines
+        ? [...storeOpenMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        : [];
+      const selectedCloseMachines = storeCloseMachines
+        ? [...storeCloseMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        : [];
+      return { actionsPayload, schedulePayload, selectedOpenMachines, selectedCloseMachines };
+    };
+    const persistStoreConfigFromUi = async () => {
+      const { actionsPayload, schedulePayload, selectedOpenMachines, selectedCloseMachines } = buildStoreConfigPayloads();
+      const [aRes, sRes, openRes, closeRes] = await Promise.all([
+        fetch(`${API_BASE}/api/iot/store-actions`, {
+          method: "PUT",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(actionsPayload),
+        }),
+        fetch(`${API_BASE}/api/iot/schedule`, {
+          method: "PUT",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(schedulePayload),
+        }),
+        fetch(`${API_BASE}/api/iot/store-open-machines`, {
+          method: "PUT",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ maquinas: selectedOpenMachines }),
+        }),
+        fetch(`${API_BASE}/api/iot/store-close-machines`, {
+          method: "PUT",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ maquinas: selectedCloseMachines }),
+        }),
+      ]);
+      return aRes.ok && sRes.ok && openRes.ok && closeRes.ok;
+    };
     if (storeConfigSave) {
       storeConfigSave.addEventListener("click", async () => {
         storeConfigSave.disabled = true;
-        const actionsPayload = {
-          abrir_tienda: {
-            puerta_abierta: Boolean(openDoor?.checked),
-            luces_encendidas: Boolean(openLights?.checked),
-            ventilacion_encendida: Boolean(openFan?.checked),
-          },
-          cerrar_tienda: {
-            puerta_abierta: Boolean(closeDoor?.checked),
-            luces_encendidas: Boolean(closeLights?.checked),
-            ventilacion_encendida: Boolean(closeFan?.checked),
-          },
-        };
-        const schedulePayload = {
-          puerta: { on: openDoor?.checked ? (storeOpenTime?.value || null) : null, off: closeDoor?.checked ? (storeCloseTime?.value || null) : null },
-          luces: { on: openLights?.checked ? (storeOpenTime?.value || null) : null, off: closeLights?.checked ? (storeCloseTime?.value || null) : null },
-          ventilacion: { on: openFan?.checked ? (storeOpenTime?.value || null) : null, off: closeFan?.checked ? (storeCloseTime?.value || null) : null },
-        };
-        const selectedMachines = storeOpenMachines
-          ? [...storeOpenMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
-          : [];
-        const [aRes, sRes, mRes] = await Promise.all([
-          fetch("http://127.0.0.1:8080/api/iot/store-actions", {
-            method: "PUT",
-            headers: {
-              authorization: `Bearer ${token}`,
-              "x-lavanderia-id": String(activeLavId),
-              "content-type": "application/json",
-            },
-            body: JSON.stringify(actionsPayload),
-          }),
-          fetch("http://127.0.0.1:8080/api/iot/schedule", {
-            method: "PUT",
-            headers: {
-              authorization: `Bearer ${token}`,
-              "x-lavanderia-id": String(activeLavId),
-              "content-type": "application/json",
-            },
-            body: JSON.stringify(schedulePayload),
-          }),
-          fetch("http://127.0.0.1:8080/api/iot/store-open-machines", {
-            method: "PUT",
-            headers: {
-              authorization: `Bearer ${token}`,
-              "x-lavanderia-id": String(activeLavId),
-              "content-type": "application/json",
-            },
-            body: JSON.stringify({ maquinas: selectedMachines }),
-          }),
-        ]);
+        const ok = await persistStoreConfigFromUi();
         storeConfigSave.disabled = false;
-        if (aRes.ok && sRes.ok && mRes.ok) {
+        if (ok) {
           storeConfigDialog?.close();
           return;
         }
-        window.alert("No se pudo guardar la configuración.");
+        notifyNice("No se pudo guardar la configuración.");
       });
     }
     if (storeConfigDialog) {
-      const [r, s, machinesRes, selectedRes] = await Promise.all([
-        fetch("http://127.0.0.1:8080/api/iot/store-actions", {
+      const [r, s, machinesRes, selectedOpenRes, selectedCloseRes] = await Promise.all([
+        fetch(`${API_BASE}/api/iot/store-actions`, {
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
         }),
-        fetch("http://127.0.0.1:8080/api/iot/schedule", {
+        fetch(`${API_BASE}/api/iot/schedule`, {
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
         }),
-        fetch("http://127.0.0.1:8080/api/maquinas", {
+        fetch(`${API_BASE}/api/maquinas`, {
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
         }),
-        fetch("http://127.0.0.1:8080/api/iot/store-open-machines", {
+        fetch(`${API_BASE}/api/iot/store-open-machines`, {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        }),
+        fetch(`${API_BASE}/api/iot/store-close-machines`, {
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
         }),
       ]);
@@ -609,27 +670,32 @@
         const d = await r.json();
         if (openDoor) openDoor.checked = Boolean(d?.actions?.abrir_tienda?.puerta_abierta);
         if (openLights) openLights.checked = Boolean(d?.actions?.abrir_tienda?.luces_encendidas);
-        if (openFan) openFan.checked = Boolean(d?.actions?.abrir_tienda?.ventilacion_encendida);
         if (closeDoor) closeDoor.checked = Boolean(d?.actions?.cerrar_tienda?.puerta_abierta);
         if (closeLights) closeLights.checked = Boolean(d?.actions?.cerrar_tienda?.luces_encendidas);
-        if (closeFan) closeFan.checked = Boolean(d?.actions?.cerrar_tienda?.ventilacion_encendida);
       }
       if (s.ok) {
         const d = await s.json();
-        if (storeOpenTime) storeOpenTime.value = d?.schedule?.puerta?.on || d?.schedule?.luces?.on || d?.schedule?.ventilacion?.on || "";
-        if (storeCloseTime) storeCloseTime.value = d?.schedule?.puerta?.off || d?.schedule?.luces?.off || d?.schedule?.ventilacion?.off || "";
+        if (storeOpenTime) storeOpenTime.value = d?.schedule?.puerta?.on || d?.schedule?.luces?.on || "";
+        if (storeCloseTime) storeCloseTime.value = d?.schedule?.puerta?.off || d?.schedule?.luces?.off || "";
       }
-      if (storeOpenMachines) {
+      if (storeOpenMachines || storeCloseMachines) {
         const allMachines = machinesRes.ok ? (await machinesRes.json())?.maquinas || [] : [];
-        const selectedIds = selectedRes.ok ? (await selectedRes.json())?.maquinas || [] : [];
-        const selected = new Set(selectedIds.map((x) => Number(x)));
-        storeOpenMachines.innerHTML = allMachines
-          .map((m) => `<label><input type="checkbox" value="${m.id_maquina}" ${selected.has(Number(m.id_maquina)) ? "checked" : ""} /> ${m.codigo_visible}</label>`)
+        const selectedOpenIds = selectedOpenRes.ok ? (await selectedOpenRes.json())?.maquinas || [] : [];
+        const selectedCloseIds = selectedCloseRes.ok ? (await selectedCloseRes.json())?.maquinas || [] : [];
+        const selectedOpen = new Set(selectedOpenIds.map((x) => Number(x)));
+        const selectedClose = new Set(selectedCloseIds.map((x) => Number(x)));
+        const htmlOpen = allMachines
+          .map((m) => `<label><input type="checkbox" value="${m.id_maquina}" ${selectedOpen.has(Number(m.id_maquina)) ? "checked" : ""} /> ${m.codigo_visible}</label>`)
           .join("");
+        const htmlClose = allMachines
+          .map((m) => `<label><input type="checkbox" value="${m.id_maquina}" ${selectedClose.has(Number(m.id_maquina)) ? "checked" : ""} /> ${m.codigo_visible}</label>`)
+          .join("");
+        if (storeOpenMachines) storeOpenMachines.innerHTML = htmlOpen;
+        if (storeCloseMachines) storeCloseMachines.innerHTML = htmlClose;
       }
     }
     const loadEnvFromBackend = async () => {
-      const r = await fetch("http://127.0.0.1:8080/api/configuracion/env", {
+      const r = await fetch(`${API_BASE}/api/configuracion/env`, {
         headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
       });
       if (!r.ok) throw new Error("ENV_LOAD_FAILED");
@@ -639,12 +705,139 @@
       if (envCameraPass) envCameraPass.value = d?.env?.CAMERA_PASS || "";
       if (envMqttUrl) envMqttUrl.value = d?.env?.MQTT_URL || "";
     };
+    const webEditorKeys = [
+      "brand_name",
+      "nav_inicio",
+      "nav_about",
+      "nav_contacto",
+      "nav_faqs",
+      "inicio_bienvenida",
+      "inicio_titulo",
+      "inicio_subtitulo",
+      "about_titulo",
+      "about_subtitulo",
+      "about_parrafo_1",
+      "about_parrafo_2",
+      "contacto_titulo",
+      "contacto_subtitulo",
+      "contacto_telefono",
+      "contacto_email",
+      "direccion_texto",
+      "mapa_url",
+      "footer_titulo_horario",
+      "footer_titulo_mapa",
+      "footer_copy",
+      "horario_lunes",
+      "horario_martes",
+      "horario_miercoles",
+      "horario_jueves",
+      "horario_viernes",
+      "horario_sabado",
+      "horario_domingo",
+      "faq_q1",
+      "faq_a1",
+      "faq_q2",
+      "faq_a2",
+      "faq_q3",
+      "faq_a3",
+      "faq_q4",
+      "faq_a4",
+      "faq_q5",
+      "faq_a5",
+      "faq_q6",
+      "faq_a6",
+    ];
+    const loadWebEditor = async () => {
+      if (!webEditorForm) return;
+      const r = await fetch(`${API_BASE}/api/configuracion/web-public/admin`, {
+        headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+      });
+      if (!r.ok) throw new Error("WEB_EDITOR_LOAD_FAILED");
+      const d = await r.json();
+      const content = d?.contenido || {};
+      webEditorKeys.forEach((key) => {
+        const input = document.getElementById(`web_${key}`);
+        if (input) input.value = String(content[key] ?? "");
+      });
+    };
+    if (webEditorForm) {
+      const panelStorageKey = `kwl_web_editor_panels_${String(activeLavId)}`;
+      const applyWebPanelVisibility = () => {
+        const toggles = [...webEditorForm.querySelectorAll(".js-web-panel-toggle")];
+        toggles.forEach((toggle) => {
+          const targetId = String(toggle.getAttribute("data-target") || "");
+          if (!targetId) return;
+          const panel = document.getElementById(targetId);
+          if (!panel) return;
+          panel.hidden = !toggle.checked;
+        });
+      };
+      try {
+        const raw = localStorage.getItem(panelStorageKey);
+        const saved = raw ? JSON.parse(raw) : {};
+        if (saved && typeof saved === "object") {
+          [...webEditorForm.querySelectorAll(".js-web-panel-toggle")].forEach((toggle) => {
+            const targetId = String(toggle.getAttribute("data-target") || "");
+            if (!targetId) return;
+            if (Object.prototype.hasOwnProperty.call(saved, targetId)) toggle.checked = Boolean(saved[targetId]);
+          });
+        }
+      } catch {
+        // ignore
+      }
+      applyWebPanelVisibility();
+      webEditorForm.querySelectorAll(".js-web-panel-toggle").forEach((toggle) => {
+        toggle.addEventListener("change", () => {
+          const state = {};
+          webEditorForm.querySelectorAll(".js-web-panel-toggle").forEach((x) => {
+            const targetId = String(x.getAttribute("data-target") || "");
+            if (!targetId) return;
+            state[targetId] = Boolean(x.checked);
+          });
+          try {
+            localStorage.setItem(panelStorageKey, JSON.stringify(state));
+          } catch {
+            // ignore
+          }
+          applyWebPanelVisibility();
+        });
+      });
+      try {
+        await loadWebEditor();
+      } catch {
+        notifyNice("No se pudo cargar el Editor Web.");
+      }
+      webEditorForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (webEditorSave) webEditorSave.disabled = true;
+        const payload = {};
+        webEditorKeys.forEach((key) => {
+          const input = document.getElementById(`web_${key}`);
+          payload[key] = String(input?.value ?? "").trim();
+        });
+        const r = await fetch(`${API_BASE}/api/configuracion/web-public/admin`, {
+          method: "PUT",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        if (webEditorSave) webEditorSave.disabled = false;
+        if (!r.ok) {
+          notifyNice("No se pudo guardar el contenido público.");
+          return;
+        }
+        notifyNice("Contenido público guardado.", "Guardado");
+      });
+    }
     storeEnvBtn?.addEventListener("click", async () => {
       try {
         await loadEnvFromBackend();
         storeEnvDialog?.showModal();
       } catch {
-        window.alert("No se pudieron cargar ajustes.");
+        notifyNice("No se pudieron cargar ajustes.");
       }
     });
     storeEnvClose?.addEventListener("click", () => storeEnvDialog?.close());
@@ -655,7 +848,7 @@
         CAMERA_PASS: envCameraPass?.value || "",
         MQTT_URL: envMqttUrl?.value?.trim() || "",
       };
-      const r = await fetch("http://127.0.0.1:8080/api/configuracion/env", {
+      const r = await fetch(`${API_BASE}/api/configuracion/env`, {
         method: "PUT",
         headers: {
           authorization: `Bearer ${token}`,
@@ -665,33 +858,45 @@
         body: JSON.stringify(next),
       });
       if (!r.ok) {
-        window.alert("No se pudieron guardar ajustes.");
+        notifyNice("No se pudieron guardar ajustes.");
         return;
       }
       storeEnvDialog?.close();
     });
     if (storeOpenBtn) {
       storeOpenBtn.addEventListener("click", async () => {
-        await fetch("http://127.0.0.1:8080/api/iot/store/open", {
+        const saved = await persistStoreConfigFromUi();
+        if (!saved) {
+          notifyNice("No se pudo aplicar la configuración de apertura.");
+          return;
+        }
+        const r = await fetch(`${API_BASE}/api/iot/store/open`, {
           method: "POST",
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId), "content-type": "application/json" },
           body: "{}",
         });
+        if (!r.ok) notifyNice("No se pudo abrir tienda.");
       });
     }
     if (storeCloseBtn) {
       storeCloseBtn.addEventListener("click", async () => {
-        await fetch("http://127.0.0.1:8080/api/iot/store/close", {
+        const saved = await persistStoreConfigFromUi();
+        if (!saved) {
+          notifyNice("No se pudo aplicar la configuración de cierre.");
+          return;
+        }
+        const r = await fetch(`${API_BASE}/api/iot/store/close`, {
           method: "POST",
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId), "content-type": "application/json" },
           body: "{}",
         });
+        if (!r.ok) notifyNice("No se pudo cerrar tienda.");
       });
     }
 
     // Cámara (si hay botones en esta vista)
     const callCamera = async (path, body) => {
-      const res = await fetch(`http://127.0.0.1:8080/api/camera${path}`, {
+      const res = await fetch(`${API_BASE}/api/camera${path}`, {
         method: "POST",
         headers: {
           authorization: `Bearer ${token}`,
@@ -802,13 +1007,13 @@
       try {
         setIotHint("");
         const [stateRes, schRes, approxRes] = await Promise.all([
-          fetch("http://127.0.0.1:8080/api/iot/state", {
+          fetch(`${API_BASE}/api/iot/state`, {
             headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
           }),
-          fetch("http://127.0.0.1:8080/api/iot/schedule", {
+          fetch(`${API_BASE}/api/iot/schedule`, {
             headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
           }),
-          fetch("http://127.0.0.1:8080/api/iot/approx-state", {
+          fetch(`${API_BASE}/api/iot/approx-state`, {
             headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
           }),
         ]);
@@ -847,7 +1052,7 @@
 
     const loadIotLog = async () => {
       if (!iotLogTbody) return;
-      const r = await fetch("http://127.0.0.1:8080/api/iot/relay-action-log", {
+      const r = await fetch(`${API_BASE}/api/iot/relay-action-log`, {
         headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
       });
       if (!r.ok) {
@@ -874,7 +1079,7 @@
 
     const saveState = async (nextState) => {
       const payload = { ...currentIotState, ...nextState };
-      const res = await fetch("http://127.0.0.1:8080/api/iot/state", {
+      const res = await fetch(`${API_BASE}/api/iot/state`, {
         method: "PUT",
         headers: {
           authorization: `Bearer ${token}`,
@@ -895,7 +1100,7 @@
       if (isSimulatorLav(activeLavInfo)) {
         return;
       }
-      const r = await fetch("http://127.0.0.1:8080/api/camera/relay/pulse", {
+      const r = await fetch(`${API_BASE}/api/camera/relay/pulse`, {
         method: "POST",
         headers: {
           authorization: `Bearer ${token}`,
@@ -907,7 +1112,7 @@
       if (!r.ok) throw new Error("RELAY_FAILED");
     };
     const registerRelayToggle = async (device, origin = "manual", forcedAction = "toggle") => {
-      const r = await fetch("http://127.0.0.1:8080/api/iot/relay-action", {
+      const r = await fetch(`${API_BASE}/api/iot/relay-action`, {
         method: "POST",
         headers: {
           authorization: `Bearer ${token}`,
@@ -927,7 +1132,7 @@
         await registerRelayToggle("puerta", "inicio", nextAction);
         await loadIot();
       } catch {
-        window.alert("No se pudo cambiar puerta.");
+        notifyNice("No se pudo cambiar puerta.");
       }
     });
     quickLightsBtn?.addEventListener("click", async () => {
@@ -938,14 +1143,14 @@
         await registerRelayToggle("luces", "inicio", nextAction);
         await loadIot();
       } catch {
-        window.alert("No se pudo cambiar luces.");
+        notifyNice("No se pudo cambiar luces.");
       }
     });
     quickAudioBtn?.addEventListener("click", async () => {
       const soundfile = String(quickAudioSound?.value || "PUBLICIDAD");
       if (!(await confirmNice("Confirmar audio", `¿Reproducir "${soundfile}" en la tienda?`))) return;
       try {
-        const r = await fetch("http://127.0.0.1:8080/api/camera/audio/play", {
+        const r = await fetch(`${API_BASE}/api/camera/audio/play`, {
           method: "POST",
           headers: {
             authorization: `Bearer ${token}`,
@@ -955,7 +1160,7 @@
           body: JSON.stringify({ soundfile }),
         });
         if (!r.ok) throw new Error("AUDIO_FAILED");
-        await fetch("http://127.0.0.1:8080/api/iot/relay-action", {
+        await fetch(`${API_BASE}/api/iot/relay-action`, {
           method: "POST",
           headers: {
             authorization: `Bearer ${token}`,
@@ -965,7 +1170,7 @@
           body: JSON.stringify({ dispositivo: "audio", accion: "play", origen: "inicio" }),
         });
       } catch {
-        window.alert("No se pudo reproducir audio.");
+        notifyNice("No se pudo reproducir audio.");
       }
     });
 
@@ -989,22 +1194,6 @@
         setIotHint("Error en cambio de luces.");
       }
     });
-    doorState?.addEventListener("click", async () => {
-      try {
-        await registerRelayToggle("puerta");
-        await loadIot();
-      } catch {
-        setIotHint("Error al actualizar estado aproximado de puerta.");
-      }
-    });
-    lightsState?.addEventListener("click", async () => {
-      try {
-        await registerRelayToggle("luces");
-        await loadIot();
-      } catch {
-        setIotHint("Error al actualizar estado aproximado de luces.");
-      }
-    });
     fanOn?.addEventListener("click", async () => {
       await saveState({ ventilacion_encendida: true });
     });
@@ -1023,7 +1212,7 @@
           : { on: null, off: null },
         ventilacion: { on: String(fanOnTime?.value ?? "").trim() || null, off: String(fanOffTime?.value ?? "").trim() || null },
       };
-      const res = await fetch("http://127.0.0.1:8080/api/iot/schedule", {
+      const res = await fetch(`${API_BASE}/api/iot/schedule`, {
         method: "PUT",
         headers: {
           authorization: `Bearer ${token}`,
@@ -1135,7 +1324,7 @@
     const loadUsers = async () => {
       if (!isUsersView) return;
       showNote("");
-      const res = await fetch("http://127.0.0.1:8080/api/usuarios", {
+      const res = await fetch(`${API_BASE}/api/usuarios`, {
         headers: {
           authorization: `Bearer ${token}`,
           "x-lavanderia-id": String(activeLavId),
@@ -1192,10 +1381,10 @@
       if (lavsBtn) {
         try {
           const [allLavRes, userLavRes] = await Promise.all([
-            fetch("http://127.0.0.1:8080/api/lavanderias", {
+            fetch(`${API_BASE}/api/lavanderias`, {
               headers: { authorization: `Bearer ${token}` },
             }),
-            fetch(`http://127.0.0.1:8080/api/usuarios/${id}/lavanderias`, {
+            fetch(`${API_BASE}/api/usuarios/${id}/lavanderias`, {
               headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
             }),
           ]);
@@ -1206,7 +1395,7 @@
           const raw = window.prompt(`IDs de tiendas (coma):\n${hint}`, userLav.join(","));
           if (raw === null) return;
           const ids = raw.split(",").map((x) => Number(x.trim())).filter((x) => Number.isFinite(x) && x > 0);
-          const r = await fetch(`http://127.0.0.1:8080/api/usuarios/${id}/lavanderias`, {
+          const r = await fetch(`${API_BASE}/api/usuarios/${id}/lavanderias`, {
             method: "PUT",
             headers: {
               authorization: `Bearer ${token}`,
@@ -1227,7 +1416,7 @@
         toggleBtn.disabled = true;
         try {
           const action = user.activo ? "desactivar" : "activar";
-          const r = await fetch(`http://127.0.0.1:8080/api/usuarios/${id}/${action}`, {
+          const r = await fetch(`${API_BASE}/api/usuarios/${id}/${action}`, {
             method: "POST",
             headers: {
               authorization: `Bearer ${token}`,
@@ -1246,9 +1435,9 @@
       }
 
       if (delBtn) {
-        if (!window.confirm(`¿Borrar usuario ${user.email}?`)) return;
+        if (!(await confirmNice("Borrar usuario", `¿Borrar usuario ${user.email}?`, "Borrar", "Cancelar"))) return;
         try {
-          const r = await fetch(`http://127.0.0.1:8080/api/usuarios/${id}`, {
+          const r = await fetch(`${API_BASE}/api/usuarios/${id}`, {
             method: "DELETE",
             headers: {
               authorization: `Bearer ${token}`,
@@ -1278,7 +1467,7 @@
       if (!payload.nombre || !payload.email) return;
 
       const url =
-        mode === "edit" && id > 0 ? `http://127.0.0.1:8080/api/usuarios/${id}` : "http://127.0.0.1:8080/api/usuarios";
+        mode === "edit" && id > 0 ? `${API_BASE}/api/usuarios/${id}` : `${API_BASE}/api/usuarios`;
       const method = mode === "edit" && id > 0 ? "PUT" : "POST";
 
       const sendPayload = { ...payload };
@@ -1359,7 +1548,7 @@
     };
     const loadCash = async (path) => {
       setCashHint("");
-      const res = await fetch(`http://127.0.0.1:8080/api/caja/${path}`, {
+      const res = await fetch(`${API_BASE}/api/caja/${path}`, {
         headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
       });
       const data = await res.json().catch(() => ({}));
@@ -1390,8 +1579,22 @@
       if (cashTo && !cashTo.value) cashTo.value = t;
 
       document.querySelectorAll(".cash-tab").forEach((b) => {
-        b.addEventListener("click", () => {
-          setCashView(b.getAttribute("data-tab") || "dia");
+        b.addEventListener("click", async () => {
+          const view = b.getAttribute("data-tab") || "dia";
+          setCashView(view);
+          if (view === "dia") {
+            const d = String(cashDay?.value ?? "").trim() || t;
+            await loadCash(`dia?date=${encodeURIComponent(d)}`);
+            return;
+          }
+          if (view === "semana") {
+            const d = String(cashWeekDate?.value ?? "").trim() || t;
+            await loadCash(`semana?date=${encodeURIComponent(d)}`);
+            return;
+          }
+          const f = String(cashFrom?.value ?? "").trim() || t.slice(0, 8) + "01";
+          const to = String(cashTo?.value ?? "").trim() || t;
+          await loadCash(`rango?from=${encodeURIComponent(f)}&to=${encodeURIComponent(to)}`);
         });
       });
 
@@ -1416,9 +1619,32 @@
       await loadCash(`dia?date=${encodeURIComponent(String(cashDay?.value ?? t))}`);
     }
 
-    // Informes (Ciclos)
+    // Informes (Ciclos + Evolución + Estadísticas)
     const isReportsView = Boolean(repTbody);
     if (isReportsView) {
+      const evWeekDate = document.getElementById("evWeekDate");
+      const evMonth = document.getElementById("evMonth");
+      const evYear = document.getElementById("evYear");
+      const evLoad = document.getElementById("evLoad");
+      const evTbody = document.getElementById("evTbody");
+      const evHint = document.getElementById("evHint");
+      const evCurrentLabel = document.getElementById("evCurrentLabel");
+      const evPrevLabel = document.getElementById("evPrevLabel");
+      const evDeltaTotal = document.getElementById("evDeltaTotal");
+      const evDeltaCycles = document.getElementById("evDeltaCycles");
+      const evChartTable = document.getElementById("evChartTable");
+
+      const stDate = document.getElementById("stDate");
+      const stMonth = document.getElementById("stMonth");
+      const stYear = document.getElementById("stYear");
+      const stLoad = document.getElementById("stLoad");
+      const stPeriod = document.getElementById("stPeriod");
+      const stTotal = document.getElementById("stTotal");
+      const stCycles = document.getElementById("stCycles");
+      const stTable = document.getElementById("stTable");
+      const stHint = document.getElementById("stHint");
+      const stChartTable = document.getElementById("stChartTable");
+
       const today = () => {
         const d = new Date();
         const yyyy = d.getFullYear();
@@ -1426,16 +1652,35 @@
         const dd = String(d.getDate()).padStart(2, "0");
         return `${yyyy}-${mm}-${dd}`;
       };
+      const monthNow = () => today().slice(0, 7);
+      const yearNow = () => String(new Date().getFullYear());
+
       const t = today();
       if (repFrom && !repFrom.value) repFrom.value = t;
       if (repTo && !repTo.value) repTo.value = t;
+      if (evWeekDate && !evWeekDate.value) evWeekDate.value = t;
+      if (evMonth && !evMonth.value) evMonth.value = monthNow();
+      if (evYear && !evYear.value) evYear.value = yearNow();
+      if (stDate && !stDate.value) stDate.value = t;
+      if (stMonth && !stMonth.value) stMonth.value = monthNow();
+      if (stYear && !stYear.value) stYear.value = yearNow();
 
       let offset = 0;
       const limit = 25;
+      let evTab = "semanal";
+      let stTab = "diario";
 
       const setHint = (text) => {
         if (!repHint) return;
         repHint.textContent = text || "";
+      };
+      const setEvHint = (text) => {
+        if (!evHint) return;
+        evHint.textContent = text || "";
+      };
+      const setStHint = (text) => {
+        if (!stHint) return;
+        stHint.textContent = text || "";
       };
 
       const eur = (n) => {
@@ -1455,8 +1700,11 @@
         }
       };
 
+      const barCell = (pct, txt) =>
+        `<div style="display:flex;align-items:center;gap:8px"><div style="height:8px;flex:1;background:rgba(255,255,255,.1);border-radius:999px"><div style="height:8px;width:${pct}%;background:#40c2a8;border-radius:999px"></div></div><span>${txt}</span></div>`;
+
       const setReportsTab = (tab) => {
-        document.querySelectorAll(".reports-tab").forEach((b) => {
+        document.querySelectorAll(".reports-tab[data-tab]").forEach((b) => {
           const active = b.getAttribute("data-tab") === tab;
           b.classList.toggle("is-active", active);
           b.setAttribute("aria-selected", active ? "true" : "false");
@@ -1466,11 +1714,35 @@
           v.hidden = !show;
         });
       };
+      const setEvTab = (tab) => {
+        evTab = tab;
+        document.querySelectorAll(".reports-tab[data-evtab]").forEach((b) => {
+          const active = b.getAttribute("data-evtab") === tab;
+          b.classList.toggle("is-active", active);
+          b.setAttribute("aria-selected", active ? "true" : "false");
+        });
+      };
+      const setStTab = (tab) => {
+        stTab = tab;
+        document.querySelectorAll(".reports-tab[data-sttab]").forEach((b) => {
+          const active = b.getAttribute("data-sttab") === tab;
+          b.classList.toggle("is-active", active);
+          b.setAttribute("aria-selected", active ? "true" : "false");
+        });
+      };
 
-      document.querySelectorAll(".reports-tab").forEach((b) => {
+      document.querySelectorAll(".reports-tab[data-tab]").forEach((b) => {
         b.addEventListener("click", () => setReportsTab(b.getAttribute("data-tab") || "ciclos"));
       });
+      document.querySelectorAll(".reports-tab[data-evtab]").forEach((b) => {
+        b.addEventListener("click", () => setEvTab(b.getAttribute("data-evtab") || "semanal"));
+      });
+      document.querySelectorAll(".reports-tab[data-sttab]").forEach((b) => {
+        b.addEventListener("click", () => setStTab(b.getAttribute("data-sttab") || "diario"));
+      });
       setReportsTab("ciclos");
+      setEvTab("semanal");
+      setStTab("diario");
 
       const loadCiclos = async () => {
         if (!repTbody) return;
@@ -1489,7 +1761,7 @@
         if (mid) qs.set("id_maquina", mid);
         if (estado) qs.set("estado", estado);
 
-        const res = await fetch(`http://127.0.0.1:8080/api/informes/ciclos?${qs.toString()}`, {
+        const res = await fetch(`${API_BASE}/api/informes/ciclos?${qs.toString()}`, {
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
         });
         const data = await res.json().catch(() => ({}));
@@ -1529,6 +1801,137 @@
         if (repNext) repNext.disabled = offset + limit >= (data?.total ?? 0);
       };
 
+      const loadEvolucion = async () => {
+        if (!evTbody) return;
+        setEvHint("");
+        let url = `${API_BASE}/api/informes/evolucion/semanal?date=${encodeURIComponent(String(evWeekDate?.value || t))}`;
+        if (evTab === "mensual") {
+          url = `${API_BASE}/api/informes/evolucion/mensual?month=${encodeURIComponent(String(evMonth?.value || monthNow()))}`;
+        }
+        if (evTab === "anual") {
+          url = `${API_BASE}/api/informes/evolucion/anual?year=${encodeURIComponent(String(evYear?.value || yearNow()))}`;
+        }
+        const res = await fetch(url, {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setEvHint(`Error: ${data?.error || "NO_OK"}`);
+          evTbody.innerHTML = `<tr><td colspan="7">Error</td></tr>`;
+          if (evChartTable) evChartTable.innerHTML = "";
+          return;
+        }
+        if (evCurrentLabel) evCurrentLabel.textContent = data?.periodo_actual || "—";
+        if (evPrevLabel) evPrevLabel.textContent = data?.periodo_anterior || "—";
+        if (evDeltaTotal) evDeltaTotal.textContent = eur(data?.resumen?.delta_total || 0);
+        if (evDeltaCycles) evDeltaCycles.textContent = String(data?.resumen?.delta_ciclos ?? 0);
+
+        const items = Array.isArray(data?.machines) ? data.machines : [];
+        evTbody.innerHTML = "";
+        if (!items.length) {
+          evTbody.innerHTML = `<tr><td colspan="7">Sin datos</td></tr>`;
+        } else {
+          items.forEach((m) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${m.codigo_visible}</td>
+              <td>${eur(m.total_actual)}</td>
+              <td>${eur(m.total_anterior)}</td>
+              <td>${eur(m.delta_total)}</td>
+              <td>${m.ciclos_actual}</td>
+              <td>${m.ciclos_anterior}</td>
+              <td>${m.delta_ciclos}</td>
+            `;
+            evTbody.appendChild(tr);
+          });
+        }
+
+        if (evChartTable) {
+          const max = Math.max(1, ...items.map((m) => Number(m.total_actual || 0)));
+          evChartTable.innerHTML = `
+            <thead><tr><th>Máquina</th><th>Total actual (gráfico)</th></tr></thead>
+            <tbody>
+              ${items
+                .map((m) => {
+                  const total = Number(m.total_actual || 0);
+                  const pct = Math.min(100, Math.round((total / max) * 100));
+                  return `<tr><td>${m.codigo_visible}</td><td>${barCell(pct, eur(total))}</td></tr>`;
+                })
+                .join("")}
+            </tbody>
+          `;
+        }
+      };
+
+      const loadEstadisticas = async () => {
+        if (!stTable) return;
+        setStHint("");
+        let url = `${API_BASE}/api/informes/tramos/diario?date=${encodeURIComponent(String(stDate?.value || t))}`;
+        if (stTab === "mensual") {
+          url = `${API_BASE}/api/informes/tramos/mensual?month=${encodeURIComponent(String(stMonth?.value || monthNow()))}`;
+        }
+        if (stTab === "anual") {
+          url = `${API_BASE}/api/informes/tramos/anual?year=${encodeURIComponent(String(stYear?.value || yearNow()))}`;
+        }
+        const res = await fetch(url, {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setStHint(`Error: ${data?.error || "NO_OK"}`);
+          stTable.innerHTML = "";
+          if (stChartTable) stChartTable.innerHTML = "";
+          return;
+        }
+        const rows = Array.isArray(data?.data) ? data.data : [];
+        const totals = Array.isArray(data?.totals_by_machine) ? data.totals_by_machine : [];
+        if (stPeriod) stPeriod.textContent = String(data?.periodo || "—");
+        if (stTotal) stTotal.textContent = eur(data?.total_general || 0);
+        if (stCycles) stCycles.textContent = String(data?.ciclos_general ?? 0);
+
+        const machineCols = totals.map((m) => m.codigo_visible);
+        stTable.innerHTML = `
+          <thead>
+            <tr>
+              <th>Tramo</th>
+              ${machineCols.map((c) => `<th>${c}</th>`).join("")}
+              <th>Total tramo</th>
+              <th>Ciclos tramo</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows
+              .map((r) => {
+                const cells = (r.maquinas || []).map((m) => `<td>${eur(m.total)}<br/><small>${m.ciclos} ciclos</small></td>`).join("");
+                return `<tr><td>${r.slot}</td>${cells}<td>${eur(r.total_slot)}</td><td>${r.ciclos_slot}</td></tr>`;
+              })
+              .join("")}
+            <tr>
+              <td><strong>Total</strong></td>
+              ${totals.map((m) => `<td><strong>${eur(m.total)}</strong><br/><small>${m.ciclos} ciclos</small></td>`).join("")}
+              <td><strong>${eur(data?.total_general || 0)}</strong></td>
+              <td><strong>${data?.ciclos_general || 0}</strong></td>
+            </tr>
+          </tbody>
+        `;
+
+        if (stChartTable) {
+          const max = Math.max(1, ...rows.map((r) => Number(r.total_slot || 0)));
+          stChartTable.innerHTML = `
+            <thead><tr><th>Tramo</th><th>Total (gráfico)</th></tr></thead>
+            <tbody>
+              ${rows
+                .map((r) => {
+                  const total = Number(r.total_slot || 0);
+                  const pct = Math.min(100, Math.round((total / max) * 100));
+                  return `<tr><td>${r.slot}</td><td>${barCell(pct, eur(total))}</td></tr>`;
+                })
+                .join("")}
+            </tbody>
+          `;
+        }
+      };
+
       repLoad?.addEventListener("click", async () => {
         offset = 0;
         await loadCiclos();
@@ -1541,8 +1944,14 @@
         offset = offset + limit;
         await loadCiclos();
       });
+      evLoad?.addEventListener("click", loadEvolucion);
+      stLoad?.addEventListener("click", loadEstadisticas);
+      document.querySelectorAll(".reports-tab[data-evtab]").forEach((b) => b.addEventListener("click", loadEvolucion));
+      document.querySelectorAll(".reports-tab[data-sttab]").forEach((b) => b.addEventListener("click", loadEstadisticas));
 
       await loadCiclos();
+      await loadEvolucion();
+      await loadEstadisticas();
     }
 
     // Logs (Auditoría)
@@ -1574,7 +1983,7 @@
         if (q) qs.set("q", q);
         if (action) qs.set("accion", action);
 
-        const r = await fetch(`http://127.0.0.1:8080/api/auditoria?${qs.toString()}`, {
+        const r = await fetch(`${API_BASE}/api/auditoria?${qs.toString()}`, {
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
         });
         const data = await r.json().catch(() => ({}));
@@ -1616,7 +2025,9 @@
       if (loadMaquinas._busy) return;
       loadMaquinas._busy = true;
       try {
-        const res = await fetch("http://127.0.0.1:8080/api/maquinas", {
+        const isMachinesView = location.pathname.toLowerCase().endsWith("/admin/maquinas.html");
+        if (isMachinesView && machinesGrid?.querySelector(".machine-drawer.is-open")) return;
+        const res = await fetch(`${API_BASE}/api/maquinas`, {
           headers: {
             authorization: `Bearer ${token}`,
             "x-lavanderia-id": String(activeLavId),
@@ -1726,7 +2137,7 @@
         if (!Number.isFinite(importe) || importe <= 0) return;
         applyBtn.disabled = true;
         try {
-          const res = await fetch(`http://127.0.0.1:8080/api/maquinas/${id}/${mode}`, {
+          const res = await fetch(`${API_BASE}/api/maquinas/${id}/${mode}`, {
             method: "POST",
             headers: {
               authorization: `Bearer ${token}`,
@@ -1754,7 +2165,7 @@
 
       anyBtn.disabled = true;
       try {
-        const res = await fetch(`http://127.0.0.1:8080/api/maquinas/${id}/${action}`, {
+        const res = await fetch(`${API_BASE}/api/maquinas/${id}/${action}`, {
           method: "POST",
           headers: {
             authorization: `Bearer ${token}`,
@@ -1763,9 +2174,13 @@
           },
           body: JSON.stringify(body),
         });
-        if (!res.ok) throw new Error("ACTION_FAILED");
+        if (!res.ok) {
+          const ebody = await res.json().catch(() => ({}));
+          throw new Error(String(ebody?.error || "ACTION_FAILED"));
+        }
         await loadMaquinas();
       } catch {
+        notifyNice(`No se pudo ${action === "detener" ? "apagar" : "encender"} la máquina.`);
         await loadMaquinas();
       }
     });
@@ -1776,7 +2191,7 @@
       if (!Number.isFinite(id) || id <= 0) return;
       const enabled = fanBtn.getAttribute("data-enabled") !== "1";
       fanBtn.disabled = true;
-      const res = await fetch(`http://127.0.0.1:8080/api/maquinas/${id}/ventilador-auto`, {
+      const res = await fetch(`${API_BASE}/api/maquinas/${id}/ventilador-auto`, {
         method: "PUT",
         headers: {
           authorization: `Bearer ${token}`,
@@ -1786,7 +2201,7 @@
         body: JSON.stringify({ enabled }),
       });
       if (!res.ok) {
-        window.alert("No se pudo guardar ventilador auto.");
+        notifyNice("No se pudo guardar ventilador auto.");
         fanBtn.disabled = false;
         return;
       }
@@ -1818,7 +2233,7 @@
 
     // Logout best-effort (token stateless)
     if (token) {
-      fetch("http://127.0.0.1:8080/api/auth/logout", {
+      fetch(`${API_BASE}/api/auth/logout`, {
         method: "POST",
         headers: { authorization: `Bearer ${token}` },
       }).catch(() => {});

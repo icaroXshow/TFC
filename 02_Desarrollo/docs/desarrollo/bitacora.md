@@ -396,3 +396,49 @@ Verificación:
 
 - La tabla de ciclos es la base para “Evolución” y “Estadísticas”.
 - Evita depender de consultas manuales a BD para el análisis del TFC.
+
+## 2026-04-27 — Cierre de funcionalidades pedidas (Informes + Publicaciones + Redis)
+
+### Qué
+
+- Se completa `Informes` con:
+  - `Ciclos` (ya existente)
+  - `Evolución` semanal/mensual/anual (comparativa con periodo anterior)
+  - `Estadísticas` de tramos diario/mensual/anual (tabla por tramo/máquina + totales)
+- Se amplía `Editor Web` para cubrir también textos de `About us` y `FAQs` (además de header/footer/contacto).
+- Se integra Redis real en backend como caché operativa en rutas IoT con fallback a BD.
+
+### Cómo
+
+- Backend:
+  - `app/backend/src/web/routes/informes.ts`
+    - Nuevos endpoints:
+      - `GET /api/informes/evolucion/semanal?date=YYYY-MM-DD`
+      - `GET /api/informes/evolucion/mensual?month=YYYY-MM`
+      - `GET /api/informes/evolucion/anual?year=YYYY`
+      - `GET /api/informes/tramos/diario?date=YYYY-MM-DD`
+      - `GET /api/informes/tramos/mensual?month=YYYY-MM`
+      - `GET /api/informes/tramos/anual?year=YYYY`
+  - `app/backend/src/web/routes/configuracion.ts`
+    - `web_public_content` ampliado con claves para `about_*` y `faq_q*/faq_a*`.
+  - Redis:
+    - `app/backend/src/cache/redis.ts` (cliente RESP mínimo sobre `node:net`)
+    - `app/backend/src/system/env.ts` (variables `REDIS_*`)
+    - `app/backend/src/web/routes/iot.ts` (cache de estado/config IoT + invalidación)
+    - `app/backend/src/server.ts` (`/health` reporta `redis`).
+
+- Frontend:
+  - `app/frontend/public/admin/informes.html`:
+    - vistas reales para Evolución y Estadísticas.
+  - `app/frontend/public/js/admin.js`:
+    - carga de endpoints nuevos y render de tablas/gráficos simples.
+  - `app/frontend/public/admin/editor-web.html`:
+    - campos nuevos para About y FAQs.
+  - `app/frontend/public/about.html` y `app/frontend/public/faqs.html`:
+    - `data-web-key` para contenido editable.
+
+### Por qué
+
+- Alinea implementación real con el bloque `# IMPLEMENTACIONES PEDIDAS POR USUARIO`.
+- Reduce edición manual de HTML para contenido público.
+- Mejora rendimiento/latencia de lecturas IoT con Redis sin perder robustez (fallback a MariaDB).

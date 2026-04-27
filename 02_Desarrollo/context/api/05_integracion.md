@@ -2,7 +2,7 @@
 
 ## Flujo estándar
 
-API → BD → MQTT → Redis → WebSocket
+API → BD (persistencia) + MQTT (comandos/eventos) + Redis (cache operativa)
 
 ---
 
@@ -19,10 +19,8 @@ MQTT:
 - envía comando
 
 Redis:
-- se actualiza al recibir estado
-
-WebSocket:
-- notifica al frontend
+- cachea estado/configuración de consulta frecuente
+- fallback a BD si Redis no responde
 
 ---
 
@@ -30,4 +28,4 @@ WebSocket:
 
 La API no espera a que el dispositivo confirme.
 
-El estado real llega después vía MQTT.
+El estado real llega después vía MQTT y se refleja en consultas de API.

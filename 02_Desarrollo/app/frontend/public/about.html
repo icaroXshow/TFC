@@ -45,7 +45,7 @@
           <img src="assets/Logo_KWL.png" alt="KWL Aqua" class="logo-img" />
         </div>
         <div class="titulo">
-          <h1>KWL AQUA</h1>
+          <h1 data-web-key="brand_name">KWL AQUA</h1>
         </div>
         <div class="loguin">
           <a class="btn login-btn" id="openLogin" href="#login">👤Login</a>
@@ -55,10 +55,10 @@
       <div class="navegador">
         <nav>
           <ul>
-            <li><a href="index.html">Inicio</a></li>
-            <li><a href="about.html">About us</a></li>
-            <li><a href="contact.html">Contacto</a></li>
-            <li><a href="faqs.html">FAQs</a></li>
+            <li><a href="index.html" data-web-key="nav_inicio">Inicio</a></li>
+            <li><a href="about.html" data-web-key="nav_about">About us</a></li>
+            <li><a href="contact.html" data-web-key="nav_contacto">Contacto</a></li>
+            <li><a href="faqs.html" data-web-key="nav_faqs">FAQs</a></li>
           </ul>
         </nav>
       </div>
@@ -67,7 +67,7 @@
     <!-- CONTENIDO -->
     <main class="about">
       <!-- TÍTULO PRINCIPAL -->
-       <h2 class="about-titulo">¿Quiénes somos?</h2>
+       <h2 class="about-titulo" data-web-key="about_titulo">¿Quiénes somos?</h2>
       <section class="about-header container">
 
         <!-- Imagen izquierda -->
@@ -78,17 +78,17 @@
         <div class="about-intro">
           <!-- Texto derecha -->
           <div class="about-text">
-            <h3 class="about-subtitulo">
+            <h3 class="about-subtitulo" data-web-key="about_subtitulo">
               Software y App para tu lavandería autoservicio
             </h3>
-            <p>
+            <p data-web-key="about_parrafo_1">
               Ahorra tiempo y dinero. Fideliza a tus clientes. Con KWL podrás
               controlar tu lavandería autoservicio en remoto, desde cualquier
               lugar, evitando desplazamientos innecesarios y resolviendo los
               contratiempos de tus clientes de forma más rápida. ¡Cientos de
               lavanderías utilizan nuestro sistema!
             </p>
-            <p>
+            <p data-web-key="about_parrafo_2">
               Además, con nuestra App podrás ofrecer a tus clientes la opción de
               pagar con tarjeta o bizum, hacer promociones, descuentos ¡y mucho
               más!
@@ -164,33 +164,33 @@
           />
 
           <ul class="footer-menu">
-            <li><a href="contact.html">Contacto</a></li>
-            <li><a href="about.html">Sobre nosotros</a></li>
-            <li><a href="faqs.html">FAQs</a></li>
+            <li><a href="contact.html" data-web-key="nav_contacto">Contacto</a></li>
+            <li><a href="about.html" data-web-key="nav_about">Sobre nosotros</a></li>
+            <li><a href="faqs.html" data-web-key="nav_faqs">FAQs</a></li>
           </ul>
         </div>
 
         <div class="footer-top-drch">
           <!-- Columna 2: Horario -->
           <div class="footer-col-2">
-            <h4>Horario</h4>
+            <h4 data-web-key="footer_titulo_horario">Horario</h4>
             <ul class="hours-list">
-              <li><span>Lunes</span><span>8:30–22:00</span></li>
-              <li><span>Martes</span><span>8:30–22:00</span></li>
-              <li><span>Miércoles</span><span>8:30–22:00</span></li>
-              <li><span>Jueves</span><span>8:30–22:00</span></li>
-              <li><span>Viernes</span><span>8:30–22:00</span></li>
-              <li><span>Sábado</span><span>8:30–22:00</span></li>
-              <li><span>Domingo</span><span>8:30–22:00</span></li>
+              <li><span>Lunes</span><span data-web-key="horario_lunes">8:30-22:00</span></li>
+              <li><span>Martes</span><span data-web-key="horario_martes">8:30-22:00</span></li>
+              <li><span>Miércoles</span><span data-web-key="horario_miercoles">8:30-22:00</span></li>
+              <li><span>Jueves</span><span data-web-key="horario_jueves">8:30-22:00</span></li>
+              <li><span>Viernes</span><span data-web-key="horario_viernes">8:30-22:00</span></li>
+              <li><span>Sábado</span><span data-web-key="horario_sabado">8:30-22:00</span></li>
+              <li><span>Domingo</span><span data-web-key="horario_domingo">8:30-22:00</span></li>
             </ul>
           </div>
 
           <!-- Columna 3: Mapa -->
           <div class="footer-col-3">
-            <h4>Donde encontrarnos</h4>
+            <h4 data-web-key="footer_titulo_mapa">Donde encontrarnos</h4>
 
             <div class="footer-map">
-              <iframe
+              <iframe data-web-key="mapa_url"
                 src="https://www.google.com/maps?q=Calle%20Dr.%20Fleming%2C%2026%2C%2024402%20Ponferrada&output=embed"
                 loading="lazy"
                 allowfullscreen
@@ -217,9 +217,7 @@
         <a href="legal/privacidad.html">Políticas de privacidad</a>
       </div>
 
-      <div class="footer-copy">
-        © 2025 KWL Aqua. Todos los derechos reservados.
-      </div>
+      <div class="footer-copy" data-web-key="footer_copy">© 2025 KWL Aqua. Todos los derechos reservados.</div>
     </footer>
 
     <script src="js/app.js"></script>

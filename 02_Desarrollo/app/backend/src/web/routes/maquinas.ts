@@ -46,6 +46,12 @@ function fanKey(idMaquina: number) {
   return String(idMaquina);
 }
 
+async function setManualPriorityUntil(idLav: number, idMaquina: number, seconds = 15) {
+  const map = await getConfigLav<Record<string, string | null>>(idLav, "machine_manual_priority_until", {});
+  map[fanKey(idMaquina)] = new Date(Date.now() + Math.max(1, seconds) * 1000).toISOString();
+  await setConfigLav(idLav, "machine_manual_priority_until", map, "Prioridad temporal de control manual por máquina");
+}
+
 async function setFanPendingOff(idLav: number, idMaquina: number, minutes = 5) {
   const pending = await getConfigLav<Record<string, string | null>>(idLav, "fan_pending_off", {});
   pending[fanKey(idMaquina)] = new Date(Date.now() + minutes * 60 * 1000).toISOString();
@@ -286,6 +292,7 @@ maquinasRouter.post(
       );
 
       await conn.commit();
+      await setManualPriorityUntil(idLavanderia, idMaquina, 20);
       publishMachineCommand(maquina.codigo_visible, {
         accion: "encender_rele",
         id_maquina: idMaquina,
@@ -390,6 +397,7 @@ maquinasRouter.post(
       );
 
       await conn.commit();
+      await setManualPriorityUntil(idLavanderia, idMaquina, 20);
       publishMachineCommand(maquina.codigo_visible, {
         accion: "apagar_rele",
         id_maquina: idMaquina,
@@ -517,6 +525,19 @@ maquinasRouter.post(
       VALUES (:idLav, :idMaquina, NULL, NOW(), 'CREDITO_ACUMULADO_WEB', 'INFO', JSON_OBJECT('origen','web_admin','importe',:importe), 1)
       `,
       { idLav: idLavanderia, idMaquina, importe },
+    );
+    await db.query<ResultSetHeader>(
+      `
+      INSERT INTO movimiento_maquina (
+        id_lavanderia, id_maquina, id_ciclo, id_usuario, fecha_hora,
+        tipo_movimiento, origen_movimiento, importe, minutos_extra_generados,
+        es_bonificacion, descripcion
+      ) VALUES (
+        :idLav, :idMaquina, NULL, :idUsuario, NOW(),
+        'CREDITO', 'WEB_MANUAL', :importe, 0, 0, 'Crédito acumulado desde web admin'
+      )
+      `,
+      { idLav: idLavanderia, idMaquina, idUsuario: idUsuario || null, importe },
     );
     await db.query<ResultSetHeader>(
       `

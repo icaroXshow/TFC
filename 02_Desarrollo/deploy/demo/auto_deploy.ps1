@@ -6,6 +6,20 @@ Set-Location $ScriptRoot
 
 $resetDb = $args -contains '--reset-db'
 $sinAbrir = $args -contains '--sin-abrir'
+$runSmoke = $args -contains '--smoke'
+
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+  throw 'No se encontró docker en PATH.'
+}
+
+if (-not (Test-Path '.env')) {
+  if (Test-Path '.env.example') {
+    Copy-Item '.env.example' '.env'
+    Write-Host '[i] Se creó .env desde .env.example' -ForegroundColor Yellow
+  } else {
+    throw 'No existe .env ni .env.example en deploy/demo.'
+  }
+}
 
 if ($resetDb) {
   docker compose down -v
@@ -42,6 +56,20 @@ Write-Host 'Backend : http://127.0.0.1:8080/health' -ForegroundColor Cyan
 Write-Host 'Adminer : http://127.0.0.1:8082' -ForegroundColor Cyan
 Write-Host 'MQTT    : mqtt://127.0.0.1:1883' -ForegroundColor Cyan
 Write-Host 'Redis   : redis://127.0.0.1:6379' -ForegroundColor Cyan
+
+if ($runSmoke) {
+  $smoke = Join-Path $ScriptRoot 'scripts/soft_load_test.sh'
+  if (Test-Path $smoke) {
+    Write-Host '[i] Ejecutando smoke test...' -ForegroundColor Yellow
+    try {
+      bash $smoke
+    } catch {
+      Write-Host '[!] No se pudo ejecutar smoke test (bash no disponible o script falló).' -ForegroundColor Yellow
+    }
+  } else {
+    Write-Host '[!] No se encontró scripts/soft_load_test.sh' -ForegroundColor Yellow
+  }
+}
 
 if (-not $sinAbrir) {
   Start-Process 'http://127.0.0.1:8081/index.html' | Out-Null
