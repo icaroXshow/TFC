@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npm run clean && tsc -p tsconfig.json",
     "start": "node --env-file=.env dist/server.js",
-    "dev": "npm run build && node --env-file=.env --watch dist/server.js",
+    "dev": "sh -c 'npm run clean && tsc -p tsconfig.json --watch --preserveWatchOutput & node --env-file=.env --watch dist/server.js'",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "rm -rf dist"
   },

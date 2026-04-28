@@ -5,6 +5,7 @@ API_BASE="${API_BASE:-http://127.0.0.1:8080}"
 LOGIN="${LOGIN:-admin@gmail.com}"
 PASSWORD="${PASSWORD:-admin}"
 LAV_ID="${LAV_ID:-3}"
+START_MIN_CREDIT="${START_MIN_CREDIT:-4}"
 
 json_escape() {
   printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
@@ -70,7 +71,7 @@ sleep 1
 s1="$(machine_state)"
 
 # crédito + iniciar (esperado EN_MARCHA, con espera por sincronía simulador)
-post_json "/api/maquinas/$machine_id/credito" '{"importe":1}' >/dev/null || true
+post_json "/api/maquinas/$machine_id/credito" "{\"importe\":$START_MIN_CREDIT}" >/dev/null || true
 post_json "/api/maquinas/$machine_id/iniciar" '{}' >/dev/null || true
 t=0
 while [ "$t" -lt 20 ]; do

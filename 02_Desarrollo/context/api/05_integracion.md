@@ -29,3 +29,13 @@ Redis:
 La API no espera a que el dispositivo confirme.
 
 El estado real llega después vía MQTT y se refleja en consultas de API.
+
+---
+
+## Estado operativo validado (2026-04-28)
+
+- Flujo de máquina validado en demo:
+  - `STOP -> iniciar -> PAUSADA`
+  - `PAUSADA + crédito mínimo -> iniciar -> EN_MARCHA`
+  - `detener -> STOP`
+- Deriva de temporizador validada con máximo `1s` incluyendo evento de ampliación de tiempo.

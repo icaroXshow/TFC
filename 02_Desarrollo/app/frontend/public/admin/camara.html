@@ -44,6 +44,7 @@
           <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
           <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
           <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
+          <a class="admin-nav-item" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
         </nav>
 
         <div class="admin-sidebar-bottom">
@@ -61,14 +62,14 @@
       </header>
 
       <main class="admin-main">
-        <section class="admin-section" style="margin-top: 8px">
+        <section class="admin-section" style="margin-top: 2px">
           <div class="iot-actions" style="flex-wrap: wrap">
             <button type="button" class="btn-primary" id="camOpenMobotix">Mobotix</button>
             <button type="button" class="btn-secondary" id="camOpenAdmin">Administrar</button>
             <button type="button" class="btn-secondary" id="camOpenEvents">Eventos</button>
           </div>
         </section>
-        <section class="admin-section">
+        <section class="admin-section" style="margin-top: 10px">
           <div class="admin-section-head">
             <h3>Cámara</h3>
             <p></p>
@@ -81,6 +82,7 @@
             </div>
             <p class="admin-card-hint" id="cameraHint"></p>
             <div class="iot-actions" style="margin-top: 8px; flex-wrap: wrap">
+              <button type="button" class="btn-primary" id="camDetach">Desprender</button>
               <button type="button" class="btn-secondary" id="camCenter">Centrar</button>
               <button type="button" class="btn-secondary" id="camZoomIn">Zoom +</button>
               <button type="button" class="btn-secondary" id="camZoomOut">Zoom -</button>

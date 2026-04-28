@@ -14,9 +14,19 @@ function parseCsv(value: string | undefined): string[] {
 const nodeEnv = process.env.NODE_ENV ?? "development";
 const corsOriginsRaw = parseCsv(process.env.CORS_ORIGIN);
 const tokenSecret = required("AUTH_TOKEN_SECRET", process.env.AUTH_TOKEN_SECRET);
+const weakDemoSecrets = new Set([
+  "change-this-secret",
+  "kwl-demo-cambiar-esta-clave-en-produccion-32chars",
+  "kwl-backend-super-secret-2024",
+]);
 
-if (nodeEnv === "production" && tokenSecret.includes("cambiar-esta-clave")) {
-  throw new Error("AUTH_TOKEN_SECRET must be changed in production");
+if (
+  nodeEnv === "production" &&
+  (tokenSecret.length < 32 ||
+    tokenSecret.includes("cambiar-esta-clave") ||
+    weakDemoSecrets.has(tokenSecret.toLowerCase()))
+) {
+  throw new Error("AUTH_TOKEN_SECRET must be a strong secret in production (>=32 chars, non-demo value)");
 }
 
 export const env = {

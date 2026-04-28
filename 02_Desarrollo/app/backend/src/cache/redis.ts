@@ -20,20 +20,44 @@ function encodeResp(parts: Array<string | number>): Buffer {
   return Buffer.from(chunks.join(""), "utf8");
 }
 
-function parseRespSimple(buf: Buffer): string | null {
-  if (!buf.length) return null;
-  const t = String.fromCharCode(buf[0]);
-  const text = buf.toString("utf8");
-  if (t === "+") return text.slice(1).split("\r\n")[0] ?? "";
-  if (t === "-") throw new Error(text.slice(1).split("\r\n")[0] || "REDIS_ERROR");
-  if (t === ":") return text.slice(1).split("\r\n")[0] ?? "";
-  if (t === "$") {
-    const firstCrLf = text.indexOf("\r\n");
-    const len = Number(text.slice(1, firstCrLf));
-    if (len < 0) return null;
-    return text.slice(firstCrLf + 2, firstCrLf + 2 + len);
+function readLine(text: string, start: number) {
+  const end = text.indexOf("\r\n", start);
+  if (end < 0) throw new Error("REDIS_PROTOCOL_ERROR");
+  return { line: text.slice(start, end), next: end + 2 };
+}
+
+function parseRespOne(text: string, start: number): { value: string | null; next: number } {
+  if (start >= text.length) throw new Error("REDIS_PROTOCOL_ERROR");
+  const t = text[start];
+  if (t === "+" || t === "-" || t === ":") {
+    const { line, next } = readLine(text, start + 1);
+    if (t === "-") throw new Error(line || "REDIS_ERROR");
+    return { value: line ?? "", next };
   }
-  return null;
+  if (t === "$") {
+    const { line, next } = readLine(text, start + 1);
+    const len = Number(line);
+    if (!Number.isFinite(len)) throw new Error("REDIS_PROTOCOL_ERROR");
+    if (len < 0) return { value: null, next };
+    const end = next + len;
+    if (end + 2 > text.length) throw new Error("REDIS_PROTOCOL_ERROR");
+    const value = text.slice(next, end);
+    if (text.slice(end, end + 2) !== "\r\n") throw new Error("REDIS_PROTOCOL_ERROR");
+    return { value, next: end + 2 };
+  }
+  throw new Error("REDIS_PROTOCOL_UNSUPPORTED");
+}
+
+function parseRespAll(buf: Buffer): Array<string | null> {
+  const text = buf.toString("utf8");
+  const out: Array<string | null> = [];
+  let i = 0;
+  while (i < text.length) {
+    const parsed = parseRespOne(text, i);
+    out.push(parsed.value);
+    i = parsed.next;
+  }
+  return out;
 }
 
 async function rawCommand(parts: Array<string | number>): Promise<string | null> {
@@ -65,9 +89,10 @@ async function rawCommand(parts: Array<string | number>): Promise<string | null>
     sock.on("data", (c) => chunks.push(c));
     sock.on("end", () => {
       try {
-        const out = parseRespSimple(
+        const all = parseRespAll(
           Buffer.concat(chunks.map((c) => (typeof c === "string" ? Buffer.from(c, "utf8") : c))),
         );
+        const out = all.length ? all[all.length - 1] : null;
         lastError = null;
         done(() => resolve(out));
       } catch (e) {

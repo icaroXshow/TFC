@@ -44,6 +44,7 @@
           <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
           <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
           <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
+          <a class="admin-nav-item" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
         </nav>
 
         <div class="admin-sidebar-bottom">
@@ -64,10 +65,10 @@
         <section class="admin-section">
           <div class="admin-section-head">
             <h3>Programador</h3>
-            <p>Programacion automática de IoT.</p>
+            <p>Control y horarios automáticos de IoT.</p>
           </div>
 
-          <div class="iot-grid">
+          <div class="iot-grid iot-main-grid">
             <article class="iot-tile">
               <h4>Puerta</h4>
               <p class="iot-status"><span id="iotDoorState" class="iot-state-pill iot-state-clickable">—</span></p>
@@ -92,6 +93,18 @@
                 <label>Auto apagar <input type="time" class="input" id="lightsOffTime" /></label>
               </div>
             </article>
+            <article class="iot-tile">
+              <h4>Máquinas</h4>
+              <p class="iot-status">Control horario de máquinas</p>
+              <div class="iot-schedule">
+                <label>Hora encendido (apertura) <input type="time" class="input" id="iotMachineOnTime" /></label>
+                <label>Hora apagado (cierre) <input type="time" class="input" id="iotMachineOffTime" /></label>
+                <label>Encender al abrir</label>
+                <div id="iotOpenMachines" class="iot-grid store-machines-grid"></div>
+                <label>Apagar al cerrar</label>
+                <div id="iotCloseMachines" class="iot-grid store-machines-grid"></div>
+              </div>
+            </article>
           </div>
 
           <div class="iot-footer">
@@ -101,7 +114,7 @@
 
           <section class="iot-log-wrap" aria-label="Registro de cambios">
             <h4>Registro de cambios</h4>
-            <p class="iot-log-subtitle">Últimas acciones manuales y automáticas (inicio, programador y scheduler).</p>
+            <p class="iot-log-subtitle">Actividad reciente del sistema y del panel.</p>
             <div class="iot-log-table-wrap">
               <table class="iot-log-table">
                 <thead>

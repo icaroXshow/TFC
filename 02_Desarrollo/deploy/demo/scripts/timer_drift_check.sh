@@ -91,6 +91,23 @@ while [ "$i" -le "$SAMPLES" ]; do
 
   if [ -n "$prev_sec" ]; then
     delta=$((prev_sec - sec))
+    # Si el contador sube tras una ampliación, no es deriva: es incremento esperado.
+    if [ "$delta" -lt 0 ]; then
+      drift=0
+      printf '[timer-drift] muestra=%s sec=%s delta=%s drift=%s (salto por ampliación)\n' "$i" "$sec" "$delta" "$drift"
+      prev_sec="$sec"
+      if [ "$i" -eq $((SAMPLES / 2)) ]; then
+        curl -sS -o /dev/null -X POST "$API_BASE/api/maquinas/$running_id/ampliar" \
+          -H "authorization: Bearer $TOKEN" \
+          -H "x-lavanderia-id: $LAV_ID" \
+          -H 'content-type: application/json' \
+          -d '{"importe":1}' || true
+        echo "[timer-drift] ampliación lanzada (muestra media)"
+      fi
+      sleep "$SLEEP_SEC"
+      i=$((i + 1))
+      continue
+    fi
     drift=$((delta - 1))
     if [ "$drift" -lt 0 ]; then drift=$(( -drift )); fi
     if [ "$drift" -gt "$max_observed" ]; then max_observed="$drift"; fi

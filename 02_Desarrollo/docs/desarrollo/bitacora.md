@@ -442,3 +442,35 @@ Verificación:
 - Alinea implementación real con el bloque `# IMPLEMENTACIONES PEDIDAS POR USUARIO`.
 - Reduce edición manual de HTML para contenido público.
 - Mejora rendimiento/latencia de lecturas IoT con Redis sin perder robustez (fallback a MariaDB).
+
+## 2026-04-28 — Cierre de regresiones runtime (demo)
+
+### Qué
+
+- Se corrigen y validan regresiones de arranque/parada de máquinas.
+- Se estabiliza la validación de deriva de temporizador tras ampliación.
+- Se endurece el arranque de stack demo para evitar 502 por dependencia temprana de BD.
+
+### Cómo
+
+- Backend:
+  - `requireLavanderia` devuelve `503 DB_UNAVAILABLE` ante caída/transitorio de BD, evitando crash del proceso.
+  - `POST /api/maquinas/:id/iniciar` ahora también confirma inicio cuando la máquina está en `PAUSADA` (envía `confirmar_inicio` al simulador).
+  - Bridge MQTT: en evento `CICLO_FINALIZADO`, si `payload.motivo = stop_manual`, estado final `STOP`; en fin natural, `PAUSADA`.
+- Deploy demo:
+  - `docker-compose.yml` con `healthcheck` de MariaDB y `depends_on: condition: service_healthy` para `core-node`.
+- Scripts de validación:
+  - `timer_drift_check.sh`: no considera deriva el salto positivo de segundos por ampliación.
+  - `machine_regression_check.sh`: usa crédito mínimo configurable (`START_MIN_CREDIT`, por defecto `4`) para transición a `EN_MARCHA`.
+
+### Resultado validado
+
+- `soft_load_test.sh`: PASS (`360/360` OK).
+- `timer_drift_check.sh`: PASS (drift máximo observado `1s`).
+- `machine_regression_check.sh`: PASS (`STOP -> PAUSADA -> EN_MARCHA -> STOP`).
+
+### Por qué
+
+- Garantiza consistencia entre estado de máquina en backend/simulador y comportamiento esperado en panel admin.
+- Evita falsos negativos en pruebas de temporizador y transiciones operativas.
+- Deja una base defendible para demo y memoria del TFC.

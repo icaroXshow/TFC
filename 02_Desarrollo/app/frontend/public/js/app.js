@@ -9,7 +9,9 @@
 
   async function loadPublicWebContent() {
     try {
-      const res = await fetch(`${API_BASE}/api/configuracion/web-public`);
+      const rawLav = Number(localStorage.getItem(ACTIVE_LAV_KEY) || "");
+      const lavId = Number.isFinite(rawLav) && rawLav > 0 ? rawLav : 1;
+      const res = await fetch(`${API_BASE}/api/configuracion/web-public?lav=${encodeURIComponent(String(lavId))}`);
       if (!res.ok) return;
       const data = await res.json().catch(() => ({}));
       const content = data?.contenido || {};

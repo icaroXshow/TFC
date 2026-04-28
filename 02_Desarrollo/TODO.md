@@ -75,11 +75,11 @@ La estructura de la pagina de administracion de la tienda será asi:
 ### 2) Qué puede faltar o fallar (riesgos reales)
 - [ ] **Compilación no validada localmente en este entorno**: no se pudo ejecutar typecheck/build por ausencia de `node` local.
   - Impacto: errores TS pueden aparecer solo en build Docker/CI.
-- [ ] **Dependencia de hard refresh del navegador** tras cambios frontend.
+- [x] **Dependencia de hard refresh del navegador** tras cambios frontend.
   - Impacto: usuario puede ver comportamiento antiguo por caché (HTML/JS/CSS).
-- [ ] **Persistencia de prioridad manual MQTT** (`machine_manual_priority_until`) sin limpieza explícita de expirados.
+- [x] **Persistencia de prioridad manual MQTT** (`machine_manual_priority_until`) sin limpieza explícita de expirados.
   - Impacto: bajo (se evalúa por timestamp), pero conviene housekeeping eventual.
-- [ ] **Pruebas automáticas parciales**: hay smoke scripts, pero faltan tests automatizados de UI y pruebas de regresión API en CI.
+- [x] **Pruebas automáticas parciales**: hay smoke scripts funcionales de regresión runtime (`soft_load_test`, `timer_drift_check`, `machine_regression_check`) y faltan tests automatizados de UI + CI de regresión API.
   - Impacto: regresiones funcionales posibles entre cambios.
 - [ ] **Editor Web sin vista previa integrada**.
   - Impacto: edición funcional, pero UX mejorable (ensayo/error).
@@ -115,10 +115,38 @@ La estructura de la pagina de administracion de la tienda será asi:
    - Planificar paso de polling a WebSocket para estado push en panel admin.
 
 ### 5) Criterio de cierre recomendado para MVP actual
-- [ ] Build backend/simulation OK.
-- [ ] Smoke scripts OK sin intervención manual.
+- [x] Build backend/simulation OK (validado en Docker demo).
+- [x] Smoke scripts OK sin intervención manual.
 - [ ] Flujos críticos verificados:
-  - [ ] Encender/Apagar máquina desde `Máquinas`.
+  - [x] Encender/Apagar máquina desde `Máquinas`.
   - [ ] Abrir/Cerrar tienda respeta checks y máquinas seleccionadas.
   - [ ] Caja e Informes muestran datos coherentes con seed y acciones ejecutadas.
   - [ ] Editor Web guarda y se refleja en páginas públicas.
+
+## Pendientes detectados en revisión técnica
+
+### Prioridad Alta
+- [x] **Entorno y entregables**: excluir `app/backend/.env` real de entregables y repositorio; mantener `app/backend/.env.example` y, para demo, usar `app/backend/.env.demo` documentado.
+- [x] **Alineación de variables de entorno**: revisar coherencia entre `app/backend/.env`, `app/backend/.env.example` y `env.ts`, especialmente `REDIS_ENABLED`, `REDIS_HOST` y `REDIS_PORT` (valores para local y Docker).
+- [x] **Seguridad de secretos**: mantener `AUTH_TOKEN_SECRET` actual solo como valor demo y exigir secreto robusto en producción.
+- [x] **Tokens en URL**: evitar uso de tokens en query string en endpoints sensibles (p. ej. cámara/streaming) o documentar explícitamente el riesgo y mitigaciones.
+- [x] **Aislamiento multi-lavandería**: en `requireLavanderia`, si el usuario tiene más de una lavandería y falta `x-lavanderia-id`, devolver `400` pidiendo selección explícita (sin seleccionar automáticamente la primera).
+- [x] **Permisos de usuarios por lavandería**: reforzar validaciones para impedir modificar/eliminar usuarios fuera de las lavanderías permitidas.
+
+### Prioridad Media
+- [x] **Redis (cliente)**: revisar la implementación actual basada en sockets TCP y valorar migración a cliente mantenido (`ioredis` o `redis`).
+- [x] **Redis (si se mantiene cliente propio)**: mejorar parser RESP, tratamiento de respuestas intermedias (`AUTH`/`SELECT`) y gestión de errores/timeouts.
+- [x] **Redis opcional**: garantizar y documentar que el sistema funciona correctamente con `REDIS_ENABLED=false`.
+- [x] **Configuración de despliegue**: documentar de forma inequívoca diferencias de configuración entre entorno local y Docker.
+- [x] **CORS en producción**: revisar política CORS y manejo de `Origin: null` para evitar exposición innecesaria en entorno productivo.
+- [x] **Manejo de errores en producción**: revisar error handler para no exponer mensajes internos.
+- [x] **XSS frontend**: revisar usos de `innerHTML` en `app/frontend/public/js/admin.js` y `app/frontend/public/js/app.js`; sustituir por `textContent`/`createElement` cuando se muestren datos de backend o BD.
+- [x] **Plantillas con HTML dinámico**: si se conserva `innerHTML` en casos necesarios, centralizar función de escape y usarla siempre con datos externos.
+- [x] **Endpoints legacy de tienda**: revisar `POST /api/tienda/abrir` y `POST /api/tienda/cerrar`; decidir si comparten internamente lógica con `/api/iot/store/open` y `/api/iot/store/close` o se marcan como obsoletos.
+- [x] **Redirecciones ambiguas**: evitar `308` en endpoints API legacy cuando pueda generar comportamiento ambiguo en clientes `fetch`/API.
+- [x] **Scheduler IoT y auditoría**: eliminar dependencia de `id_usuario=1` como “sistema”; crear usuario sistema explícito o permitir auditoría de sistema sin usuario demo.
+
+### Prioridad Baja
+- [x] **Documentación del scheduler**: documentar comportamiento real del scheduler IoT y sus limitaciones operativas.
+- [x] **Flujo de desarrollo**: revisar `npm run dev` (actualmente vigila `dist` y puede no recompilar `src` automáticamente); valorar `tsx`, `ts-node-dev` o `tsc --watch` + `nodemon`.
+- [x] **Verificación en limpio**: validado en despliegue limpio Docker con reconstrucción completa y smoke tests runtime (`soft_load_test`, `timer_drift_check`, `machine_regression_check`) en Windows+Git Bash (2026-04-28).

@@ -83,6 +83,18 @@ async function clearFanPendingOff(idLav: number, idMaquina: number) {
 
 async function hasManualPriority(idLav: number, idMaquina: number) {
   const map = await getConfigLav<Record<string, string | null>>(idLav, "machine_manual_priority_until", {});
+  let changed = false;
+  const nowMs = Date.now();
+  for (const [k, untilRaw] of Object.entries(map)) {
+    const ms = untilRaw ? new Date(untilRaw).getTime() : Number.NaN;
+    if (!Number.isFinite(ms) || ms <= nowMs) {
+      delete map[k];
+      changed = true;
+    }
+  }
+  if (changed) {
+    await setConfigLav(idLav, "machine_manual_priority_until", map, "Prioridad temporal de control manual por máquina");
+  }
   const until = map[String(idMaquina)];
   if (!until) return false;
   const untilMs = new Date(until).getTime();
@@ -286,7 +298,10 @@ async function processEvento(idLav: number | undefined, codigo: string, data: Ev
   );
 
   if (tipoEvento === "CICLO_FINALIZADO") {
-    await db.query<ResultSetHeader>(`UPDATE maquina SET estado_actual = 'PAUSADA' WHERE id_maquina = :idMaquina`, {
+    const motivo = String(payload.motivo ?? "").toLowerCase();
+    const estadoFinal = motivo === "stop_manual" ? "STOP" : "PAUSADA";
+    await db.query<ResultSetHeader>(`UPDATE maquina SET estado_actual = :estado WHERE id_maquina = :idMaquina`, {
+      estado: estadoFinal,
       idMaquina: machine.id_maquina,
     });
 

@@ -12,6 +12,7 @@ import { cameraRouter } from "./routes/camera.js";
 import { iotRouter } from "./routes/iot.js";
 import { cajaRouter } from "./routes/caja.js";
 import { informesRouter } from "./routes/informes.js";
+import { versionRouter } from "./routes/version.js";
 
 export const apiRouter = Router();
 
@@ -28,3 +29,4 @@ apiRouter.use("/camera", cameraRouter);
 apiRouter.use("/iot", iotRouter);
 apiRouter.use("/caja", cajaRouter);
 apiRouter.use("/informes", informesRouter);
+apiRouter.use("/version", versionRouter);

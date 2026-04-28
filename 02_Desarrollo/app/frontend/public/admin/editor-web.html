@@ -44,6 +44,7 @@
           <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
           <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
           <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
+          <a class="admin-nav-item" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
         </nav>
 
         <div class="admin-sidebar-bottom">
@@ -69,6 +70,26 @@
         </section>
 
         <section class="admin-section">
+          <div class="admin-card" style="margin-bottom:14px;">
+            <div class="users-toolbar" style="margin-top:0;">
+              <div class="users-filters" style="width:100%;">
+                <label class="field" style="min-width:220px;">
+                  <span>Vista previa</span>
+                  <select class="input" id="webPreviewPage">
+                    <option value="index.html">Inicio</option>
+                    <option value="about.html">About</option>
+                    <option value="contact.html">Contacto</option>
+                    <option value="faqs.html">FAQs</option>
+                  </select>
+                </label>
+                <button type="button" class="btn-secondary" id="webPreviewReload">Recargar vista</button>
+              </div>
+            </div>
+            <div class="admin-camera-frame" style="margin-top:10px; max-height:none; min-height:420px;">
+              <iframe id="webPreviewFrame" title="Vista previa web pública" style="width:100%;height:70vh;min-height:420px;border:0;background:#0b1220;"></iframe>
+            </div>
+          </div>
+
           <form id="webEditorForm" class="admin-card web-editor-form">
             <section class="web-editor-visibility">
               <p class="web-editor-visibility-title">Visibilidad de paneles</p>

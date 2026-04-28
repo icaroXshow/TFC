@@ -12,6 +12,12 @@ services:
       - kwl_demo_db:/var/lib/mysql
       - ../../context/db/BD_modelo_fisico.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
       - ./db/init/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -u root -p$$MARIADB_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -78,6 +84,13 @@ services:
       AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-kwl-demo-cambiar-esta-clave-en-produccion-32chars}
       MQTT_ENABLED: "true"
       MQTT_URL: mqtt://mqtt:1883
+      REDIS_ENABLED: ${REDIS_ENABLED:-true}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DB: ${REDIS_DB:-0}
+      REDIS_TIMEOUT_MS: ${REDIS_TIMEOUT_MS:-500}
+      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-kwl}
       CAMERA_BASE_URL: ${CAMERA_BASE_URL:-}
       CAMERA_USER: ${CAMERA_USER:-}
       CAMERA_PASS: ${CAMERA_PASS:-}
@@ -89,9 +102,12 @@ services:
       CAMERA2_STREAM_USER: ${CAMERA2_STREAM_USER:-}
       CAMERA2_STREAM_PASS: ${CAMERA2_STREAM_PASS:-}
     depends_on:
-      - mariadb
-      - redis
-      - mqtt
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      mqtt:
+        condition: service_started
 
   core-nginx:
     image: nginx:1.27-alpine

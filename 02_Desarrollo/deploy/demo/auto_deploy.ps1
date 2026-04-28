@@ -58,16 +58,27 @@ Write-Host 'MQTT    : mqtt://127.0.0.1:1883' -ForegroundColor Cyan
 Write-Host 'Redis   : redis://127.0.0.1:6379' -ForegroundColor Cyan
 
 if ($runSmoke) {
-  $smoke = Join-Path $ScriptRoot 'scripts/soft_load_test.sh'
-  if (Test-Path $smoke) {
-    Write-Host '[i] Ejecutando smoke test...' -ForegroundColor Yellow
-    try {
-      bash $smoke
-    } catch {
-      Write-Host '[!] No se pudo ejecutar smoke test (bash no disponible o script falló).' -ForegroundColor Yellow
+  $scripts = @(
+    'scripts/soft_load_test.sh',
+    'scripts/timer_drift_check.sh',
+    'scripts/machine_regression_check.sh'
+  )
+  $found = $false
+  foreach ($rel in $scripts) {
+    $script = Join-Path $ScriptRoot $rel
+    if (Test-Path $script) {
+      $found = $true
+      Write-Host "[i] Ejecutando $rel ..." -ForegroundColor Yellow
+      try {
+        bash $script
+      } catch {
+        Write-Host "[!] Falló $rel (bash no disponible o script con error)." -ForegroundColor Yellow
+        throw
+      }
     }
-  } else {
-    Write-Host '[!] No se encontró scripts/soft_load_test.sh' -ForegroundColor Yellow
+  }
+  if (-not $found) {
+    Write-Host '[!] No se encontraron scripts smoke.' -ForegroundColor Yellow
   }
 }
 

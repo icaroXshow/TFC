@@ -93,7 +93,7 @@ VALUES
   ('LAVANDERIA', @lav_pueb, 'iot_schedule', '{"puerta":{"on":"02:15","off":"03:25"},"luces":{"on":"02:25","off":"03:35"},"ventilacion":{"on":"02:35","off":"03:55"}}', 'Horario IoT'),
   ('LAVANDERIA', @lav_sim, 'iot_state', '{"puerta_abierta": false, "luces_encendidas": false, "ventilacion_encendida": false, "updated_at": "2026-01-01T10:00:00Z"}', 'Estado IoT'),
   ('LAVANDERIA', @lav_sim, 'iot_schedule', '{"puerta":{"on":"02:00","off":"03:50"},"luces":{"on":"02:05","off":"03:55"},"ventilacion":{"on":"02:10","off":"03:45"}}', 'Horario IoT'),
-  ('LAVANDERIA', @lav_sim, 'env_settings', '{"CAMERA_BASE_URL":"","CAMERA_USER":"","CAMERA_PASS":"","MQTT_URL":"mqtt://mqtt:1883"}', 'Ajustes por tienda para simulador');
+  ('LAVANDERIA', @lav_sim, 'env_settings', '{"CAMERA_BASE_URL":"","CAMERA_USER":"","CAMERA_PASS":"","CAMERA_STREAM_USER":"","CAMERA_STREAM_PASS":"","CAMERA2_BASE_URL":"","CAMERA2_USER":"","CAMERA2_PASS":"","CAMERA2_STREAM_USER":"","CAMERA2_STREAM_PASS":"","MQTT_URL":"mqtt://mqtt:1883","MQTT_USER":"","MQTT_PASS":"","REDIS_ENABLED":"true","REDIS_HOST":"redis","REDIS_PORT":"6379","REDIS_PASSWORD":"","REDIS_DB":"0","REDIS_TIMEOUT_MS":"500","REDIS_KEY_PREFIX":"kwl"}', 'Ajustes por tienda para simulador');
 
 INSERT INTO ciclo (
   id_maquina, id_tarifa_aplicada, fecha_hora_inicio, fecha_hora_fin, estado_ciclo,
@@ -173,3 +173,82 @@ INSERT INTO auditoria (
 VALUES
   (@u_admin, @lav_flem, @mf_l2, @cf_l2, NOW() - INTERVAL 20 MINUTE, 'MAQUINA_INICIAR', 'maquina', @mf_l2, 'Seed', '127.0.0.1'),
   (@u_admin, @lav_pueb, @mp_s1, @cp_s1, NOW() - INTERVAL 15 MINUTE, 'MAQUINA_INICIAR', 'maquina', @mp_s1, 'Seed', '127.0.0.1');
+
+-- Dataset masivo para pruebas de Caja e Informes (simulador)
+WITH RECURSIVE seq(n) AS (
+  SELECT 0
+  UNION ALL
+  SELECT n + 1 FROM seq WHERE n < 179
+)
+INSERT INTO ciclo (
+  id_maquina, id_tarifa_aplicada, fecha_hora_inicio, fecha_hora_fin, estado_ciclo,
+  precio_arranque_aplicado, tiempo_base_aplicado_min, minutos_extra_total,
+  importe_cliente_total, importe_bonificado_total, importe_total_aplicado,
+  duracion_total_programada_min, observaciones
+)
+SELECT
+  CASE (n % 5)
+    WHEN 0 THEN @ms_l1
+    WHEN 1 THEN @ms_l2
+    WHEN 2 THEN @ms_l3
+    WHEN 3 THEN @ms_s1
+    ELSE @ms_s2
+  END,
+  @tarifa_sim,
+  (NOW() - INTERVAL (n + 1) DAY) + INTERVAL (6 + (n % 14)) HOUR,
+  (NOW() - INTERVAL (n + 1) DAY) + INTERVAL (6 + (n % 14)) HOUR + INTERVAL (40 + IF(n % 4 = 0, 15, 0)) MINUTE,
+  'FINALIZADO',
+  4.00,
+  40,
+  IF(n % 4 = 0, 15, 0),
+  4.00 + IF(n % 4 = 0, 1.00, 0.00),
+  0.00,
+  4.00 + IF(n % 4 = 0, 1.00, 0.00),
+  40 + IF(n % 4 = 0, 15, 0),
+  CONCAT('Seed Masivo ', n)
+FROM seq;
+
+INSERT INTO movimiento_maquina (
+  id_lavanderia, id_maquina, id_ciclo, id_usuario, fecha_hora,
+  tipo_movimiento, origen_movimiento, importe, minutos_extra_generados,
+  es_bonificacion, descripcion
+)
+SELECT
+  @lav_sim,
+  c.id_maquina,
+  c.id_ciclo,
+  @u_admin,
+  c.fecha_hora_inicio,
+  'ARRANQUE',
+  'WEB_MANUAL',
+  4.00,
+  0,
+  0,
+  'Seed masivo arranque'
+FROM ciclo c
+WHERE c.id_tarifa_aplicada = @tarifa_sim
+  AND c.estado_ciclo = 'FINALIZADO'
+  AND c.observaciones LIKE 'Seed Masivo %';
+
+INSERT INTO movimiento_maquina (
+  id_lavanderia, id_maquina, id_ciclo, id_usuario, fecha_hora,
+  tipo_movimiento, origen_movimiento, importe, minutos_extra_generados,
+  es_bonificacion, descripcion
+)
+SELECT
+  @lav_sim,
+  c.id_maquina,
+  c.id_ciclo,
+  @u_admin,
+  c.fecha_hora_inicio + INTERVAL 10 MINUTE,
+  'AMPLIACION_TIEMPO',
+  'WEB_MANUAL',
+  1.00,
+  15,
+  0,
+  'Seed masivo ampliación'
+FROM ciclo c
+WHERE c.id_tarifa_aplicada = @tarifa_sim
+  AND c.estado_ciclo = 'FINALIZADO'
+  AND c.minutos_extra_total > 0
+  AND c.observaciones LIKE 'Seed Masivo %';

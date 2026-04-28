@@ -44,6 +44,7 @@
           <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
           <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
           <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
+          <a class="admin-nav-item" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
         </nav>
 
         <div class="admin-sidebar-bottom">
@@ -73,7 +74,7 @@
             <button type="button" class="cash-tab" data-tab="rango" aria-selected="false">Acumulada</button>
           </div>
 
-          <div class="cash-filters">
+          <div class="cash-filters cash-filters-row">
             <div class="cash-filter" data-view="dia">
               <label>Fecha
                 <input type="date" class="input" id="cashDay" />
@@ -82,13 +83,13 @@
             </div>
 
             <div class="cash-filter" data-view="semana" hidden>
-              <label>Semana (elige un día)
+              <label>Semana
                 <input type="date" class="input" id="cashWeekDate" />
               </label>
               <button type="button" class="btn-primary" id="cashLoadWeek">Ver</button>
             </div>
 
-            <div class="cash-filter" data-view="rango" hidden>
+            <div class="cash-filter cash-filter-range" data-view="rango" hidden>
               <label>Desde
                 <input type="date" class="input" id="cashFrom" />
               </label>

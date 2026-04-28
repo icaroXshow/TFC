@@ -48,6 +48,22 @@ async function userBelongsToLav(idUsuario: number, idLavanderia: number) {
   return Number(rows[0]?.total ?? 0) > 0;
 }
 
+async function adminCanManageUserEverywhere(adminId: number, idUsuario: number) {
+  const [rows] = await db.query<(import("mysql2/promise").RowDataPacket & { total: number })[]>(
+    `
+    SELECT COUNT(*) AS total
+    FROM usuario_lavanderia ul
+    LEFT JOIN usuario_lavanderia admin_lav
+      ON admin_lav.id_lavanderia = ul.id_lavanderia
+     AND admin_lav.id_usuario = :adminId
+    WHERE ul.id_usuario = :idUsuario
+      AND admin_lav.id_usuario IS NULL
+    `,
+    { adminId, idUsuario },
+  );
+  return Number(rows[0]?.total ?? 0) === 0;
+}
+
 usuariosRouter.get("/", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLavanderia = req.auth?.id_lavanderia ?? 1;
   const [rows] = await db.query<UsuarioRow[]>(
@@ -138,6 +154,7 @@ usuariosRouter.post("/", requireAuth, requireRole(["ADMIN"]), requireLavanderia,
 
 usuariosRouter.put("/:id", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLavanderia = req.auth?.id_lavanderia ?? 1;
+  const adminId = Number(req.auth?.id_usuario ?? "0");
   const idUsuario = Number(req.params.id);
   if (!Number.isFinite(idUsuario) || idUsuario <= 0) {
     return res.status(400).json({ ok: false, error: "BAD_USER_ID" });
@@ -155,6 +172,10 @@ usuariosRouter.put("/:id", requireAuth, requireRole(["ADMIN"]), requireLavanderi
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
+    if (!(await adminCanManageUserEverywhere(adminId, idUsuario))) {
+      await conn.rollback();
+      return res.status(403).json({ ok: false, error: "FORBIDDEN_LAVANDERIA" });
+    }
 
     const [rows] = await conn.query<UsuarioRow[]>(
       `
@@ -238,8 +259,10 @@ usuariosRouter.put("/:id", requireAuth, requireRole(["ADMIN"]), requireLavanderi
 
 usuariosRouter.post("/:id/activar", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLavanderia = req.auth?.id_lavanderia ?? 1;
+  const adminId = Number(req.auth?.id_usuario ?? "0");
   const idUsuario = Number(req.params.id);
   if (!Number.isFinite(idUsuario) || idUsuario <= 0) return res.status(400).json({ ok: false, error: "BAD_USER_ID" });
+  if (!(await adminCanManageUserEverywhere(adminId, idUsuario))) return res.status(403).json({ ok: false, error: "FORBIDDEN_LAVANDERIA" });
 
   const [rows] = await db.query<UsuarioRow[]>(
     `
@@ -260,8 +283,10 @@ usuariosRouter.post("/:id/activar", requireAuth, requireRole(["ADMIN"]), require
 
 usuariosRouter.post("/:id/desactivar", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLavanderia = req.auth?.id_lavanderia ?? 1;
+  const adminId = Number(req.auth?.id_usuario ?? "0");
   const idUsuario = Number(req.params.id);
   if (!Number.isFinite(idUsuario) || idUsuario <= 0) return res.status(400).json({ ok: false, error: "BAD_USER_ID" });
+  if (!(await adminCanManageUserEverywhere(adminId, idUsuario))) return res.status(403).json({ ok: false, error: "FORBIDDEN_LAVANDERIA" });
 
   const currentUserId = Number(req.auth?.id_usuario ?? "0");
   if (currentUserId && idUsuario === currentUserId) {

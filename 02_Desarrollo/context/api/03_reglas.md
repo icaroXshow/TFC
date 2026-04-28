@@ -26,5 +26,6 @@
 ## Reglas de tiempo real
 
 1. El frontend obtiene una carga inicial por API.
-2. Las actualizaciones posteriores llegan por WebSockets.
-3. Redis puede usarse como apoyo para propagar cambios y mantener estado operativo rápido.
+2. Las actualizaciones posteriores se refrescan por polling HTTP en el panel admin.
+3. Redis puede usarse como apoyo para estado operativo rápido, pero el sistema debe funcionar con `REDIS_ENABLED=false`.
+4. WebSocket queda como evolución futura, no como requisito funcional del MVP actual.

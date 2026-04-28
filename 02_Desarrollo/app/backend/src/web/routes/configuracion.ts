@@ -2,6 +2,8 @@ import { Router } from "express";
 import { db } from "../../db/pool.js";
 import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { requireAuth, requireLavanderia, requireRole } from "../auth/middleware.js";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 
 export const configuracionRouter = Router();
 
@@ -17,7 +19,79 @@ type EnvSettings = {
   CAMERA_USER: string;
   CAMERA_PASS: string;
   MQTT_URL: string;
+  MQTT_USER: string;
+  MQTT_PASS: string;
+  CAMERA_STREAM_USER: string;
+  CAMERA_STREAM_PASS: string;
+  CAMERA2_BASE_URL: string;
+  CAMERA2_USER: string;
+  CAMERA2_PASS: string;
+  CAMERA2_STREAM_USER: string;
+  CAMERA2_STREAM_PASS: string;
+  REDIS_ENABLED: string;
+  REDIS_HOST: string;
+  REDIS_PORT: string;
+  REDIS_PASSWORD: string;
+  REDIS_DB: string;
+  REDIS_TIMEOUT_MS: string;
+  REDIS_KEY_PREFIX: string;
 };
+
+const EDITABLE_ENV_KEYS = [
+  "CAMERA_BASE_URL",
+  "CAMERA_USER",
+  "CAMERA_PASS",
+  "CAMERA_STREAM_USER",
+  "CAMERA_STREAM_PASS",
+  "CAMERA2_BASE_URL",
+  "CAMERA2_USER",
+  "CAMERA2_PASS",
+  "CAMERA2_STREAM_USER",
+  "CAMERA2_STREAM_PASS",
+  "MQTT_URL",
+  "MQTT_USER",
+  "MQTT_PASS",
+  "REDIS_ENABLED",
+  "REDIS_HOST",
+  "REDIS_PORT",
+  "REDIS_PASSWORD",
+  "REDIS_DB",
+  "REDIS_TIMEOUT_MS",
+  "REDIS_KEY_PREFIX",
+] as const;
+
+function normalizeEnvValue(key: string, value: unknown) {
+  const raw = String(value ?? "").trim();
+  if (key === "REDIS_ENABLED") return raw.toLowerCase() === "false" ? "false" : "true";
+  return raw;
+}
+
+async function persistEditableEnv(vars: Record<string, string>) {
+  const envPath = path.resolve(process.cwd(), ".env");
+  let raw = "";
+  try {
+    raw = await fs.readFile(envPath, "utf8");
+  } catch {
+    raw = "";
+  }
+
+  const lines = raw.split(/\r?\n/);
+  const idxByKey = new Map<string, number>();
+  for (let i = 0; i < lines.length; i += 1) {
+    const m = lines[i]?.match(/^\s*([A-Z0-9_]+)\s*=/);
+    if (m) idxByKey.set(m[1], i);
+  }
+
+  for (const [k, v] of Object.entries(vars)) {
+    const line = `${k}=${v}`;
+    const idx = idxByKey.get(k);
+    if (typeof idx === "number") lines[idx] = line;
+    else lines.push(line);
+    process.env[k] = v;
+  }
+
+  await fs.writeFile(envPath, `${lines.filter((x) => x !== undefined).join("\n").replace(/\n+$/, "")}\n`, "utf8");
+}
 
 type PublicWebSettings = {
   brand_name: string;
@@ -172,6 +246,22 @@ configuracionRouter.get("/env", requireAuth, requireRole(["ADMIN"]), requireLava
     CAMERA_USER: "",
     CAMERA_PASS: "",
     MQTT_URL: "",
+    MQTT_USER: "",
+    MQTT_PASS: "",
+    CAMERA_STREAM_USER: "",
+    CAMERA_STREAM_PASS: "",
+    CAMERA2_BASE_URL: "",
+    CAMERA2_USER: "",
+    CAMERA2_PASS: "",
+    CAMERA2_STREAM_USER: "",
+    CAMERA2_STREAM_PASS: "",
+    REDIS_ENABLED: "true",
+    REDIS_HOST: "",
+    REDIS_PORT: "",
+    REDIS_PASSWORD: "",
+    REDIS_DB: "",
+    REDIS_TIMEOUT_MS: "",
+    REDIS_KEY_PREFIX: "",
   });
   res.json({
     ok: true,
@@ -181,12 +271,30 @@ configuracionRouter.get("/env", requireAuth, requireRole(["ADMIN"]), requireLava
       CAMERA_PASS: "",
       CAMERA_PASS_SET: Boolean(envCfg.CAMERA_PASS),
       MQTT_URL: envCfg.MQTT_URL,
+      MQTT_USER: envCfg.MQTT_USER,
+      MQTT_PASS_SET: Boolean(envCfg.MQTT_PASS),
+      CAMERA_STREAM_USER: envCfg.CAMERA_STREAM_USER,
+      CAMERA_STREAM_PASS_SET: Boolean(envCfg.CAMERA_STREAM_PASS),
+      CAMERA2_BASE_URL: envCfg.CAMERA2_BASE_URL,
+      CAMERA2_USER: envCfg.CAMERA2_USER,
+      CAMERA2_PASS_SET: Boolean(envCfg.CAMERA2_PASS),
+      CAMERA2_STREAM_USER: envCfg.CAMERA2_STREAM_USER,
+      CAMERA2_STREAM_PASS_SET: Boolean(envCfg.CAMERA2_STREAM_PASS),
+      REDIS_ENABLED: envCfg.REDIS_ENABLED,
+      REDIS_HOST: envCfg.REDIS_HOST,
+      REDIS_PORT: envCfg.REDIS_PORT,
+      REDIS_PASSWORD_SET: Boolean(envCfg.REDIS_PASSWORD),
+      REDIS_DB: envCfg.REDIS_DB,
+      REDIS_TIMEOUT_MS: envCfg.REDIS_TIMEOUT_MS,
+      REDIS_KEY_PREFIX: envCfg.REDIS_KEY_PREFIX,
     },
   });
 });
 
-configuracionRouter.get("/web-public", async (_req, res) => {
-  const publicWeb = await getConfigLav<PublicWebSettings>(1, "web_public_content", DEFAULT_PUBLIC_WEB_SETTINGS);
+configuracionRouter.get("/web-public", async (req, res) => {
+  const rawLav = Number(req.query?.lav);
+  const idLav = Number.isFinite(rawLav) && rawLav > 0 ? rawLav : 1;
+  const publicWeb = await getConfigLav<PublicWebSettings>(idLav, "web_public_content", DEFAULT_PUBLIC_WEB_SETTINGS);
   res.json({ ok: true, contenido: { ...DEFAULT_PUBLIC_WEB_SETTINGS, ...publicWeb } });
 });
 
@@ -252,16 +360,39 @@ configuracionRouter.put("/env", requireAuth, requireRole(["ADMIN"]), requireLava
     CAMERA_USER: "",
     CAMERA_PASS: "",
     MQTT_URL: "",
+    MQTT_USER: "",
+    MQTT_PASS: "",
+    CAMERA_STREAM_USER: "",
+    CAMERA_STREAM_PASS: "",
+    CAMERA2_BASE_URL: "",
+    CAMERA2_USER: "",
+    CAMERA2_PASS: "",
+    CAMERA2_STREAM_USER: "",
+    CAMERA2_STREAM_PASS: "",
+    REDIS_ENABLED: "true",
+    REDIS_HOST: "",
+    REDIS_PORT: "",
+    REDIS_PASSWORD: "",
+    REDIS_DB: "",
+    REDIS_TIMEOUT_MS: "",
+    REDIS_KEY_PREFIX: "",
   });
-  const nextPass = String(req.body?.CAMERA_PASS ?? "");
-  const envCfg: EnvSettings = {
-    CAMERA_BASE_URL: String(req.body?.CAMERA_BASE_URL ?? "").trim(),
-    CAMERA_USER: String(req.body?.CAMERA_USER ?? "").trim(),
-    CAMERA_PASS: nextPass ? nextPass : current.CAMERA_PASS,
-    MQTT_URL: String(req.body?.MQTT_URL ?? "").trim(),
-  };
+  const payload = (req.body ?? {}) as Record<string, unknown>;
+  const next = { ...current } as Record<string, string>;
+  for (const key of EDITABLE_ENV_KEYS) {
+    const val = payload[key];
+    if (val === undefined) continue;
+    if (String(key).endsWith("_PASS") || key === "REDIS_PASSWORD") {
+      const pass = String(val ?? "");
+      if (pass) next[key] = normalizeEnvValue(key, pass);
+      continue;
+    }
+    next[key] = normalizeEnvValue(key, val);
+  }
+  const envCfg = next as EnvSettings;
   await setConfigLav(idLav, "env_settings", envCfg, "Ajustes ENV por tienda (demo/admin)");
-  res.json({ ok: true, env: envCfg, note: "MQTT_URL requiere reinicio para aplicar bridge." });
+  await persistEditableEnv(Object.fromEntries(EDITABLE_ENV_KEYS.map((k) => [k, envCfg[k]])));
+  res.json({ ok: true, env: envCfg, note: "Cambios guardados en BD y .env del backend. Reinicia servicios para aplicar completamente." });
 });
 
 configuracionRouter.get("/:clave", requireAuth, requireLavanderia, async (req, res) => {

@@ -10,6 +10,7 @@
 
   const cardBackend = $("#cardBackend");
   const healthLine = $("#healthLine");
+  const serverClockEl = $("#serverClock");
   const cardCajaHoy = $("#cardCajaHoy");
   const storeOpenBtn = $("#storeOpenBtn");
   const storeCloseBtn = $("#storeCloseBtn");
@@ -25,6 +26,25 @@
   const envCameraUser = $("#envCameraUser");
   const envCameraPass = $("#envCameraPass");
   const envMqttUrl = $("#envMqttUrl");
+  const envMqttUser = $("#envMqttUser");
+  const envMqttPass = $("#envMqttPass");
+  const envCameraStreamUser = $("#envCameraStreamUser");
+  const envCameraStreamPass = $("#envCameraStreamPass");
+  const envCamera2Base = $("#envCamera2Base");
+  const envCamera2User = $("#envCamera2User");
+  const envCamera2Pass = $("#envCamera2Pass");
+  const envCamera2StreamUser = $("#envCamera2StreamUser");
+  const envCamera2StreamPass = $("#envCamera2StreamPass");
+  const envRedisEnabled = $("#envRedisEnabled");
+  const envRedisHost = $("#envRedisHost");
+  const envRedisPort = $("#envRedisPort");
+  const envRedisPass = $("#envRedisPass");
+  const envRedisDb = $("#envRedisDb");
+  const envRedisTimeout = $("#envRedisTimeout");
+  const envRedisPrefix = $("#envRedisPrefix");
+  const envSettingsForm = $("#envSettingsForm");
+  const envSettingsSave = $("#envSettingsSave");
+  const envSettingsHint = $("#envSettingsHint");
   const storeOpenTime = $("#storeOpenTime");
   const storeCloseTime = $("#storeCloseTime");
   const storeOpenMachines = $("#storeOpenMachines");
@@ -52,6 +72,7 @@
   const camOpenMobotix = $("#camOpenMobotix");
   const camOpenAdmin = $("#camOpenAdmin");
   const camOpenEvents = $("#camOpenEvents");
+  const camDetach = $("#camDetach");
   const cameraImg = $("#cameraStream");
   const cameraImg1 = $("#cameraStream1");
   const cameraImg2 = $("#cameraStream2");
@@ -93,6 +114,10 @@
   const lightsOffTime = $("#lightsOffTime");
   const fanOnTime = $("#fanOnTime");
   const fanOffTime = $("#fanOffTime");
+  const iotOpenMachines = $("#iotOpenMachines");
+  const iotCloseMachines = $("#iotCloseMachines");
+  const iotMachineOnTime = $("#iotMachineOnTime");
+  const iotMachineOffTime = $("#iotMachineOffTime");
   const cashTbody = $("#cashTbody");
   const cashHint = $("#cashHint");
   const cashPeriod = $("#cashPeriod");
@@ -124,10 +149,19 @@
   const logsLoad = $("#logsLoad");
   const webEditorForm = $("#webEditorForm");
   const webEditorSave = $("#webEditorSave");
+  const webPreviewPage = $("#webPreviewPage");
+  const webPreviewReload = $("#webPreviewReload");
+  const webPreviewFrame = $("#webPreviewFrame");
 
   function setText(el, text) {
     if (!el) return;
     el.textContent = text;
+  }
+  function escapeHtml(v) {
+    return String(v ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
   }
 
   function confirmNice(title, message, okLabel = "Confirmar", cancelLabel = "Cancelar") {
@@ -519,9 +553,21 @@
       if (locationEl) locationEl.textContent = "—";
       if (lavSelect) lavSelect.hidden = true;
     }
+    const renderServerClock = (isoValue) => {
+      if (!serverClockEl) return;
+      const dt = new Date(String(isoValue || ""));
+      if (Number.isNaN(dt.getTime())) {
+        serverClockEl.textContent = "Hora servidor: no disponible";
+        return;
+      }
+      const madrid = dt.toLocaleString("es-ES", { timeZone: "Europe/Madrid" });
+      serverClockEl.textContent = `Hora servidor (Madrid): ${madrid}`;
+    };
+
     try {
       const healthRes = await fetch(`${API_BASE}/health`);
       const health = await healthRes.json();
+      renderServerClock(health?.timestamp);
       setText(cardBackend, health?.db === "ok" ? "Conectado" : "BD caída");
       if (healthLine) {
         const apiOk = Boolean(health?.ok);
@@ -536,6 +582,7 @@
         `;
       }
     } catch {
+      renderServerClock(null);
       setText(cardBackend, "Desconectado");
       if (healthLine) {
         healthLine.innerHTML = `
@@ -684,11 +731,11 @@
         const selectedCloseIds = selectedCloseRes.ok ? (await selectedCloseRes.json())?.maquinas || [] : [];
         const selectedOpen = new Set(selectedOpenIds.map((x) => Number(x)));
         const selectedClose = new Set(selectedCloseIds.map((x) => Number(x)));
-        const htmlOpen = allMachines
-          .map((m) => `<label><input type="checkbox" value="${m.id_maquina}" ${selectedOpen.has(Number(m.id_maquina)) ? "checked" : ""} /> ${m.codigo_visible}</label>`)
+      const htmlOpen = allMachines
+          .map((m) => `<label><input type="checkbox" value="${Number(m.id_maquina)}" ${selectedOpen.has(Number(m.id_maquina)) ? "checked" : ""} /> ${escapeHtml(m.codigo_visible)}</label>`)
           .join("");
         const htmlClose = allMachines
-          .map((m) => `<label><input type="checkbox" value="${m.id_maquina}" ${selectedClose.has(Number(m.id_maquina)) ? "checked" : ""} /> ${m.codigo_visible}</label>`)
+          .map((m) => `<label><input type="checkbox" value="${Number(m.id_maquina)}" ${selectedClose.has(Number(m.id_maquina)) ? "checked" : ""} /> ${escapeHtml(m.codigo_visible)}</label>`)
           .join("");
         if (storeOpenMachines) storeOpenMachines.innerHTML = htmlOpen;
         if (storeCloseMachines) storeCloseMachines.innerHTML = htmlClose;
@@ -704,6 +751,17 @@
       if (envCameraUser) envCameraUser.value = d?.env?.CAMERA_USER || "";
       if (envCameraPass) envCameraPass.value = d?.env?.CAMERA_PASS || "";
       if (envMqttUrl) envMqttUrl.value = d?.env?.MQTT_URL || "";
+      if (envMqttUser) envMqttUser.value = d?.env?.MQTT_USER || "";
+      if (envCameraStreamUser) envCameraStreamUser.value = d?.env?.CAMERA_STREAM_USER || "";
+      if (envCamera2Base) envCamera2Base.value = d?.env?.CAMERA2_BASE_URL || "";
+      if (envCamera2User) envCamera2User.value = d?.env?.CAMERA2_USER || "";
+      if (envCamera2StreamUser) envCamera2StreamUser.value = d?.env?.CAMERA2_STREAM_USER || "";
+      if (envRedisEnabled) envRedisEnabled.value = String(d?.env?.REDIS_ENABLED || "true");
+      if (envRedisHost) envRedisHost.value = d?.env?.REDIS_HOST || "";
+      if (envRedisPort) envRedisPort.value = d?.env?.REDIS_PORT || "";
+      if (envRedisDb) envRedisDb.value = d?.env?.REDIS_DB || "";
+      if (envRedisTimeout) envRedisTimeout.value = d?.env?.REDIS_TIMEOUT_MS || "";
+      if (envRedisPrefix) envRedisPrefix.value = d?.env?.REDIS_KEY_PREFIX || "";
     };
     const webEditorKeys = [
       "brand_name",
@@ -761,6 +819,41 @@
       });
     };
     if (webEditorForm) {
+      let previewLoadId = 0;
+      const collectWebEditorPayload = () => {
+        const payload = {};
+        webEditorKeys.forEach((key) => {
+          const input = document.getElementById(`web_${key}`);
+          payload[key] = String(input?.value ?? "").trim();
+        });
+        return payload;
+      };
+      const applyPreviewToFrame = () => {
+        if (!webPreviewFrame) return;
+        const doc = webPreviewFrame.contentDocument;
+        if (!doc) return;
+        const content = collectWebEditorPayload();
+        doc.querySelectorAll("[data-web-key]").forEach((el) => {
+          const key = el.getAttribute("data-web-key");
+          if (!key || content[key] == null) return;
+          if (el.tagName === "IFRAME") {
+            el.setAttribute("src", String(content[key]));
+            return;
+          }
+          el.textContent = String(content[key]);
+        });
+      };
+      const loadPreviewFrame = () => {
+        if (!webPreviewFrame) return;
+        const page = String(webPreviewPage?.value || "index.html");
+        const thisLoad = ++previewLoadId;
+        webPreviewFrame.src = `/${page}?preview=1&cb=${Date.now()}`;
+        webPreviewFrame.onload = () => {
+          if (thisLoad !== previewLoadId) return;
+          applyPreviewToFrame();
+        };
+      };
+
       const panelStorageKey = `kwl_web_editor_panels_${String(activeLavId)}`;
       const applyWebPanelVisibility = () => {
         const toggles = [...webEditorForm.querySelectorAll(".js-web-panel-toggle")];
@@ -804,17 +897,28 @@
       });
       try {
         await loadWebEditor();
+        loadPreviewFrame();
       } catch {
         notifyNice("No se pudo cargar el Editor Web.");
       }
+
+      webPreviewPage?.addEventListener("change", loadPreviewFrame);
+      webPreviewReload?.addEventListener("click", loadPreviewFrame);
+
+      let previewDebounce = null;
+      webEditorForm.querySelectorAll("input, textarea, select").forEach((el) => {
+        el.addEventListener("input", () => {
+          if (previewDebounce) clearTimeout(previewDebounce);
+          previewDebounce = setTimeout(() => {
+            applyPreviewToFrame();
+          }, 120);
+        });
+      });
+
       webEditorForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         if (webEditorSave) webEditorSave.disabled = true;
-        const payload = {};
-        webEditorKeys.forEach((key) => {
-          const input = document.getElementById(`web_${key}`);
-          payload[key] = String(input?.value ?? "").trim();
-        });
+        const payload = collectWebEditorPayload();
         const r = await fetch(`${API_BASE}/api/configuracion/web-public/admin`, {
           method: "PUT",
           headers: {
@@ -830,6 +934,7 @@
           return;
         }
         notifyNice("Contenido público guardado.", "Guardado");
+        applyPreviewToFrame();
       });
     }
     storeEnvBtn?.addEventListener("click", async () => {
@@ -863,8 +968,86 @@
       }
       storeEnvDialog?.close();
     });
+
+    if (envSettingsForm) {
+      const setEnvSettingsHint = (text) => {
+        if (!envSettingsHint) return;
+        envSettingsHint.hidden = !text;
+        envSettingsHint.textContent = text || "";
+      };
+      try {
+        await loadEnvFromBackend();
+      } catch {
+        setEnvSettingsHint("No se pudieron cargar los ajustes actuales.");
+      }
+      envSettingsForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setEnvSettingsHint("");
+        if (envSettingsSave) envSettingsSave.disabled = true;
+        const next = {
+          CAMERA_BASE_URL: envCameraBase?.value?.trim() || "",
+          CAMERA_USER: envCameraUser?.value?.trim() || "",
+          CAMERA_PASS: envCameraPass?.value || "",
+          CAMERA_STREAM_USER: envCameraStreamUser?.value?.trim() || "",
+          CAMERA_STREAM_PASS: envCameraStreamPass?.value || "",
+          CAMERA2_BASE_URL: envCamera2Base?.value?.trim() || "",
+          CAMERA2_USER: envCamera2User?.value?.trim() || "",
+          CAMERA2_PASS: envCamera2Pass?.value || "",
+          CAMERA2_STREAM_USER: envCamera2StreamUser?.value?.trim() || "",
+          CAMERA2_STREAM_PASS: envCamera2StreamPass?.value || "",
+          MQTT_URL: envMqttUrl?.value?.trim() || "",
+          MQTT_USER: envMqttUser?.value?.trim() || "",
+          MQTT_PASS: envMqttPass?.value || "",
+          REDIS_ENABLED: envRedisEnabled?.value || "true",
+          REDIS_HOST: envRedisHost?.value?.trim() || "",
+          REDIS_PORT: envRedisPort?.value?.trim() || "",
+          REDIS_PASSWORD: envRedisPass?.value || "",
+          REDIS_DB: envRedisDb?.value?.trim() || "",
+          REDIS_TIMEOUT_MS: envRedisTimeout?.value?.trim() || "",
+          REDIS_KEY_PREFIX: envRedisPrefix?.value?.trim() || "",
+        };
+        const r = await fetch(`${API_BASE}/api/configuracion/env`, {
+          method: "PUT",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(next),
+        });
+        if (envSettingsSave) envSettingsSave.disabled = false;
+        if (!r.ok) {
+          setEnvSettingsHint("No se pudieron guardar los ajustes.");
+          notifyNice("No se pudieron guardar los ajustes.", "Ajustes");
+          return;
+        }
+        const d = await r.json().catch(() => ({}));
+        setEnvSettingsHint(String(d?.note || "Ajustes guardados."));
+        notifyNice("Ajustes guardados correctamente.", "Ajustes");
+      });
+    }
+    let storeActionCooldownUntil = 0;
+    const beginStoreActionCooldown = () => {
+      storeActionCooldownUntil = Date.now() + 3000;
+      if (storeOpenBtn) storeOpenBtn.disabled = true;
+      if (storeCloseBtn) storeCloseBtn.disabled = true;
+      window.setTimeout(() => {
+        if (Date.now() >= storeActionCooldownUntil) {
+          if (storeOpenBtn) storeOpenBtn.disabled = false;
+          if (storeCloseBtn) storeCloseBtn.disabled = false;
+        }
+      }, 3100);
+    };
+    const canRunStoreAction = () => {
+      const waitMs = storeActionCooldownUntil - Date.now();
+      if (waitMs <= 0) return true;
+      notifyNice(`Espera ${Math.ceil(waitMs / 1000)}s antes de volver a pulsar.`);
+      return false;
+    };
     if (storeOpenBtn) {
       storeOpenBtn.addEventListener("click", async () => {
+        if (!canRunStoreAction()) return;
+        beginStoreActionCooldown();
         const saved = await persistStoreConfigFromUi();
         if (!saved) {
           notifyNice("No se pudo aplicar la configuración de apertura.");
@@ -880,6 +1063,8 @@
     }
     if (storeCloseBtn) {
       storeCloseBtn.addEventListener("click", async () => {
+        if (!canRunStoreAction()) return;
+        beginStoreActionCooldown();
         const saved = await persistStoreConfigFromUi();
         if (!saved) {
           notifyNice("No se pudo aplicar la configuración de cierre.");
@@ -960,6 +1145,45 @@
     camOpenMobotix?.addEventListener("click", () => openCamUi("userimage"));
     camOpenAdmin?.addEventListener("click", () => openCamUi("admin"));
     camOpenEvents?.addEventListener("click", () => openCamUi("events"));
+    camDetach?.addEventListener("click", () => {
+      const popup = window.open("", "kwl-camera-popup", "noopener,noreferrer,width=1280,height=860");
+      if (!popup) return;
+      const safeApi = JSON.stringify(API_BASE);
+      const safeToken = JSON.stringify(token);
+      const safeLav = JSON.stringify(String(activeLavId));
+      popup.document.write(`<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cámara desprendida</title>
+<style>
+body{margin:0;background:#0f172a;color:#e5e7eb;font-family:system-ui,sans-serif}
+.bar{display:flex;gap:8px;flex-wrap:wrap;padding:10px;background:#111827;position:sticky;top:0}
+button,select{padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#1f2937;color:#fff;font-weight:600}
+.frame{padding:10px}.frame img{width:100%;max-height:calc(100vh - 86px);object-fit:contain;border-radius:12px;border:1px solid #334155;background:#000}
+</style></head><body>
+<div class="bar">
+<button id="center">Centrar</button><button id="zin">Zoom +</button><button id="zout">Zoom -</button>
+<button id="z1">1x</button><button id="z2">2x</button><button id="z4">4x</button><button id="z8">8x</button>
+<select id="mode"><option value="fullimage">Full Image</option><option value="surround">Modo surround</option><option value="normal">Modo normal</option><option value="panorama">Modo panorama</option></select>
+<button id="apply">Aplicar modo</button>
+</div>
+<div class="frame"><img id="stream" alt="Cámara"></div>
+<script>
+const API_BASE=${safeApi}, token=${safeToken}, lav=${safeLav};
+const stream=document.getElementById("stream");
+const refresh=()=>{stream.src=\`\${API_BASE}/api/camera/faststream.mjpg?t=\${encodeURIComponent(token)}&lav=\${encodeURIComponent(lav)}&cam=1&cb=\${Date.now()}\`;};
+const call=async(path,body)=>{await fetch(\`\${API_BASE}/api/camera\${path}\`,{method:"POST",headers:{authorization:\`Bearer \${token}\`,"x-lavanderia-id":lav,"content-type":"application/json"},body:JSON.stringify(body||{})});refresh();};
+document.getElementById("center").onclick=()=>call("/ptz/center");
+document.getElementById("zin").onclick=()=>call("/zoom",{mode:"relative",value:250});
+document.getElementById("zout").onclick=()=>call("/zoom",{mode:"relative",value:-250});
+document.getElementById("z1").onclick=()=>call("/zoom",{mode:"absolute",value:1000});
+document.getElementById("z2").onclick=()=>call("/zoom",{mode:"absolute",value:2000});
+document.getElementById("z4").onclick=()=>call("/zoom",{mode:"absolute",value:4000});
+document.getElementById("z8").onclick=()=>call("/zoom",{mode:"absolute",value:8000});
+document.getElementById("apply").onclick=()=>call("/display-mode",{mode:document.getElementById("mode").value});
+refresh();
+</script></body></html>`);
+      popup.document.close();
+    });
 
     // Cámara: ambas vistas usan MJPEG directo (1 sola conexión por <img>, sin bucles JS).
     const cameraTargets = [];
@@ -990,6 +1214,7 @@
     // IOT / Programador
     const isIotView = Boolean(iotSaveSchedule || doorToggle || lightsToggle || fanOn);
     let currentIotState = { puerta_abierta: false, luces_encendidas: false, ventilacion_encendida: false };
+    let iotScheduleDirty = false;
     const setIotHint = (text) => {
       if (!iotHint) return;
       iotHint.textContent = text || "";
@@ -1006,7 +1231,7 @@
       loadIot._busy = true;
       try {
         setIotHint("");
-        const [stateRes, schRes, approxRes] = await Promise.all([
+        const [stateRes, schRes, approxRes, machinesRes, openMachinesRes, closeMachinesRes] = await Promise.all([
           fetch(`${API_BASE}/api/iot/state`, {
             headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
           }),
@@ -1014,6 +1239,15 @@
             headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
           }),
           fetch(`${API_BASE}/api/iot/approx-state`, {
+            headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+          }),
+          fetch(`${API_BASE}/api/maquinas`, {
+            headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+          }),
+          fetch(`${API_BASE}/api/iot/store-open-machines`, {
+            headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+          }),
+          fetch(`${API_BASE}/api/iot/store-close-machines`, {
             headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
           }),
         ]);
@@ -1036,14 +1270,31 @@
         setPill(fanState, st.ventilacion_encendida);
 
         const sc = schData?.schedule || {};
-        if (doorScheduleEnabled) doorScheduleEnabled.checked = Boolean(sc?.puerta?.on || sc?.puerta?.off);
-        if (lightsScheduleEnabled) lightsScheduleEnabled.checked = Boolean(sc?.luces?.on || sc?.luces?.off);
-        if (doorOn) doorOn.value = sc?.puerta?.on || "";
-        if (doorOff) doorOff.value = sc?.puerta?.off || "";
-        if (lightsOnTime) lightsOnTime.value = sc?.luces?.on || "";
-        if (lightsOffTime) lightsOffTime.value = sc?.luces?.off || "";
-        if (fanOnTime) fanOnTime.value = sc?.ventilacion?.on || "";
-        if (fanOffTime) fanOffTime.value = sc?.ventilacion?.off || "";
+        if (!iotScheduleDirty) {
+          if (doorScheduleEnabled) doorScheduleEnabled.checked = Boolean(sc?.puerta?.on || sc?.puerta?.off);
+          if (lightsScheduleEnabled) lightsScheduleEnabled.checked = Boolean(sc?.luces?.on || sc?.luces?.off);
+          if (doorOn) doorOn.value = sc?.puerta?.on || "";
+          if (doorOff) doorOff.value = sc?.puerta?.off || "";
+          if (lightsOnTime) lightsOnTime.value = sc?.luces?.on || "";
+          if (lightsOffTime) lightsOffTime.value = sc?.luces?.off || "";
+          if (iotMachineOnTime) iotMachineOnTime.value = sc?.puerta?.on || sc?.luces?.on || "";
+          if (iotMachineOffTime) iotMachineOffTime.value = sc?.puerta?.off || sc?.luces?.off || "";
+          if (fanOnTime) fanOnTime.value = sc?.ventilacion?.on || "";
+          if (fanOffTime) fanOffTime.value = sc?.ventilacion?.off || "";
+          if (iotOpenMachines && iotCloseMachines && machinesRes.ok && openMachinesRes.ok && closeMachinesRes.ok) {
+            const allMachines = (await machinesRes.json())?.maquinas || [];
+            const selectedOpen = new Set((((await openMachinesRes.json())?.maquinas) || []).map((x) => Number(x)));
+            const selectedClose = new Set((((await closeMachinesRes.json())?.maquinas) || []).map((x) => Number(x)));
+            const htmlOpen = allMachines
+              .map((m) => `<label><input type="checkbox" data-role="open" value="${Number(m.id_maquina)}" ${selectedOpen.has(Number(m.id_maquina)) ? "checked" : ""} /> ${escapeHtml(m.codigo_visible)}</label>`)
+              .join("");
+            const htmlClose = allMachines
+              .map((m) => `<label><input type="checkbox" data-role="close" value="${Number(m.id_maquina)}" ${selectedClose.has(Number(m.id_maquina)) ? "checked" : ""} /> ${escapeHtml(m.codigo_visible)}</label>`)
+              .join("");
+            iotOpenMachines.innerHTML = htmlOpen;
+            iotCloseMachines.innerHTML = htmlClose;
+          }
+        }
         await loadIotLog();
       } finally {
         loadIot._busy = false;
@@ -1072,7 +1323,7 @@
           const accion = item?.accion || "—";
           const origen = item?.origen ? ` · ${item.origen}` : "";
           const by = item?.by ? `#${item.by}` : "—";
-          return `<tr><td>${ts}</td><td>${dispositivo}</td><td>${accion}${origen}</td><td>${by}</td></tr>`;
+          return `<tr><td>${escapeHtml(ts)}</td><td>${escapeHtml(dispositivo)}</td><td>${escapeHtml(`${accion}${origen}`)}</td><td>${escapeHtml(by)}</td></tr>`;
         })
         .join("");
     };
@@ -1201,31 +1452,77 @@
       await saveState({ ventilacion_encendida: false });
     });
 
+    [doorScheduleEnabled, lightsScheduleEnabled, doorOn, doorOff, lightsOnTime, lightsOffTime, iotMachineOnTime, iotMachineOffTime, fanOnTime, fanOffTime, iotOpenMachines, iotCloseMachines]
+      .filter(Boolean)
+      .forEach((el) => {
+        el.addEventListener("input", () => {
+          iotScheduleDirty = true;
+        });
+        el.addEventListener("change", () => {
+          iotScheduleDirty = true;
+        });
+      });
+
     iotSaveSchedule?.addEventListener("click", async () => {
       setIotHint("");
+      iotSaveSchedule.disabled = true;
+      const machineOn = String(iotMachineOnTime?.value ?? "").trim() || null;
+      const machineOff = String(iotMachineOffTime?.value ?? "").trim() || null;
+      const doorOnValue = String(doorOn?.value ?? "").trim() || machineOn;
+      const doorOffValue = String(doorOff?.value ?? "").trim() || machineOff;
+      const lightsOnValue = String(lightsOnTime?.value ?? "").trim() || machineOn;
+      const lightsOffValue = String(lightsOffTime?.value ?? "").trim() || machineOff;
       const payload = {
         puerta: doorScheduleEnabled?.checked
-          ? { on: String(doorOn?.value ?? "").trim() || null, off: String(doorOff?.value ?? "").trim() || null }
+          ? { on: doorOnValue, off: doorOffValue }
           : { on: null, off: null },
         luces: lightsScheduleEnabled?.checked
-          ? { on: String(lightsOnTime?.value ?? "").trim() || null, off: String(lightsOffTime?.value ?? "").trim() || null }
+          ? { on: lightsOnValue, off: lightsOffValue }
           : { on: null, off: null },
         ventilacion: { on: String(fanOnTime?.value ?? "").trim() || null, off: String(fanOffTime?.value ?? "").trim() || null },
       };
-      const res = await fetch(`${API_BASE}/api/iot/schedule`, {
-        method: "PUT",
-        headers: {
-          authorization: `Bearer ${token}`,
-          "x-lavanderia-id": String(activeLavId),
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const selectedOpenMachines = iotOpenMachines
+        ? [...iotOpenMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        : [];
+      const selectedCloseMachines = iotCloseMachines
+        ? [...iotCloseMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        : [];
+      const [res, openRes, closeRes] = await Promise.all([
+        fetch(`${API_BASE}/api/iot/schedule`, {
+          method: "PUT",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }),
+        fetch(`${API_BASE}/api/iot/store-open-machines`, {
+          method: "PUT",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ maquinas: selectedOpenMachines }),
+        }),
+        fetch(`${API_BASE}/api/iot/store-close-machines`, {
+          method: "PUT",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ maquinas: selectedCloseMachines }),
+        }),
+      ]);
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      iotSaveSchedule.disabled = false;
+      if (!res.ok || !openRes.ok || !closeRes.ok) {
         setIotHint(`Error: ${data?.error || "NO_OK"} (solo ADMIN)`);
         return;
       }
+      iotScheduleDirty = false;
       setIotHint("Guardado.");
       await loadIot();
     });
@@ -1299,19 +1596,19 @@
         const pill = u.activo ? `<span class="pill pill-ok">ACTIVO</span>` : `<span class="pill pill-off">INACTIVO</span>`;
         const canToggle = u.id_usuario !== (existing?.user?.id_usuario ?? 0);
         tr.innerHTML = `
-          <td>${fullName || "—"}</td>
-          <td>${u.email}</td>
-          <td>${u.rol}</td>
+          <td>${escapeHtml(fullName || "—")}</td>
+          <td>${escapeHtml(u.email)}</td>
+          <td>${escapeHtml(u.rol)}</td>
           <td>${pill}</td>
-          <td>${formatDate(u.ultimo_acceso)}</td>
+          <td>${escapeHtml(formatDate(u.ultimo_acceso))}</td>
           <td>
             <div class="users-actions-inline">
-              <button type="button" class="btn-secondary js-user-edit" data-id="${u.id_usuario}">Editar</button>
-              <button type="button" class="btn-secondary js-user-lavs" data-id="${u.id_usuario}">Tiendas</button>
-              <button type="button" class="btn-secondary js-user-toggle" data-id="${u.id_usuario}" ${
+              <button type="button" class="btn-secondary js-user-edit" data-id="${Number(u.id_usuario)}">Editar</button>
+              <button type="button" class="btn-secondary js-user-lavs" data-id="${Number(u.id_usuario)}">Tiendas</button>
+              <button type="button" class="btn-secondary js-user-toggle" data-id="${Number(u.id_usuario)}" ${
                 canToggle ? "" : "disabled"
               }>${u.activo ? "Desactivar" : "Activar"}</button>
-              <button type="button" class="btn-secondary js-user-delete" data-id="${u.id_usuario}" ${
+              <button type="button" class="btn-secondary js-user-delete" data-id="${Number(u.id_usuario)}" ${
                 canToggle ? "" : "disabled"
               }>Borrar</button>
             </div>
@@ -1529,15 +1826,15 @@
       cashTbody.innerHTML = "";
       const items = data?.items || [];
       if (!items.length) {
-        cashTbody.innerHTML = `<tr><td colspan="4">Sin movimientos</td></tr>`;
+        cashTbody.innerHTML = `<tr><td colspan="4" class="table-empty">Sin actividad en el periodo seleccionado</td></tr>`;
       } else {
         items.forEach((it) => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
-            <td>${it.codigo_visible}</td>
-            <td>${it.tipo_maquina}</td>
-            <td>${it.movimientos}</td>
-            <td>${eur(it.importe_total)}</td>
+            <td>${escapeHtml(it.codigo_visible)}</td>
+            <td>${escapeHtml(it.tipo_maquina)}</td>
+            <td>${escapeHtml(it.movimientos)}</td>
+            <td>${escapeHtml(eur(it.importe_total))}</td>
           `;
           cashTbody.appendChild(tr);
         });
@@ -1554,6 +1851,7 @@
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setCashHint(`Error: ${data?.error || "NO_OK"}`);
+        notifyNice("No se pudo cargar caja para ese filtro.", "Error de caja");
         return;
       }
       renderCash(data);
@@ -1779,13 +2077,13 @@
           ciclos.forEach((c) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-              <td>${c.id_ciclo}</td>
-              <td>${c.codigo_visible} (${c.tipo_maquina})</td>
-              <td>${fmt(c.fecha_hora_inicio)}</td>
-              <td>${fmt(c.fecha_hora_fin)}</td>
-              <td>${c.estado_ciclo}</td>
-              <td>${c.duracion_total_programada_min}</td>
-              <td>${eur(c.importe_total_aplicado)}</td>
+              <td>${escapeHtml(c.id_ciclo)}</td>
+              <td>${escapeHtml(`${c.codigo_visible} (${c.tipo_maquina})`)}</td>
+              <td>${escapeHtml(fmt(c.fecha_hora_inicio))}</td>
+              <td>${escapeHtml(fmt(c.fecha_hora_fin))}</td>
+              <td>${escapeHtml(c.estado_ciclo)}</td>
+              <td>${escapeHtml(c.duracion_total_programada_min)}</td>
+              <td>${escapeHtml(eur(c.importe_total_aplicado))}</td>
             `;
             repTbody.appendChild(tr);
           });
@@ -1834,13 +2132,13 @@
           items.forEach((m) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-              <td>${m.codigo_visible}</td>
-              <td>${eur(m.total_actual)}</td>
-              <td>${eur(m.total_anterior)}</td>
-              <td>${eur(m.delta_total)}</td>
-              <td>${m.ciclos_actual}</td>
-              <td>${m.ciclos_anterior}</td>
-              <td>${m.delta_ciclos}</td>
+              <td>${escapeHtml(m.codigo_visible)}</td>
+              <td>${escapeHtml(eur(m.total_actual))}</td>
+              <td>${escapeHtml(eur(m.total_anterior))}</td>
+              <td>${escapeHtml(eur(m.delta_total))}</td>
+              <td>${escapeHtml(m.ciclos_actual)}</td>
+              <td>${escapeHtml(m.ciclos_anterior)}</td>
+              <td>${escapeHtml(m.delta_ciclos)}</td>
             `;
             evTbody.appendChild(tr);
           });
@@ -1855,7 +2153,7 @@
                 .map((m) => {
                   const total = Number(m.total_actual || 0);
                   const pct = Math.min(100, Math.round((total / max) * 100));
-                  return `<tr><td>${m.codigo_visible}</td><td>${barCell(pct, eur(total))}</td></tr>`;
+                  return `<tr><td>${escapeHtml(m.codigo_visible)}</td><td>${barCell(pct, eur(total))}</td></tr>`;
                 })
                 .join("")}
             </tbody>
@@ -1894,7 +2192,7 @@
           <thead>
             <tr>
               <th>Tramo</th>
-              ${machineCols.map((c) => `<th>${c}</th>`).join("")}
+              ${machineCols.map((c) => `<th>${escapeHtml(c)}</th>`).join("")}
               <th>Total tramo</th>
               <th>Ciclos tramo</th>
             </tr>
@@ -1903,7 +2201,7 @@
             ${rows
               .map((r) => {
                 const cells = (r.maquinas || []).map((m) => `<td>${eur(m.total)}<br/><small>${m.ciclos} ciclos</small></td>`).join("");
-                return `<tr><td>${r.slot}</td>${cells}<td>${eur(r.total_slot)}</td><td>${r.ciclos_slot}</td></tr>`;
+                return `<tr><td>${escapeHtml(r.slot)}</td>${cells}<td>${escapeHtml(eur(r.total_slot))}</td><td>${escapeHtml(r.ciclos_slot)}</td></tr>`;
               })
               .join("")}
             <tr>
@@ -1924,7 +2222,7 @@
                 .map((r) => {
                   const total = Number(r.total_slot || 0);
                   const pct = Math.min(100, Math.round((total / max) * 100));
-                  return `<tr><td>${r.slot}</td><td>${barCell(pct, eur(total))}</td></tr>`;
+                  return `<tr><td>${escapeHtml(r.slot)}</td><td>${barCell(pct, eur(total))}</td></tr>`;
                 })
                 .join("")}
             </tbody>
@@ -1989,23 +2287,24 @@
         const data = await r.json().catch(() => ({}));
         if (!r.ok) {
           setLogsHint(`Error: ${data?.error || "NO_OK"}`);
-          logsTbody.innerHTML = `<tr><td colspan="6">Error al cargar logs</td></tr>`;
+          logsTbody.innerHTML = `<tr><td colspan="6" class="table-empty">No se pudieron cargar los logs</td></tr>`;
+          notifyNice("No se pudieron cargar los logs.", "Error de logs");
           return;
         }
         const items = Array.isArray(data?.items) ? data.items : [];
         if (!items.length) {
-          logsTbody.innerHTML = `<tr><td colspan="6">Sin registros</td></tr>`;
+          logsTbody.innerHTML = `<tr><td colspan="6" class="table-empty">Sin registros para ese filtro</td></tr>`;
           return;
         }
         logsTbody.innerHTML = items
           .map(
             (it) => `<tr>
-              <td>${esc(fmt(it?.fecha_hora))}</td>
-              <td>${esc(it?.accion || "—")}</td>
+              <td><span class="logs-date">${esc(fmt(it?.fecha_hora))}</span></td>
+              <td><span class="logs-action-chip">${esc(it?.accion || "—")}</span></td>
               <td>${esc(it?.usuario_login || "—")}</td>
-              <td>${esc(it?.maquina_codigo || "—")}</td>
+              <td><span class="logs-machine-chip">${esc(it?.maquina_codigo || "—")}</span></td>
               <td>${esc(it?.detalle || "—")}</td>
-              <td>${esc(it?.ip_origen || "—")}</td>
+              <td><span class="logs-ip">${esc(it?.ip_origen || "—")}</span></td>
             </tr>`,
           )
           .join("");

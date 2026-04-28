@@ -250,13 +250,14 @@ body.admin-locked .admin-main {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(0, 0, 0, 0.35);
-  min-height: 300px;
+  min-height: 180px;
+  max-height: min(52vh, 560px);
 }
 
 .admin-camera-img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   aspect-ratio: 16 / 9;
   object-fit: contain;
 }
@@ -594,7 +595,19 @@ body.admin-locked .admin-main {
 }
 
 body[data-breadcrumb*="Programador"] .iot-grid {
-  grid-template-columns: repeat(2, minmax(220px, 300px));
+  grid-template-columns: repeat(3, minmax(220px, 300px));
+}
+
+body[data-breadcrumb*="Programador"] .iot-main-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+body[data-breadcrumb*="Programador"] .store-machines-grid {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  width: 100%;
 }
 
 .iot-tile h4 {
@@ -1655,5 +1668,398 @@ body[data-breadcrumb*="Programador"] .iot-grid {
 
   .admin-main {
     grid-column: 1;
+  }
+}
+
+/* UX refinements 2026-04-28 */
+.btn-primary:hover,
+.btn-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+}
+
+.btn-primary:active,
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+.btn-primary.is-busy,
+.btn-secondary.is-busy {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+body[data-breadcrumb*="Programador"] .iot-main-grid {
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) minmax(380px, 1.35fr);
+}
+
+body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
+  min-height: 100%;
+}
+
+.cash-table tbody tr:hover,
+.reports-table tbody tr:hover,
+.users-table tbody tr:hover,
+.iot-log-table tbody tr:hover {
+  background: rgba(40, 240, 200, 0.08);
+}
+
+.table-empty {
+  color: rgba(255, 255, 255, 0.72);
+  font-style: italic;
+}
+
+@media (max-width: 1380px) {
+  body[data-breadcrumb*="Programador"] .iot-main-grid {
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+  }
+
+  body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Responsive hardening 2026-04-28 */
+.admin-main,
+.admin-topbar,
+.admin-sidebar {
+  min-width: 0;
+}
+
+.admin-section,
+.admin-card,
+.iot-tile,
+.machine-tile,
+.user-tile,
+.cash-table-wrap,
+.reports-table-wrap,
+.users-table-wrap,
+.iot-log-wrap {
+  min-width: 0;
+}
+
+.admin-lav-select {
+  max-width: min(420px, 58vw);
+}
+
+@media (max-width: 1280px) {
+  .admin-main {
+    padding: 18px 20px 38px;
+  }
+
+  .machines-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+
+  .admin-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-hero-cards {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+    margin-top: 0;
+  }
+
+  #cardNextFinish {
+    font-size: 28px;
+  }
+
+  .reports-filters,
+  .cash-filter,
+  .users-toolbar,
+  .users-filters {
+    row-gap: 8px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .admin-topbar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .admin-breadcrumbs {
+    order: 2;
+    width: 100%;
+  }
+
+  .admin-topbar-right {
+    order: 1;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .admin-lav-select {
+    max-width: min(520px, 100%);
+    width: 100%;
+  }
+
+  .cash-summary,
+  .reports-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .web-editor-form {
+    padding: 14px;
+  }
+
+  .modal-card,
+  .store-config-card {
+    width: min(92vw, 760px);
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-main {
+    padding: 14px;
+  }
+
+  .admin-section {
+    margin-top: 20px;
+  }
+
+  .admin-card,
+  .machine-tile,
+  .iot-tile,
+  .user-tile {
+    border-radius: 14px;
+  }
+
+  .machines-grid,
+  .users-grid,
+  .iot-main-grid,
+  .iot-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cash-summary,
+  .reports-meta,
+  .form-grid,
+  .web-editor-visibility-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cash-table,
+  .reports-table,
+  .users-table,
+  .iot-log-table {
+    min-width: 640px;
+  }
+
+  .machine-actions {
+    padding-bottom: 40px;
+  }
+
+  .machine-fan-toggle {
+    position: static;
+    margin-top: 8px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-topbar {
+    padding: 10px;
+  }
+
+  .admin-burger {
+    width: 40px;
+    height: 40px;
+  }
+
+  .admin-breadcrumbs {
+    font-size: 12px;
+  }
+
+  .admin-section-head h3 {
+    font-size: 20px;
+  }
+
+  .admin-section-head p {
+    font-size: 13px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .input {
+    width: 100%;
+  }
+
+  .machine-actions .btn-primary,
+  .machine-actions .btn-secondary {
+    flex: 1 1 100%;
+  }
+
+  .cash-table,
+  .reports-table,
+  .users-table,
+  .iot-log-table {
+    min-width: 560px;
+  }
+
+  .modal-card,
+  .store-config-card {
+    width: calc(100vw - 16px);
+    border-radius: 14px;
+    padding: 8px;
+  }
+}
+
+/* Logs redesign 2026-04-28 */
+.logs-head p {
+  max-width: 52ch;
+}
+
+.logs-filters-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.logs-filters-card .btn-primary {
+  min-width: 130px;
+}
+
+.logs-table-wrap {
+  margin-top: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  overflow: auto;
+}
+
+.logs-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+}
+
+.logs-table th,
+.logs-table td {
+  padding: 13px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.logs-table thead th {
+  border-top: 0;
+  background: rgba(0, 0, 0, 0.24);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.logs-table tbody tr:hover {
+  background: rgba(40, 240, 200, 0.08);
+}
+
+.logs-date {
+  color: rgba(255, 255, 255, 0.86);
+  font-variant-numeric: tabular-nums;
+}
+
+.logs-action-chip,
+.logs-machine-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+.logs-action-chip {
+  border-color: rgba(40, 240, 200, 0.3);
+  background: rgba(40, 240, 200, 0.12);
+  color: rgba(211, 255, 245, 0.96);
+}
+
+.logs-machine-chip {
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.logs-ip {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.logs-note {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 125, 137, 0.34);
+  background: rgba(255, 125, 137, 0.11);
+  color: rgba(255, 233, 235, 0.95);
+}
+
+@media (max-width: 900px) {
+  .logs-filters-card {
+    padding: 12px;
+  }
+
+  .logs-table {
+    min-width: 760px;
+  }
+}
+
+@media (max-width: 640px) {
+  .logs-table {
+    min-width: 680px;
+  }
+}
+
+/* Caja: filtros en fila */
+.cash-filters-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(360px, 1.4fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.cash-filters-row .cash-filter {
+  margin: 0;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cash-filters-row .cash-filter .btn-primary {
+  min-width: 86px;
+}
+
+.cash-filter-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 1200px) {
+  .cash-filters-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cash-filters-row .cash-filter-range {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .cash-filters-row {
+    grid-template-columns: 1fr;
+  }
+
+  .cash-filter-range {
+    grid-template-columns: 1fr;
   }
 }

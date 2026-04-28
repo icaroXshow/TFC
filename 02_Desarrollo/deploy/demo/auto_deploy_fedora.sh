@@ -102,11 +102,24 @@ echo "MQTT    : mqtt://127.0.0.1:1883"
 echo "Redis   : redis://127.0.0.1:6379"
 
 if [[ "$RUN_SMOKE" -eq 1 ]]; then
+  found=0
   if [[ -x "$SCRIPT_DIR/scripts/soft_load_test.sh" ]]; then
-    echo "[i] Ejecutando smoke test..."
+    found=1
+    echo "[i] Ejecutando soft_load_test..."
     (cd "$SCRIPT_DIR" && ./scripts/soft_load_test.sh)
-  else
-    echo "[!] No se encontró scripts/soft_load_test.sh ejecutable"
+  fi
+  if [[ -x "$SCRIPT_DIR/scripts/timer_drift_check.sh" ]]; then
+    found=1
+    echo "[i] Ejecutando timer_drift_check..."
+    (cd "$SCRIPT_DIR" && ./scripts/timer_drift_check.sh)
+  fi
+  if [[ -x "$SCRIPT_DIR/scripts/machine_regression_check.sh" ]]; then
+    found=1
+    echo "[i] Ejecutando machine_regression_check..."
+    (cd "$SCRIPT_DIR" && ./scripts/machine_regression_check.sh)
+  fi
+  if [[ "$found" -eq 0 ]]; then
+    echo "[!] No se encontraron scripts smoke ejecutables"
   fi
 fi
 

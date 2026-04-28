@@ -44,6 +44,7 @@
           <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
           <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
           <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
+          <a class="admin-nav-item" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
         </nav>
 
         <div class="admin-sidebar-bottom">
@@ -62,12 +63,12 @@
 
       <main class="admin-main">
         <section class="admin-section">
-          <div class="admin-section-head">
+          <div class="admin-section-head logs-head">
             <h3>Logs</h3>
-            <p>Auditoria Web</p>
+            <p>Auditoría del panel y del sistema</p>
           </div>
 
-          <div class="rep-filters">
+          <div class="rep-filters logs-filters-card">
             <label>
               Buscar
               <input class="input" id="logsQuery" placeholder="Ej: Acción | Detalle | Usuario | Máquina" />
@@ -79,8 +80,8 @@
             <button class="btn-primary" id="logsLoad" type="button">Cargar</button>
           </div>
 
-          <div class="cash-table-wrap">
-            <table class="cash-table">
+          <div class="logs-table-wrap">
+            <table class="logs-table">
               <thead>
                 <tr>
                   <th>Fecha</th>
@@ -92,11 +93,11 @@
                 </tr>
               </thead>
               <tbody id="logsTbody">
-                <tr><td colspan="6">Sin datos</td></tr>
+                <tr><td colspan="6" class="table-empty">Sin registros</td></tr>
               </tbody>
             </table>
           </div>
-          <p class="users-note" id="logsHint" hidden></p>
+          <p class="logs-note" id="logsHint" hidden></p>
         </section>
       </main>
     </div>

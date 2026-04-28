@@ -22,9 +22,17 @@ Se recomienda JSON.
 {
   "accion": "insertar_credito",
   "id_maquina": 1,
-  "id_ciclo": 25,
   "importe": 1.0,
   "timestamp": "2026-04-15T18:00:00Z"
+}
+```
+
+```json
+{
+  "accion": "confirmar_inicio",
+  "id_maquina": 1,
+  "timestamp": "2026-04-15T18:00:03Z",
+  "origen": "web_admin"
 }
 ```
 
@@ -71,6 +79,11 @@ Eventos relevantes adicionales:
 - `PULSO_INICIO`
 - `PULSO_FIN`
 - `AMPLIACION_APLICADA`
+
+Nota operativa:
+
+- En `CICLO_FINALIZADO`, si `payload.motivo = "stop_manual"`, el backend deja estado final `STOP`.
+- En finalización natural de ciclo, el estado final es `PAUSADA`.
 
 ---
 

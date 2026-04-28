@@ -76,6 +76,21 @@ Variables útiles del simulador (en `deploy/demo/.env`):
 - `SIM_START_MIN_CREDIT=4`
 - `SIM_GUI_PORT=8090`
 
+Variables Redis backend en Docker demo (en `deploy/demo/.env`):
+
+- `REDIS_ENABLED=true`
+- `REDIS_HOST=redis`
+- `REDIS_PORT=6379`
+- `REDIS_PASSWORD=`
+- `REDIS_DB=0`
+- `REDIS_TIMEOUT_MS=500`
+- `REDIS_KEY_PREFIX=kwl`
+
+Diferencia clave local vs Docker:
+
+- Local (backend fuera de contenedor): `REDIS_HOST=127.0.0.1`.
+- Docker demo: `REDIS_HOST=redis` (nombre del servicio Docker Compose).
+
 Flujo recomendado de pruebas:
 
 - En panel admin, selecciona tienda `KWL Simulador`: controlas solo simulador (sin tocar hardware real).

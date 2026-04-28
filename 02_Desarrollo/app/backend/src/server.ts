@@ -31,8 +31,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(
   cors({
     origin(origin, cb) {
-      // Permite peticiones server-side/sin Origin (curl, health checks).
-      if (!origin) return cb(null, true);
+      // En producción, bloqueamos peticiones sin Origin para evitar superficie CORS implícita.
+      // En desarrollo/demo se permite (curl, health checks, scripts locales).
+      if (!origin) return cb(null, env.nodeEnv !== "production");
       // Origin null solo en desarrollo/demo local cuando se declara explícitamente.
       if (origin === "null") return cb(null, env.corsAllowNullOrigin);
       // El comodín se acepta solo fuera de producción para evitar CORS demasiado permisivo.

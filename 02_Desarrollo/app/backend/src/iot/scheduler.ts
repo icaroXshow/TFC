@@ -63,18 +63,18 @@ async function setConfigLav(idLav: number, clave: string, valor: unknown, descri
 }
 
 async function auditSystem(idLav: number, accion: string, detalle: string) {
-  // MVP: usamos el usuario 1 como "sistema" (seed demo).
+  // Auditoría de sistema: no depende de usuario demo fijo.
   await db.query<ResultSetHeader>(
     `
     INSERT INTO auditoria (
       id_usuario, id_lavanderia, id_maquina, id_ciclo,
       fecha_hora, accion, entidad_afectada, id_entidad_afectada, detalle, ip_origen
     ) VALUES (
-      1, :idLav, NULL, NULL,
+      :idUsuario, :idLav, NULL, NULL,
       NOW(), :accion, 'iot', NULL, :detalle, NULL
     )
     `,
-    { idLav, accion, detalle },
+    { idUsuario: null, idLav, accion, detalle },
   );
 }
 
@@ -176,7 +176,7 @@ export function startIoTScheduler() {
               dispositivo: stateField === "puerta_abierta" ? "puerta" : stateField === "luces_encendidas" ? "luces" : "ventilacion",
               accion: "on",
               ts: new Date().toISOString(),
-              by: 1,
+              by: undefined,
               origen: "auto_schedule",
             });
             await auditSystem(idLav, "IOT_SCHEDULE_ON", `${label} ON (${hhmm})`);
@@ -194,7 +194,7 @@ export function startIoTScheduler() {
               dispositivo: stateField === "puerta_abierta" ? "puerta" : stateField === "luces_encendidas" ? "luces" : "ventilacion",
               accion: "off",
               ts: new Date().toISOString(),
-              by: 1,
+              by: undefined,
               origen: "auto_schedule",
             });
             await auditSystem(idLav, "IOT_SCHEDULE_OFF", `${label} OFF (${hhmm})`);

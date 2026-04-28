@@ -48,6 +48,11 @@ function fanKey(idMaquina: number) {
 
 async function setManualPriorityUntil(idLav: number, idMaquina: number, seconds = 15) {
   const map = await getConfigLav<Record<string, string | null>>(idLav, "machine_manual_priority_until", {});
+  const nowMs = Date.now();
+  for (const [k, until] of Object.entries(map)) {
+    const ms = until ? new Date(until).getTime() : Number.NaN;
+    if (!Number.isFinite(ms) || ms <= nowMs) delete map[k];
+  }
   map[fanKey(idMaquina)] = new Date(Date.now() + Math.max(1, seconds) * 1000).toISOString();
   await setConfigLav(idLav, "machine_manual_priority_until", map, "Prioridad temporal de control manual por máquina");
 }
@@ -246,9 +251,52 @@ maquinasRouter.post(
         await conn.rollback();
         return res.status(409).json({ ok: false, error: "MAQUINA_INACTIVA" });
       }
-      if (maquina.estado_actual !== "STOP") {
+      if (maquina.estado_actual !== "STOP" && maquina.estado_actual !== "PAUSADA") {
         await conn.rollback();
         return res.status(409).json({ ok: false, error: "MAQUINA_ESTADO_NO_PERMITE", estado: maquina.estado_actual });
+      }
+
+      if (maquina.estado_actual === "PAUSADA") {
+        await conn.query<ResultSetHeader>(
+          `
+          INSERT INTO auditoria (
+            id_usuario, id_lavanderia, id_maquina, id_ciclo,
+            fecha_hora, accion, entidad_afectada, id_entidad_afectada, detalle, ip_origen
+          ) VALUES (
+            :idUsuario,
+            :idLav,
+            :idMaquina,
+            NULL,
+            NOW(),
+            'MAQUINA_CONFIRMAR_INICIO',
+            'maquina',
+            :idMaquina,
+            :detalle,
+            :ip
+          )
+          `,
+          {
+            idUsuario: idUsuario || 1,
+            idLav: idLavanderia,
+            idMaquina,
+            detalle: `Confirmación de inicio de ${maquina.codigo_visible} desde panel admin`,
+            ip: req.ip ?? null,
+          },
+        );
+
+        await conn.commit();
+        await setManualPriorityUntil(idLavanderia, idMaquina, 20);
+        publishMachineCommand(
+          maquina.codigo_visible,
+          {
+            accion: "confirmar_inicio",
+            id_maquina: idMaquina,
+            timestamp: new Date().toISOString(),
+            origen: "web_admin",
+          },
+          idLavanderia,
+        );
+        return res.json({ ok: true, maquina });
       }
 
       await conn.query<ResultSetHeader>(

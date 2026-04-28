@@ -39,3 +39,4 @@ Servir como apoyo para:
 - Editor Web ampliado (About + FAQs)
 - Redis activo como caché operativa en backend IoT
 - Instaladores demo robustecidos (`auto_deploy_fedora.sh` / `auto_deploy.ps1`)
+- Validación runtime de regresión de máquinas y deriva de temporizador (scripts demo en PASS)
