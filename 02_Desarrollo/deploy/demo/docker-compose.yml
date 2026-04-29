@@ -14,10 +14,10 @@ services:
       - ./db/init/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -u root -p$$MARIADB_ROOT_PASSWORD --silent"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
-      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 50
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -103,7 +103,7 @@ services:
       CAMERA2_STREAM_PASS: ${CAMERA2_STREAM_PASS:-}
     depends_on:
       mariadb:
-        condition: service_healthy
+        condition: service_started
       redis:
         condition: service_started
       mqtt:

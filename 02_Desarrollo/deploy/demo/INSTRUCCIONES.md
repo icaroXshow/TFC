@@ -63,8 +63,8 @@ Reset completo de la BD:
 
 ```bash
 cd deploy/demo
-sudo docker compose down -v
-sudo docker compose up -d --build
+docker compose down -v
+docker compose up -d --build
 ```
 
 Variables útiles del simulador (en `deploy/demo/.env`):
