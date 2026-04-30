@@ -23,7 +23,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
+.logs/
+.run/
 dist/
 build/
 .out/
@@ -103,3 +104,6 @@ dist/
 .env.*.local
 npm-debug.log*
 02_Desarrollo/Versiones
+Privado_KWL
+02_Desarrollo/context
+TODO.md

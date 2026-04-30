@@ -6,9 +6,9 @@
 
 * lógica de negocio (backend)
 * interfaz web (frontend)
-* simulación de dispositivos
+* simulación de dispositivos fisicos como las lavadora e interruptores para poder testear.
 * definición conceptual del sistema
-* despliegue en entorno real y entorno de evaluación
+* despliegue en entorno real y entorno de evaluación y testeo
 
 El sistema está diseñado como una arquitectura distribuida basada en eventos, donde los dispositivos físicos (o simulados) se comunican con el backend mediante MQTT. En la versión actual los paneles web consultan la API; Redis se usa para caché de estado/configuración IoT y WebSockets quedan como evolución de tiempo real.
 
@@ -109,23 +109,12 @@ Permite probar el sistema sin hardware real.
 
 ---
 
-### `server/`
-
-Configuración de la infraestructura real:
-
-* `vm_core` → backend, frontend, Redis
-* `vm_data` → base de datos (MariaDB)
-* `lxc_mqtt` → broker MQTT
-* `lxc_sim` → ejecución del simulador
-
----
-
 ### `deploy/`
 
 Despliegue del sistema en distintos entornos:
 
-* entorno real (infraestructura distribuida)
-* entorno demo (una sola máquina para evaluación)
+* entorno real (infraestructura en servidor)
+* entorno demo (una sola máquina con simulador para evaluación)
 
 ---
 
@@ -173,22 +162,35 @@ Para entender el sistema, se recomienda seguir este orden:
 
 ## Despliegue demo recomendado
 
-Ruta rápida (Linux/Fedora):
-
-```bash
-cd 02_Desarrollo/deploy/demo
-./auto_deploy_fedora.sh --smoke
-```
-
-Ruta rápida (Windows PowerShell):
+Ruta rápida (Windows, recomendado):
 
 ```powershell
 cd 02_Desarrollo/deploy/demo
-powershell -ExecutionPolicy Bypass -File .\auto_deploy.ps1 --smoke
+.\Launcher.bat
 ```
 
-Los instaladores:
-- validan prerequisitos básicos
-- crean `.env` desde `.env.example` si falta
-- levantan `docker compose`
-- verifican `health` y frontend
+En el menú:
+- `1` instala WSL + Docker (solo primera vez)
+- `2` lanza/reinicia el proyecto
+- `3` muestra estado y logs
+
+Ruta manual (Windows PowerShell):
+
+```powershell
+cd 02_Desarrollo/deploy/demo
+copy .env.example .env
+docker compose up -d --build
+```
+
+Ruta manual (Linux con sudo):
+
+```bash
+cd 02_Desarrollo/deploy/demo
+sudo cp -n .env.example .env
+sudo docker compose up -d --build
+```
+
+El despliegue:
+- crea `.env` desde `.env.example` si falta
+- levanta `docker compose`
+- verifica `health` y frontend
