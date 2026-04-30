@@ -1,21 +1,30 @@
 @echo off
-title "TFC - Launcher Demo Local"
-echo ========================================
-echo TFC Lavanderia - Despliegue Demo
-echo ========================================
-echo.
-echo Cambiando a carpeta demo...
-cd /d "%~dp0deploy\demo"
+setlocal
+title TFC Lavanderia - Launcher
+cd /d "%~dp0"
+
+where powershell.exe >nul 2>nul
 if errorlevel 1 (
-  echo ERROR: No se pudo acceder a deploy\demo
+  echo ERROR: PowerShell no esta disponible en este sistema.
   pause
   exit /b 1
 )
-echo OK: En deploy\demo
-echo.
-echo Iniciando script PowerShell...
-powershell -ExecutionPolicy Bypass -File ".\auto_deploy.ps1" %*
-echo.
-echo Presiona cualquier tecla para salir.
-pause >nul
 
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0deploy\demo\auto_deploy.ps1" %*
+set EXITCODE=%ERRORLEVEL%
+
+if not "%EXITCODE%"=="0" (
+  echo.
+  echo El launcher termino con codigo %EXITCODE%.
+)
+
+echo.
+pause
+exit /b %EXITCODE%
+EOF
+python3 - <<'PY'
+from pathlib import Path
+p=Path('/mnt/data/tfc_work/Launcher.bat')
+data=p.read_bytes().replace(b'\n', b'\r\n')
+p.write_bytes(data)
+PY
