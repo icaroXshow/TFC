@@ -1,12 +1,20 @@
 import mqtt from "mqtt";
 
 const MQTT_URL = process.env.MQTT_URL || "mqtt://mqtt:1883";
-const CYCLE_SECONDS_RAW = Number(process.env.SIM_CYCLE_SECONDS || "2400");
-const PLUS_SECONDS_RAW = Number(process.env.SIM_PLUS_SECONDS_PER_EURO || "900");
-const CYCLE_SECONDS = Number.isFinite(CYCLE_SECONDS_RAW) && CYCLE_SECONDS_RAW >= 600 ? CYCLE_SECONDS_RAW : 2400;
-const PLUS_SECONDS_PER_EURO = Number.isFinite(PLUS_SECONDS_RAW) && PLUS_SECONDS_RAW >= 300 ? PLUS_SECONDS_RAW : 900;
+const CYCLE_SECONDS_RAW = Number(process.env.SIM_CYCLE_SECONDS || "2220");
+const PLUS_SECONDS_RAW = Number(process.env.SIM_PLUS_SECONDS_PER_EURO || "540");
+const CYCLE_SECONDS =
+  Number.isFinite(CYCLE_SECONDS_RAW) && CYCLE_SECONDS_RAW >= 600
+    ? CYCLE_SECONDS_RAW
+    : 2220;
+const PLUS_SECONDS_PER_EURO =
+  Number.isFinite(PLUS_SECONDS_RAW) && PLUS_SECONDS_RAW >= 300
+    ? PLUS_SECONDS_RAW
+    : 540;
 const START_MIN_CREDIT = Number(process.env.SIM_START_MIN_CREDIT || "4");
-const SIM_MACHINE_CODES = String(process.env.SIM_MACHINE_CODES || "L1,L2,L3,S1,S2")
+const SIM_MACHINE_CODES = String(
+  process.env.SIM_MACHINE_CODES || "L1,L2,L3,S1,S2",
+)
   .split(",")
   .map((x) => x.trim().toUpperCase())
   .filter(Boolean);
@@ -14,6 +22,7 @@ const SIM_LAV_IDS = String(process.env.SIM_LAV_IDS || "3")
   .split(",")
   .map((x) => Number(x.trim()))
   .filter((x) => Number.isFinite(x) && x > 0);
+const DOOR_SIGNAL_DELAY_MS = 30000;
 
 const client = mqtt.connect(MQTT_URL, {
   reconnectPeriod: 3000,
@@ -28,7 +37,8 @@ function nowIso() {
 }
 
 function ensureMachine(codigo) {
-  if (!SIM_MACHINE_CODES.includes(String(codigo || "").toUpperCase())) return null;
+  if (!SIM_MACHINE_CODES.includes(String(codigo || "").toUpperCase()))
+    return null;
   if (!stateByCode.has(codigo)) {
     stateByCode.set(codigo, {
       estado: "STOP",
@@ -37,11 +47,95 @@ function ensureMachine(codigo) {
       relayOn: false,
       ventiladorOn: false,
       saldoCredito: 0,
-      ampliacionAplicada: false,
       endAtMs: 0,
+      puertaSecadoraAbierta: false,
+      aperturaPuertaPendiente: null,
+      segundosRestantesPausaPuerta: 0,
     });
   }
   return stateByCode.get(codigo);
+}
+
+function isDryer(codigo) {
+  return String(codigo || "").toUpperCase().startsWith("S");
+}
+
+function pausarPorPuerta(idLav, codigo) {
+  const st = ensureMachine(codigo);
+  if (!st) return;
+  if (st.estado !== "EN_MARCHA") return;
+
+  const segundosRestantes = Math.max(
+    0,
+    Math.floor((st.endAtMs - Date.now()) / 1000),
+  );
+  stopTimer(st);
+  st.segundosRestantesPausaPuerta = segundosRestantes;
+  st.estado = "PAUSADA";
+  st.endAtMs = 0;
+  publishEvento(idLav, codigo, "SECADORA_PAUSADA_POR_PUERTA", {
+    origen: "simulador",
+    segundos_restantes: segundosRestantes,
+  });
+  publishEstado(idLav, codigo, "PAUSADA", {
+    segundos_restantes_estimados: segundosRestantes,
+  });
+}
+
+function reanudarPorPuerta(idLav, codigo) {
+  const st = ensureMachine(codigo);
+  if (!st) return;
+  if (st.estado !== "PAUSADA") return;
+  if (st.segundosRestantesPausaPuerta <= 0) return;
+
+  st.estado = "EN_MARCHA";
+  st.endAtMs = Date.now() + st.segundosRestantesPausaPuerta * 1000;
+  const segundosRestantes = st.segundosRestantesPausaPuerta;
+  st.segundosRestantesPausaPuerta = 0;
+  stopTimer(st);
+  st.timer = setTimeout(
+    () => finishCycleToPaused(idLav, codigo, "simulador"),
+    Math.max(1000, st.endAtMs - Date.now()),
+  );
+
+  publishEvento(idLav, codigo, "SECADORA_REANUDADA_POR_PUERTA", {
+    origen: "simulador",
+    segundos_restantes: segundosRestantes,
+  });
+  publishEstado(idLav, codigo, "EN_MARCHA", {
+    segundos_restantes_estimados: segundosRestantes,
+  });
+}
+
+function toggleDryerDoor(idLav, codigo) {
+  const st = ensureMachine(codigo);
+  if (!st || !isDryer(codigo)) return;
+
+  if (!st.puertaSecadoraAbierta) {
+    if (st.aperturaPuertaPendiente) {
+      return;
+    }
+    st.aperturaPuertaPendiente = setTimeout(() => {
+      st.aperturaPuertaPendiente = null;
+      st.puertaSecadoraAbierta = true;
+      publishEvento(idLav, codigo, "SECADORA_PUERTA_ABIERTA", {
+        origen: "simulador",
+        retardo_ms: DOOR_SIGNAL_DELAY_MS,
+      });
+      pausarPorPuerta(idLav, codigo);
+    }, DOOR_SIGNAL_DELAY_MS);
+    publishEvento(idLav, codigo, "SECADORA_APERTURA_PENDIENTE", {
+      origen: "simulador",
+      retardo_ms: DOOR_SIGNAL_DELAY_MS,
+    });
+    return;
+  }
+
+  st.puertaSecadoraAbierta = false;
+  publishEvento(idLav, codigo, "SECADORA_PUERTA_CERRADA", {
+    origen: "simulador",
+  });
+  reanudarPorPuerta(idLav, codigo);
 }
 
 function ensureIotLav(idLav) {
@@ -137,39 +231,67 @@ function startCycle(idLav, codigo, cmd) {
 
   st.estado = "EN_MARCHA";
   st.idCiclo = Number(cmd.id_ciclo) || null;
-  const creditoUsado = Number.isFinite(Number(cmd?.credito_total)) ? Number(cmd.credito_total) : START_MIN_CREDIT;
+  const creditoUsado = Number.isFinite(Number(cmd?.credito_total))
+    ? Number(cmd.credito_total)
+    : START_MIN_CREDIT;
   const extraEuros = Math.max(0, creditoUsado - START_MIN_CREDIT);
   const extraMs = Math.floor(extraEuros * PLUS_SECONDS_PER_EURO * 1000);
   st.endAtMs = Date.now() + CYCLE_SECONDS * 1000 + Math.max(0, extraMs);
   st.saldoCredito = 0;
-  st.ampliacionAplicada = false;
 
-  publishEstado(idLav, codigo, "EN_MARCHA", { segundos_restantes_estimados: Math.floor((st.endAtMs - Date.now()) / 1000) });
+  publishEstado(idLav, codigo, "EN_MARCHA", {
+    segundos_restantes_estimados: Math.floor((st.endAtMs - Date.now()) / 1000),
+  });
   publishEvento(idLav, codigo, "PULSO_INICIO", { origen: "simulador" });
-  publishEvento(idLav, codigo, "CICLO_INICIADO", { origen: "simulador", credito_total: creditoUsado, extra_euros: extraEuros });
+  publishEvento(idLav, codigo, "CICLO_INICIADO", {
+    origen: "simulador",
+    credito_total: creditoUsado,
+    extra_euros: extraEuros,
+  });
 
   const leftMs = Math.max(1000, st.endAtMs - Date.now());
-  st.timer = setTimeout(() => finishCycleToPaused(idLav, codigo, "simulador"), leftMs);
+  st.timer = setTimeout(
+    () => finishCycleToPaused(idLav, codigo, "simulador"),
+    leftMs,
+  );
 }
 
 function stopCycle(idLav, codigo) {
   const st = ensureMachine(codigo);
   if (!st) return;
   stopTimer(st);
+  if (st.aperturaPuertaPendiente) {
+    clearTimeout(st.aperturaPuertaPendiente);
+    st.aperturaPuertaPendiente = null;
+  }
   st.estado = "STOP";
   st.relayOn = false;
   st.ventiladorOn = false;
   st.saldoCredito = 0;
-  st.ampliacionAplicada = false;
   st.endAtMs = 0;
+  st.segundosRestantesPausaPuerta = 0;
+  st.puertaSecadoraAbierta = false;
   publishEstado(idLav, codigo, "STOP", { segundos_restantes_estimados: 0 });
-  publishEvento(idLav, codigo, "VENTILADOR_OFF", { origen: "simulador", motivo: "maquina_off" });
-  publishEvento(idLav, codigo, "CICLO_FINALIZADO", { origen: "simulador", motivo: "stop_manual" });
+  publishEvento(idLav, codigo, "VENTILADOR_OFF", {
+    origen: "simulador",
+    motivo: "maquina_off",
+  });
+  publishEvento(idLav, codigo, "CICLO_FINALIZADO", {
+    origen: "simulador",
+    motivo: "stop_manual",
+  });
 }
 
 function extendCycle(idLav, codigo, cmd) {
   const st = ensureMachine(codigo);
   if (!st) return;
+  if (!isDryer(codigo)) {
+    publishEvento(idLav, codigo, "AMPLIACION_RECHAZADA_NO_SECADORA", {
+      origen: "simulador",
+      codigo,
+    });
+    return;
+  }
   if (st.estado !== "EN_MARCHA") return;
   const euros = Number(cmd.importe) || 0;
   if (Math.abs(euros - 1) > 0.0001) {
@@ -180,25 +302,20 @@ function extendCycle(idLav, codigo, cmd) {
     });
     return;
   }
-  if (st.ampliacionAplicada) {
-    publishEvento(idLav, codigo, "AMPLIACION_RECHAZADA_LIMITE", {
-      origen: "simulador",
-      importe: euros,
-      limite: 1,
-    });
-    return;
-  }
   const minutosExtra = Number(cmd.minutos_extra);
-  const extraMs = Number.isFinite(minutosExtra) && minutosExtra > 0
-    ? Math.floor(minutosExtra * 60 * 1000)
-    : Math.max(0, Math.floor(euros * PLUS_SECONDS_PER_EURO * 1000));
+  const extraMs =
+    Number.isFinite(minutosExtra) && minutosExtra > 0
+      ? Math.floor(minutosExtra * 60 * 1000)
+      : Math.max(0, Math.floor(euros * PLUS_SECONDS_PER_EURO * 1000));
   const minutosAplicados = Math.max(0, Math.round(extraMs / 60000));
-  st.ampliacionAplicada = true;
   if (st.endAtMs > Date.now()) st.endAtMs += extraMs;
   if (st.timer) {
     clearTimeout(st.timer);
     const leftMs = Math.max(1000, st.endAtMs - Date.now());
-    st.timer = setTimeout(() => finishCycleToPaused(idLav, codigo, "simulador"), leftMs);
+    st.timer = setTimeout(
+      () => finishCycleToPaused(idLav, codigo, "simulador"),
+      leftMs,
+    );
   }
 
   publishEvento(idLav, codigo, "AMPLIACION_APLICADA", {
@@ -206,7 +323,12 @@ function extendCycle(idLav, codigo, cmd) {
     importe: Number(cmd.importe) || 0,
     minutos: minutosAplicados,
   });
-  publishEstado(idLav, codigo, "EN_MARCHA", { segundos_restantes_estimados: Math.max(0, Math.floor((st.endAtMs - Date.now()) / 1000)) });
+  publishEstado(idLav, codigo, "EN_MARCHA", {
+    segundos_restantes_estimados: Math.max(
+      0,
+      Math.floor((st.endAtMs - Date.now()) / 1000),
+    ),
+  });
 }
 
 function onCommand(topic, payloadBuf) {
@@ -219,12 +341,23 @@ function onCommand(topic, payloadBuf) {
     return;
   }
 
-  if (parts.length === 4 && parts[0] === "kwl" && parts[1] === "iot" && parts[3] === "comando") {
+  if (
+    parts.length === 4 &&
+    parts[0] === "kwl" &&
+    parts[1] === "iot" &&
+    parts[3] === "comando"
+  ) {
     const idLav = Number(parts[2]);
     if (!Number.isFinite(idLav) || idLav <= 0) return;
     return applyIotCommand(idLav, cmd);
   }
-  if (parts.length !== 5 || parts[0] !== "kwl" || parts[1] !== "maquinas" || parts[4] !== "comando") return;
+  if (
+    parts.length !== 5 ||
+    parts[0] !== "kwl" ||
+    parts[1] !== "maquinas" ||
+    parts[4] !== "comando"
+  )
+    return;
   const idLav = Number(parts[2]);
   if (!Number.isFinite(idLav) || idLav <= 0) return;
   if (!SIM_LAV_IDS.includes(idLav)) return;
@@ -238,7 +371,9 @@ function onCommand(topic, payloadBuf) {
     st.relayOn = true;
     if (st.estado === "STOP") {
       st.estado = "PAUSADA";
-      publishEstado(idLav, codigo, "PAUSADA", { segundos_restantes_estimados: 0 });
+      publishEstado(idLav, codigo, "PAUSADA", {
+        segundos_restantes_estimados: 0,
+      });
     }
     return;
   }
@@ -270,20 +405,53 @@ function onCommand(topic, payloadBuf) {
       });
       return;
     }
-    if (st.estado === "EN_MARCHA") return extendCycle(idLav, codigo, cmd);
+    if (st.estado === "EN_MARCHA") {
+      if (!isDryer(codigo)) {
+        publishEvento(idLav, codigo, "CREDITO_RECHAZADO_NO_SECADORA_EN_MARCHA", {
+          origen: "simulador",
+          importe: euros,
+        });
+        return;
+      }
+      st.saldoCredito = Number((Number(st.saldoCredito || 0) + euros).toFixed(2));
+      publishEvento(idLav, codigo, "CREDITO_ACUMULADO_AMPLIACION", {
+        origen: "simulador",
+        importe: euros,
+        saldo: st.saldoCredito,
+      });
+      return;
+    }
 
     const saldoActual = Number(st.saldoCredito || 0);
+    const origenComando = String(cmd?.origen || "").toLowerCase();
+    const vieneDeWeb = origenComando === "sim_gui";
+
+    if (vieneDeWeb) {
+      // En web dejamos ver todo el saldo introducido hasta pulsar START.
+      st.saldoCredito = Number((saldoActual + euros).toFixed(2));
+      publishEvento(idLav, codigo, "CREDITO_ACUMULADO", {
+        origen: "simulador",
+        importe: euros,
+        saldo: st.saldoCredito,
+        minimo_arranque: START_MIN_CREDIT,
+      });
+      return;
+    }
+
+    // Cliente/simulador: la máquina solo retiene lo necesario para arrancar y devuelve sobrante.
     const maxAntesDeInicio = START_MIN_CREDIT;
     const restante = Number((maxAntesDeInicio - saldoActual).toFixed(2));
     if (restante <= 0) {
-      publishEvento(idLav, codigo, "CREDITO_RECHAZADO_LIMITE_PREVIO", {
+      publishEvento(idLav, codigo, "CREDITO_DEVUELTO_EXCESO_PREVIO", {
         origen: "simulador",
+        devuelto: euros,
         saldo: saldoActual,
         maximo: maxAntesDeInicio,
       });
       return;
     }
     const aplicado = Math.min(euros, restante);
+    const devuelto = Number((euros - aplicado).toFixed(2));
     st.saldoCredito = Number((saldoActual + aplicado).toFixed(2));
     publishEvento(idLav, codigo, "CREDITO_ACUMULADO", {
       origen: "simulador",
@@ -291,11 +459,12 @@ function onCommand(topic, payloadBuf) {
       saldo: st.saldoCredito,
       minimo_arranque: START_MIN_CREDIT,
     });
-    if (aplicado < euros) {
-      publishEvento(idLav, codigo, "CREDITO_RECHAZADO_EXCESO_PREVIO", {
+    if (devuelto > 0) {
+      publishEvento(idLav, codigo, "CREDITO_DEVUELTO_EXCESO_PREVIO", {
         origen: "simulador",
         intentado: euros,
         aplicado,
+        devuelto,
         maximo: maxAntesDeInicio,
       });
     }
@@ -304,6 +473,23 @@ function onCommand(topic, payloadBuf) {
   if (accion === "confirmar_inicio") {
     const st = ensureMachine(codigo);
     if (!st) return;
+    if (isDryer(codigo) && (st.puertaSecadoraAbierta || Boolean(st.aperturaPuertaPendiente))) {
+      publishEvento(idLav, codigo, "INICIO_RECHAZADO_PUERTA_ABIERTA", {
+        origen: "simulador",
+      });
+      return;
+    }
+    if (st.estado === "EN_MARCHA") {
+      if (!isDryer(codigo)) return;
+      if (Number(st.saldoCredito || 0) <= 0) return;
+      const saldoParaAmpliar = Number(st.saldoCredito || 0);
+      st.saldoCredito = 0;
+      return extendCycle(idLav, codigo, {
+        ...cmd,
+        importe: 1,
+        minutos_extra: Math.floor((saldoParaAmpliar * PLUS_SECONDS_PER_EURO) / 60),
+      });
+    }
     if (st.estado !== "PAUSADA") return;
     if (Number(st.saldoCredito || 0) < START_MIN_CREDIT) {
       publishEvento(idLav, codigo, "CREDITO_INSUFICIENTE", {
@@ -313,8 +499,22 @@ function onCommand(topic, payloadBuf) {
       });
       return;
     }
-    return startCycle(idLav, codigo, { ...cmd, credito_total: st.saldoCredito });
+    const saldoUsado = Math.min(START_MIN_CREDIT, Number(st.saldoCredito || 0));
+    const devuelto = Math.max(0, Number((Number(st.saldoCredito || 0) - saldoUsado).toFixed(2)));
+    st.saldoCredito = 0;
+    if (devuelto > 0) {
+      publishEvento(idLav, codigo, "CREDITO_DEVUELTO_AL_INICIAR", {
+        origen: "simulador",
+        devuelto,
+        coste_ciclo: START_MIN_CREDIT,
+      });
+    }
+    return startCycle(idLav, codigo, {
+      ...cmd,
+      credito_total: saldoUsado,
+    });
   }
+  if (accion === "toggle_puerta_secadora") return toggleDryerDoor(idLav, codigo);
   if (accion === "ampliar_tiempo") return extendCycle(idLav, codigo, cmd);
   if (accion === "reiniciar_maquina") {
     stopCycle(idLav, codigo);
@@ -326,7 +526,8 @@ client.on("connect", () => {
   client.subscribe("kwl/maquinas/+/+/comando");
   client.subscribe("kwl/iot/+/comando");
   for (const idLav of SIM_LAV_IDS) {
-    for (const c of SIM_MACHINE_CODES) publishEstado(idLav, c, "STOP", { segundos_restantes_estimados: 0 });
+    for (const c of SIM_MACHINE_CODES)
+      publishEstado(idLav, c, "STOP", { segundos_restantes_estimados: 0 });
   }
   for (const idLav of SIM_LAV_IDS) publishIotEstado(idLav);
 });
@@ -337,7 +538,9 @@ setInterval(() => {
       const st = ensureMachine(codigo);
       if (!st || st.estado !== "EN_MARCHA") continue;
       const secs = Math.max(0, Math.floor((st.endAtMs - Date.now()) / 1000));
-      publishEstado(idLav, codigo, "EN_MARCHA", { segundos_restantes_estimados: secs });
+      publishEstado(idLav, codigo, "EN_MARCHA", {
+        segundos_restantes_estimados: secs,
+      });
     }
   }
 }, 1000);

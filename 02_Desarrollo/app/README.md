@@ -1,33 +1,21 @@
 # app
 
-## Descripción
-
-Contiene el código fuente del sistema.
-
-Incluye tanto el backend como el frontend, así como elementos compartidos.
-
----
+Código funcional del sistema (backend + frontend).
 
 ## Estructura
 
-* `backend/` → API y lógica de negocio
-* `frontend/` → interfaz web
-* `shared/` → elementos comunes
+- `backend/`: API, reglas de negocio, DB, MQTT
+- `frontend/`: panel web admin y web pública
 
----
+## Reglas actuales importantes
 
-## Responsabilidades
+- Ampliación de tiempo: solo en secadoras.
+- No hay límite de ampliaciones por ciclo.
+- En web admin, si el importe enviado supera lo aplicable, el sobrante no se contabiliza.
+- La lógica de puerta de secadora con retardo es de simulación física y vive en `simulation/`.
 
-* gestión de usuarios y máquinas
-* procesamiento de eventos
-* comunicación con base de datos
-* integración con MQTT
-* comunicación en tiempo real con el frontend
+## Alcance
 
----
-
-## Notas
-
-* No incluye configuración del servidor
-* No incluye scripts de despliegue
-* Todo el código debe basarse en lo definido en `context/`
+- Aquí está la lógica real del panel y API.
+- El despliegue está en `deploy/`.
+- La simulación hardware está en `simulation/`.

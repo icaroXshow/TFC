@@ -23,7 +23,6 @@ El sistema se compone de los siguientes elementos:
 * **MariaDB**: persistencia de datos
 * **Redis**: caché activa de estado/configuración IoT y base para evolución de tiempo real
 * **MQTT**: comunicación con dispositivos (ESP32 o simulador)
-* **WebSockets**: previstos para una iteración posterior
 * **Simulador**: permite probar el sistema sin hardware físico
 
 ### Flujo general
@@ -39,7 +38,7 @@ Dispositivos (ESP32 / Simulación)
         ↓
      Frontend
 
-Redis activo para lecturas rápidas de IoT; WebSockets evolución prevista para actualización push.
+Redis activo para lecturas rápidas de IoT.
 ```
 
 ---
@@ -162,19 +161,19 @@ Para entender el sistema, se recomienda seguir este orden:
 
 ## Despliegue demo recomendado
 
-Ruta rápida (Windows, recomendado):
+Ruta rápida (Windows):
 
 ```powershell
 cd 02_Desarrollo/deploy/demo
 .\Launcher.bat
 ```
 
-En el menú:
-- `1` instala WSL + Docker (solo primera vez)
-- `2` lanza/reinicia el proyecto
-- `3` muestra estado y logs
+Menú:
+- `1` instala WSL + Docker
+- `2` lanza/reinicia
+- `3` estado/logs
 
-Ruta manual (Windows PowerShell):
+Ruta manual:
 
 ```powershell
 cd 02_Desarrollo/deploy/demo
@@ -182,15 +181,7 @@ copy .env.example .env
 docker compose up -d --build
 ```
 
-Ruta manual (Linux con sudo):
-
-```bash
-cd 02_Desarrollo/deploy/demo
-sudo cp -n .env.example .env
-sudo docker compose up -d --build
-```
-
-El despliegue:
-- crea `.env` desde `.env.example` si falta
-- levanta `docker compose`
-- verifica `health` y frontend
+Reglas funcionales actuales:
+- ampliación solo en secadoras
+- sin límite de ampliaciones
+- sobrante desde web admin no se contabiliza

@@ -1,0 +1,154 @@
+:root {
+  --bg: #f7f7f7;
+  --panel: #ffffff;
+  --line: #d9d9d9;
+  --text: #1f1f1f;
+  --muted: #666;
+  --ok: #1f9d55;
+  --bad: #c53030;
+  --primary: #2b6cb0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+}
+
+.wrap {
+  max-width: 1120px;
+  margin: 16px auto;
+  padding: 0 12px;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+}
+
+.sub {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+.mut {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 700;
+  margin: 4px 0 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #999;
+}
+.st-run .dot,
+.st-on .dot {
+  background: var(--ok);
+}
+.st-stop .dot,
+.st-off .dot {
+  background: var(--bad);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+input[type="number"] {
+  width: 110px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.primary {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.badge {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 700;
+  background: #000000;
+}
+
+.ok {
+  color: var(--ok);
+}
+.bad {
+  color: var(--bad);
+}
+
+@media (max-width: 960px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+  }
+}
+@media (max-width: 680px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

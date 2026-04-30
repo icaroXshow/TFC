@@ -1,37 +1,22 @@
 # context
 
-## Descripción
+Definición conceptual vigente del sistema KWL.
 
-Esta carpeta contiene la definición conceptual del sistema KWL.
+Objetivo:
+- alinear backend, frontend, BD y simulador
+- evitar contradicciones de reglas funcionales
 
-Aquí se describe qué es el sistema, qué entidades existen, cómo se comunican sus componentes y cuáles son las reglas funcionales que deben respetar el backend, el frontend, la simulación y el despliegue.
+Estructura:
+- `sistema/`: visión global, reglas y alcance
+- `dominio/`: entidades, estados, eventos y acciones
+- `mqtt/`: contrato MQTT con dispositivos/simulador
+- `api/`: contrato HTTP frontend-backend
+- `db/`: modelos conceptual/lógico y SQL base
 
-`context/` es la fuente de verdad lógica del proyecto.
+Estado actual:
+- runtime en tiempo real por polling HTTP
+- Redis activo como caché de estado/configuración IoT
+- WebSocket no forma parte del flujo operativo actual
 
----
-
-## Estructura
-
-- `sistema/` → visión general, reglas y alcance
-- `dominio/` → entidades, estados, eventos y acciones
-- `mqtt/` → contrato de comunicación con dispositivos
-- `api/` → contrato de comunicación entre frontend y backend
-
----
-
-## Objetivo
-
-Evitar incoherencias entre:
-
-- documentación
-- base de datos
-- backend
-- frontend
-- simulador
-
-Todo desarrollo posterior debe basarse en lo definido aquí.
-
-Revisión aplicada (2026-04-28):
-- API IoT ampliada con configuración separada de máquinas para apertura/cierre de tienda.
-- Estado en tiempo real: polling HTTP operativo; WebSocket sigue documentado como evolución.
-- Regresión de máquinas validada en runtime (`STOP -> PAUSADA -> EN_MARCHA -> STOP`) con scripts demo.
+Regla:
+- cualquier cambio funcional debe actualizar primero `context/` y luego implementación.

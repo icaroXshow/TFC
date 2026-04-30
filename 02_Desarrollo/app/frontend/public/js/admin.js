@@ -386,7 +386,7 @@
     return tipo || "Máquina";
   }
 
-  function renderMaquinas(maquinas) {
+  function renderMaquinas(maquinas, puertaAbierta = false) {
     if (!machinesGrid) return;
     machinesGrid.innerHTML = "";
     if (!maquinas?.length) {
@@ -402,7 +402,10 @@
       const canStart = estado === "STOP";
       const canStop = estado === "EN_MARCHA" || estado === "PAUSADA";
       const canCredit = estado === "PAUSADA";
-      const canExtend = estado === "EN_MARCHA" && Boolean(Number(m.ampliacion_disponible ?? 1));
+      const canExtend =
+        estado === "EN_MARCHA" &&
+        String(m.tipo_maquina || "").toUpperCase() === "SECADORA" &&
+        Boolean(Number(m.ampliacion_disponible ?? 1));
       const restMin = Number(m.minutos_restantes_estimados ?? 0);
       const fanEnabled = Boolean(m.ventilador_auto);
       const restSecFromApi = Number(m.segundos_restantes_estimados ?? NaN);
@@ -426,6 +429,7 @@
           <div class="machine-state-left">
             <span class="state-pill ${stateClass(estado)}">${estado}</span>
             <span class="state-pill ${fanEnabled ? "state-running" : "state-stop"}">REFRIGERAR ${fanEnabled ? "ON" : "OFF"}</span>
+            <span class="state-pill ${puertaAbierta ? "state-running" : "state-stop"}">PUERTA ${puertaAbierta ? "ABIERTA" : "CERRADA"}</span>
           </div>
           <span
             class="machine-timer"
@@ -2338,9 +2342,35 @@ refresh();
           return;
         }
         const data = await res.json();
+        let puertaAbierta = false;
+        try {
+          const iotRes = await fetch(`${API_BASE}/api/iot/approx-state`, {
+            headers: {
+              authorization: `Bearer ${token}`,
+              "x-lavanderia-id": String(activeLavId),
+            },
+          });
+          if (iotRes.ok) {
+            const iotData = await iotRes.json();
+            puertaAbierta = Boolean(iotData?.approx?.puerta_abierta);
+          } else {
+            const iotStateRes = await fetch(`${API_BASE}/api/iot/state`, {
+              headers: {
+                authorization: `Bearer ${token}`,
+                "x-lavanderia-id": String(activeLavId),
+              },
+            });
+            if (iotStateRes.ok) {
+              const iotStateData = await iotStateRes.json();
+              puertaAbierta = Boolean(iotStateData?.state?.puerta_abierta);
+            }
+          }
+        } catch {
+          // fallback silencioso
+        }
         const all = data?.maquinas || [];
         const isInicio = location.pathname.toLowerCase().endsWith("/admin/inicio.html");
-        renderMaquinas(isInicio ? all.filter((m) => m.estado_actual === "EN_MARCHA") : all);
+        renderMaquinas(isInicio ? all.filter((m) => m.estado_actual === "EN_MARCHA") : all, puertaAbierta);
 
         const activasEl = document.querySelector("#cardActivas");
         const nextFinishEl = document.querySelector("#cardNextFinish");
@@ -2415,10 +2445,10 @@ refresh();
               input.max = "";
               input.step = "0.10";
             } else {
-              input.min = "1.00";
-              input.max = "1.00";
-              input.step = "1.00";
-              input.value = "1.00";
+              input.min = "0.10";
+              input.max = "";
+              input.step = "0.10";
+              if (!input.value || Number(input.value) <= 0) input.value = "1.00";
             }
           }
           drawer.classList.add("is-open");

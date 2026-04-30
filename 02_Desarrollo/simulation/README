@@ -1,21 +1,42 @@
-# simulation
+# Simulador (MQTT)
 
-Simulador MQTT para demo local del TFC.
+Este simulador nos sirve para probar la lavandería sin hardware real.
 
-## Qué hace ahora (MVP)
+Resumen rápido:
+- recibe comandos MQTT del backend
+- cambia estados de máquinas
+- publica estado y eventos MQTT
+- tiene una web simple para meter crédito, arrancar y tocar puerta/luces
 
-- escucha `kwl/maquinas/{idLav}/{codigo}/comando`
-- publica estado en `kwl/maquinas/{idLav}/{codigo}/estado`
-- publica eventos en `kwl/maquinas/{idLav}/{codigo}/evento`
-- simula relé (`encender_rele` / `apagar_rele`)
-- escucha `kwl/iot/{idLav}/comando` para puerta/luces/ventilación
-- publica estado en `kwl/iot/{idLav}/estado`
-- `insertar_credito`: acumula saldo solo con máquina encendida (`PAUSADA`/`EN_MARCHA`)
-- `confirmar_inicio`: inicia lavado solo desde la máquina simulada cuando el saldo llega al mínimo
-- emite `PULSO_INICIO` al arranque y al terminar cae la señal (estado `STOP`)
-- ciclo base configurable + ampliación por euro
-- para este TFC se deja en lavandería ficticia `KWL Simulador` (id 3) con `L1,L2,L3,S1,S2`
-- no simula cámara (la cámara sigue siendo la real)
+La cámara no se simula aquí.
+
+## Qué hace exactamente
+
+- escucha comandos de máquina en:
+  - `kwl/maquinas/{idLav}/{codigo}/comando`
+- publica estado de máquina en:
+  - `kwl/maquinas/{idLav}/{codigo}/estado`
+- publica eventos de máquina en:
+  - `kwl/maquinas/{idLav}/{codigo}/evento`
+- escucha comandos IoT (puerta/luces/ventilación) en:
+  - `kwl/iot/{idLav}/comando`
+- publica estado IoT en:
+  - `kwl/iot/{idLav}/estado`
+
+Flujo de máquina:
+- `Encender` desde la web pone la máquina en `PAUSADA` que equivale a darle corriente
+- `Introducir monedas` suma saldo 
+- `START` arranca si hay saldo con el importe mínimo para el ciclo
+- durante ciclo está en `EN_MARCHA` y si tiene refrigeracion activada en la web el ventilador se enciende
+- al terminar vuelve a `PAUSADA`
+- `apagar_rele` desde la web la deja en `STOP` y no se puede usar
+- `Abrir/Cerrar Puerta` simula que se abre la puerta y pausa la maquina despues de 30seg o simula que se cierra y la pone en marcha de nuevo. En las lavadoras no es posible por eso no se implemento
+
+## Tiempos actuales
+
+- ciclo base: **37 min**
+- ampliación: **9 min por euro**
+- saldo mínimo para arrancar: **4 €**
 
 ## Arranque manual
 
@@ -25,19 +46,31 @@ npm ci
 npm start
 ```
 
-Variables:
+## Variables importantes
 
-- `MQTT_URL` (por defecto `mqtt://mqtt:1883`)
-- `SIM_CYCLE_SECONDS` (por defecto `2400`, 40 min)
-- `SIM_PLUS_SECONDS_PER_EURO` (por defecto `900`, +15 min)
-- `SIM_MACHINE_CODES` (por defecto `L1,L2,L3,S1,S2`)
-- `SIM_LAV_IDS` (por defecto `3`)
-- `SIM_START_MIN_CREDIT` (por defecto `4`)
+- `MQTT_URL` (default `mqtt://mqtt:1883`)
+- `SIM_CYCLE_SECONDS` (default `2220` = 37 min)
+- `SIM_PLUS_SECONDS_PER_EURO` (default `540` = 9 min)
+- `SIM_START_MIN_CREDIT` (default `4`)
+- `SIM_MACHINE_CODES` (default `L1,L2,L3,S1,S2`)
+- `SIM_LAV_IDS` (default `3`)
 
-## GUI independiente (docker aparte)
+## Web del simulador
 
-El contenedor `mqtt-sim-gui` sirve una interfaz web para simular:
-- estados/eventos de `L1,L2,L3,S1,S2`
-- relés de puerta/luces/ventilación por lavandería
+En la demo Docker, se abre en:
+- `http://127.0.0.1:8083`
 
-URL en demo docker: `http://127.0.0.1:8083`
+En esa web puedes:
+- ver si MQTT está ON/OFF
+- ver como esta el ventilador cuando esta en marcha
+- ver estado y temporizador de cada máquina
+- meter crédito
+- lanzar inicio de ciclo
+- alternar puerta y luces
+
+## Nota práctica
+
+Si la web marca `MQTT: OFF`, normalmente es una de estas:
+- broker MQTT no levantado
+- URL MQTT no correcta
+- contenedor/proceso del simulador sin conexión de red al broker

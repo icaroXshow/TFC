@@ -53,14 +53,13 @@ async function computeCaja(idLav: number, from: string, to: string) {
       m.id_maquina,
       m.codigo_visible,
       m.tipo_maquina,
-      CAST(SUM(mm.importe) AS CHAR) AS importe_total,
+      CAST(SUM(CASE WHEN mm.es_bonificacion = 1 THEN -mm.importe ELSE mm.importe END) AS CHAR) AS importe_total,
       COUNT(*) AS movimientos
     FROM movimiento_maquina mm
     INNER JOIN maquina m ON m.id_maquina = mm.id_maquina
     WHERE mm.id_lavanderia = :idLav
       AND mm.fecha_hora >= :from
       AND mm.fecha_hora < DATE_ADD(:to, INTERVAL 1 DAY)
-      AND mm.es_bonificacion = 0
     GROUP BY m.id_maquina, m.codigo_visible, m.tipo_maquina
     ORDER BY m.codigo_visible ASC
     `,

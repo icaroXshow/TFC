@@ -17,6 +17,10 @@
         User: admin@gmail.com 
         Pass:admin
     - Abrir Adminer `http://127.0.0.1:8082` y loguearse con:
+        Server: mariadb
+        User: root 
+        Pass: demo
+        Database: kwl_lavanderia
     - Abrir Simulador en `http://127.0.0.1:8083`
 6. Ver la guia de uso `TFC\02_Desarrollo\GUIA.pdf` para entender como funciona y que se puede testear.
 

@@ -152,7 +152,7 @@ maquinasRouter.get("/", requireAuth, requireLavanderia, async (req, res) => {
       c.minutos_extra_total,
       CASE
         WHEN c.id_ciclo IS NULL THEN 0
-        WHEN c.minutos_extra_total > 0 THEN 0
+        WHEN m.tipo_maquina <> 'SECADORA' THEN 0
         ELSE 1
       END AS ampliacion_disponible,
       GREATEST(
@@ -567,12 +567,16 @@ maquinasRouter.post(
     );
     if (!tarifaRows[0]) return res.status(409).json({ ok: false, error: "SIN_TARIFA_VIGENTE" });
 
+    const precioArranque = Number(tarifaRows[0].precio_arranque ?? 0);
+    const importeAplicado = Math.max(0, Math.min(importe, precioArranque));
+    const importeDevuelto = Number((importe - importeAplicado).toFixed(2));
+
     await db.query<ResultSetHeader>(
       `
       INSERT INTO log_maquina (id_lavanderia, id_maquina, id_ciclo, fecha_hora, tipo_evento, nivel, payload, procesado)
-      VALUES (:idLav, :idMaquina, NULL, NOW(), 'CREDITO_ACUMULADO_WEB', 'INFO', JSON_OBJECT('origen','web_admin','importe',:importe), 1)
+      VALUES (:idLav, :idMaquina, NULL, NOW(), 'CREDITO_ACUMULADO_WEB', 'INFO', JSON_OBJECT('origen','web_admin','importe_introducido',:importeIntroducido,'importe_aplicado',:importeAplicado,'importe_devuelto',:importeDevuelto), 1)
       `,
-      { idLav: idLavanderia, idMaquina, importe },
+      { idLav: idLavanderia, idMaquina, importeIntroducido: importe, importeAplicado, importeDevuelto },
     );
     await db.query<ResultSetHeader>(
       `
@@ -582,10 +586,10 @@ maquinasRouter.post(
         es_bonificacion, descripcion
       ) VALUES (
         :idLav, :idMaquina, NULL, :idUsuario, NOW(),
-        'CREDITO', 'WEB_MANUAL', :importe, 0, 0, 'Crédito acumulado desde web admin'
+        'CREDITO', 'WEB_MANUAL', :importe, 0, 1, 'Crédito aplicado web admin (abonado por dueño)'
       )
       `,
-      { idLav: idLavanderia, idMaquina, idUsuario: idUsuario || null, importe },
+      { idLav: idLavanderia, idMaquina, idUsuario: idUsuario || null, importe: importeAplicado },
     );
     await db.query<ResultSetHeader>(
       `
@@ -601,7 +605,7 @@ maquinasRouter.post(
         idUsuario,
         idLav: idLavanderia,
         idMaquina,
-        detalle: `Crédito acumulado ${importe}€ en ${maquina.codigo_visible} (sin arranque)`,
+        detalle: `Crédito web en ${maquina.codigo_visible}: aplicado ${importeAplicado}€, devuelto ${importeDevuelto}€`,
         ip: req.ip ?? null,
       },
     );
@@ -611,14 +615,19 @@ maquinasRouter.post(
       {
         accion: "insertar_credito",
         id_maquina: idMaquina,
-        importe,
+        importe: importeAplicado,
         timestamp: new Date().toISOString(),
         origen: "web_admin",
       },
       idLavanderia,
     );
 
-    return res.json({ ok: true, importe_aplicado: importe, estado_maquina: maquina.estado_actual });
+    return res.json({
+      ok: true,
+      importe_aplicado: importeAplicado,
+      importe_devuelto: importeDevuelto,
+      estado_maquina: maquina.estado_actual,
+    });
   },
 );
 
@@ -676,9 +685,9 @@ maquinasRouter.post(
         await conn.rollback();
         return res.status(409).json({ ok: false, error: "SIN_CICLO_ABIERTO" });
       }
-      if (Number(ciclo.minutos_extra_total ?? 0) > 0) {
+      if (String(maquina.tipo_maquina || "").toUpperCase() !== "SECADORA") {
         await conn.rollback();
-        return res.status(409).json({ ok: false, error: "AMPLIACION_YA_APLICADA" });
+        return res.status(409).json({ ok: false, error: "AMPLIACION_SOLO_SECADORA" });
       }
 
       const [tarifaRows] = await conn.query<TarifaRow[]>(
@@ -708,13 +717,9 @@ maquinasRouter.post(
         await conn.rollback();
         return res.status(400).json({ ok: false, error: "IMPORTE_INSUFICIENTE_INCREMENTO" });
       }
-      if (incrementos !== 1) {
-        await conn.rollback();
-        return res.status(400).json({ ok: false, error: "AMPLIACION_SOLO_UN_INCREMENTO" });
-      }
-
       const minutosExtra = incrementos * incMin;
       const importeAplicado = Number((incrementos * incImporte).toFixed(2));
+      const importeDevuelto = Number((importe - importeAplicado).toFixed(2));
 
       await conn.query<ResultSetHeader>(
         `
@@ -803,6 +808,22 @@ maquinasRouter.post(
         },
       );
 
+      if (importeDevuelto > 0) {
+        await conn.query<ResultSetHeader>(
+          `
+          INSERT INTO log_maquina (id_lavanderia, id_maquina, id_ciclo, fecha_hora, tipo_evento, nivel, payload, procesado)
+          VALUES (:idLav, :idMaquina, :idCiclo, NOW(), 'CREDITO_DEVUELTO_WEB', 'INFO', JSON_OBJECT('origen','web_admin','devuelto',:devuelto,'intentado',:intentado), 1)
+          `,
+          {
+            idLav: idLavanderia,
+            idMaquina,
+            idCiclo: ciclo.id_ciclo,
+            devuelto: importeDevuelto,
+            intentado: importe,
+          },
+        );
+      }
+
       await conn.commit();
       publishMachineCommand(maquina.codigo_visible, {
         accion: "ampliar_tiempo",
@@ -817,6 +838,7 @@ maquinasRouter.post(
         id_ciclo: ciclo.id_ciclo,
         minutos_extra_generados: minutosExtra,
         importe_aplicado: importeAplicado,
+        importe_devuelto: importeDevuelto,
       });
     } catch {
       try {
