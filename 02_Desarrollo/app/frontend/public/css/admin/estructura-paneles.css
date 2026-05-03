@@ -1,45 +1,16 @@
-/* =========================================
-   VARIABLES DE COLOR Y SOMBRAS
-========================================= */
-:root {
-  /* Turquesas */
-  --turquesa-oscuro: #15847c;
-  --turquesa-claro: #28f0c8;
-  --color-barra: #218571;
-
-  /* Azules */
-  --azul-marino: #0c1b2a;
-  --azul-traje: #24375d;
-
-  /* Estado */
-  --reposo: #fff47d;
-  --activo: #98ffae;
-  --apagado: #ff7d89;
-
-  /* Acento */
-  --rosa-pastel: #fbdef5;
-  --rosa: #fc7ce2;
-
-  /* Neutros */
-  --negro: rgb(0, 0, 0, 0.8);
-  --blanco: #ffffff;
-  --gris: #6b6868;
-
-  /* Otros*/
-  --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-}
+/* Variables compartidas con public/admin en base.css */
 /* =========================================
    TOPBAR - ADMIN
 ========================================= */
 /* Layout tipo “panel” (sidebar + topbar) */
-.admin-layout {
+.diseno-admin {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 260px 1fr;
   grid-template-rows: auto 1fr;
 }
 
-.admin-sidebar {
+.barra-lateral-admin {
   grid-row: 1 / span 2;
   background: rgba(10, 20, 35, 0.92);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
@@ -53,39 +24,39 @@
   z-index: 25;
 }
 
-.admin-brand {
+.marca-admin {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 8px 14px;
 }
 
-.admin-brand-logo {
+.marca-admin-logo {
   width: 54px;
   height: 54px;
   border-radius: 14px;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
 }
 
-.admin-brand-text strong {
+.marca-admin-text strong {
   display: block;
   font-size: 16px;
   letter-spacing: 0.2px;
 }
 
-.admin-brand-text span {
+.marca-admin-text span {
   display: block;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.7);
 }
 
-.admin-nav {
+.navegacion-admin {
   display: grid;
   gap: 6px;
   padding: 8px 2px;
 }
 
-.admin-nav-group {
+.grupo-navegacion-admin {
   margin-top: 10px;
   font-size: 12px;
   letter-spacing: 0.6px;
@@ -94,7 +65,7 @@
   padding: 8px 8px 2px;
 }
 
-.admin-nav-item {
+.item-navegacion-admin {
   display: flex;
   align-items: center;
   padding: 10px 10px;
@@ -105,25 +76,25 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.admin-nav-item:hover {
+.item-navegacion-admin:hover {
   background: rgba(40, 240, 200, 0.10);
   border-color: rgba(40, 240, 200, 0.22);
 }
 
-.admin-nav-item.is-active {
+.item-navegacion-admin.is-active {
   background: rgba(40, 240, 200, 0.18);
   border-color: rgba(40, 240, 200, 0.28);
   color: var(--turquesa-claro);
   font-weight: 800;
 }
 
-.admin-sidebar-bottom {
+.barra-lateral-admin-bottom {
   margin-top: 16px;
   padding: 10px 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.admin-logout {
+.cierre-sesion-admin {
   display: block;
   text-align: center;
   padding: 10px 12px;
@@ -134,21 +105,21 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-.admin-logout:hover {
+.cierre-sesion-admin:hover {
   border-color: rgba(40, 240, 200, 0.28);
 }
 
-.admin-logout {
+.cierre-sesion-admin {
   background: rgba(255, 125, 137, 0.18);
   border-color: rgba(255, 125, 137, 0.35);
 }
 
-.admin-logout:hover {
+.cierre-sesion-admin:hover {
   background: rgba(255, 125, 137, 0.26);
   border-color: rgba(255, 125, 137, 0.55);
 }
 
-.admin-topbar {
+.barra-superior-admin {
   grid-column: 2;
   display: flex;
   align-items: center;
@@ -163,7 +134,7 @@
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
 }
 
-.admin-burger {
+.boton-menu-admin {
   display: none;
   border: 0;
   background: rgba(255, 255, 255, 0.12);
@@ -175,7 +146,7 @@
   cursor: pointer;
 }
 
-.admin-breadcrumbs {
+.migas-admin {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -187,13 +158,13 @@
   text-overflow: ellipsis;
 }
 
-.admin-location {
+.ubicacion-admin {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.85);
   display: none;
 }
 
-.admin-lav-select {
+.selector-lavanderia-admin {
   width: min(420px, 70vw);
   border-radius: 12px;
   padding: 8px 10px;
@@ -203,13 +174,13 @@
   font-weight: 700;
 }
 
-.admin-topbar-right {
+.barra-superior-admin-right {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.store-config-link {
+.enlace-config-tienda {
   color: var(--turquesa-claro);
   text-decoration: underline;
   font-weight: 700;
@@ -218,7 +189,7 @@
 /* =========================================
    ADMIN (NUEVO) - LAYOUT BASE
 ========================================= */
-.admin-main {
+.principal-admin {
   grid-column: 2;
   max-width: none;
   margin: 0;
@@ -227,13 +198,13 @@
 }
 
 /* Bloqueo visual: panel oculto hasta login (redirige a público) */
-body.admin-locked .admin-topbar,
-body.admin-locked .admin-sidebar,
-body.admin-locked .admin-main {
+body.admin-locked .barra-superior-admin,
+body.admin-locked .barra-lateral-admin,
+body.admin-locked .principal-admin {
   display: none !important;
 }
 
-.admin-empty {
+.vacio-admin {
   padding: 16px;
   border-radius: 18px;
   border: 1px dashed rgba(255, 255, 255, 0.2);
@@ -244,22 +215,40 @@ body.admin-locked .admin-main {
   display: grid;
   gap: 12px;
 }
+.rejilla-camaras-admin {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.rejilla-camaras-admin.una-camara {
+  grid-template-columns: 1fr;
+}
+.panel-camara-admin {
+  display: grid;
+  gap: 8px;
+}
+.panel-camara-admin[hidden] {
+  display: none !important;
+}
 
 .admin-camera-frame {
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(0, 0, 0, 0.35);
+  width: 100%;
+  aspect-ratio: 1 / 1;
   min-height: 180px;
-  max-height: min(52vh, 560px);
+  max-height: min(72vh, 760px);
 }
 
 .admin-camera-img {
   display: block;
   width: 100%;
   height: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: auto;
   object-fit: contain;
+  object-position: center;
 }
 
 .admin-hero {
@@ -303,24 +292,24 @@ body.admin-locked .admin-main {
   margin-top: 90px;
 }
 
-.admin-card-wide {
+.tarjeta-admin-wide {
   grid-column: 1 / -1;
 }
 
-.admin-card-mini {
+.tarjeta-admin-mini {
   min-height: 0;
   min-width: 0;
 }
 
-.admin-actions-card .iot-actions {
+.admin-actions-card .acciones-iot {
   flex-wrap: wrap;
 }
 
-.admin-actions-card .admin-card-title {
+.admin-actions-card .titulo-tarjeta-admin {
   margin-bottom: 0;
 }
 
-.admin-actions-card .admin-card-hint {
+.admin-actions-card .pista-tarjeta-admin {
   margin-bottom: 0;
 }
 
@@ -364,7 +353,7 @@ body.admin-locked .admin-main {
   background: rgba(255, 125, 137, 0.14);
 }
 
-.admin-card-cube {
+.cubo-tarjeta-admin {
   width: 40px;
   height: 40px;
   display: inline-flex;
@@ -375,7 +364,7 @@ body.admin-locked .admin-main {
   background: rgba(40, 240, 200, 0.12);
 }
 
-.admin-card {
+.tarjeta-admin {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 18px;
@@ -384,14 +373,14 @@ body.admin-locked .admin-main {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
-.admin-card-title {
+.titulo-tarjeta-admin {
   margin: 0 0 8px;
   color: rgba(255, 255, 255, 0.85);
   font-weight: 600;
   font-size: 14px;
 }
 
-.admin-card-value {
+.valor-tarjeta-admin {
   margin: 0 0 4px;
   font-size: 22px;
   font-weight: 800;
@@ -403,35 +392,35 @@ body.admin-locked .admin-main {
   line-height: 1.05;
 }
 
-.admin-card-hint {
+.pista-tarjeta-admin {
   margin: 0;
   color: rgba(255, 255, 255, 0.65);
   font-size: 13px;
 }
 
-.admin-section {
+.seccion-admin {
   margin-top: 30px;
 }
 
-.admin-section-head h3 {
+.cabecera-seccion-admin h3 {
   margin: 0;
   font-size: 22px;
   letter-spacing: 0.2px;
 }
 
-.admin-section-head p {
+.cabecera-seccion-admin p {
   margin: 6px 0 16px;
   color: rgba(255, 255, 255, 0.78);
 }
 
-.machines-grid {
+.rejilla-maquinas {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 14px;
 }
 
-.machine-tile,
-.iot-tile,
+.tarjeta-maquina,
+.tarjeta-iot,
 .user-tile {
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -441,25 +430,25 @@ body.admin-locked .admin-main {
   position: relative;
 }
 
-.machine-meta {
+.meta-maquina {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
 }
 
-.machine-meta strong {
+.meta-maquina strong {
   font-size: 22px;
 }
 
-.machine-meta span {
+.meta-maquina span {
   color: rgba(255, 255, 255, 0.72);
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.machine-state {
+.estado-maquina {
   margin-top: 10px;
   display: flex;
   align-items: center;
@@ -468,14 +457,14 @@ body.admin-locked .admin-main {
   flex-wrap: wrap;
 }
 
-.machine-state-left {
+.izquierda-estado-maquina {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.machine-timer {
+.temporizador-maquina {
   font-weight: 700;
   color: rgba(255, 255, 255, 0.8);
 }
@@ -507,14 +496,14 @@ body.admin-locked .admin-main {
   color: var(--rosa);
 }
 
-.machine-actions {
+.acciones-maquina {
   margin-top: 14px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.machine-fan-toggle {
+.toggle-ventilador-maquina {
   position: absolute;
   right: 14px;
   bottom: 14px;
@@ -523,11 +512,11 @@ body.admin-locked .admin-main {
   z-index: 2;
 }
 
-.machine-tile .machine-drawer.is-open {
+.tarjeta-maquina .cajon-maquina.is-open {
   margin-bottom: 34px;
 }
 
-.machine-drawer {
+.cajon-maquina {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
@@ -535,7 +524,7 @@ body.admin-locked .admin-main {
   transition: max-height 220ms ease, opacity 180ms ease, transform 180ms ease;
 }
 
-.machine-drawer.is-open {
+.cajon-maquina.is-open {
   max-height: 160px;
   opacity: 1;
   transform: translateY(0);
@@ -544,25 +533,25 @@ body.admin-locked .admin-main {
   border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.machine-drawer-title {
+.titulo-cajon-maquina {
   margin: 0 0 8px;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.85);
   font-weight: 700;
 }
 
-.machine-drawer-row {
+.fila-cajon-maquina {
   display: flex;
   gap: 8px;
   align-items: center;
 }
 
-.machine-drawer-input {
+.entrada-cajon-maquina {
   max-width: 120px;
 }
 
-.btn-primary,
-.btn-secondary {
+.boton-primario,
+.boton-secundario {
   border-radius: 12px;
   padding: 10px 12px;
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -570,47 +559,47 @@ body.admin-locked .admin-main {
   letter-spacing: 0.2px;
 }
 
-.btn-primary {
+.boton-primario {
   background: var(--turquesa-claro);
   color: rgba(0, 0, 0, 0.85);
   border: 1px solid rgba(0, 0, 0, 0.25);
 }
 
-.btn-secondary {
+.boton-secundario {
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.92);
 }
 
-.btn-primary:disabled,
-.btn-secondary:disabled {
+.boton-primario:disabled,
+.boton-secundario:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.iot-grid {
+.rejilla-iot {
   display: grid;
   grid-template-columns: repeat(3, minmax(220px, 300px));
   gap: 14px;
   justify-content: start;
 }
 
-body[data-breadcrumb*="Programador"] .iot-grid {
+body[data-breadcrumb*="Programador"] .rejilla-iot {
   grid-template-columns: repeat(3, minmax(220px, 300px));
 }
 
-body[data-breadcrumb*="Programador"] .iot-main-grid {
+body[data-breadcrumb*="Programador"] .rejilla-principal-iot {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 14px;
   align-items: start;
 }
 
-body[data-breadcrumb*="Programador"] .store-machines-grid {
+body[data-breadcrumb*="Programador"] .store-rejilla-maquinas {
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   width: 100%;
 }
 
-.iot-tile h4 {
+.tarjeta-iot h4 {
   margin: 0 0 12px;
   font-size: 16px;
   letter-spacing: 0.2px;
@@ -618,20 +607,20 @@ body[data-breadcrumb*="Programador"] .store-machines-grid {
   text-transform: uppercase;
 }
 
-.iot-actions {
+.acciones-iot {
   display: flex;
   gap: 10px;
   justify-content: center;
 }
 
-.iot-status {
+.estado-iot {
   margin: 8px 0 10px;
   color: rgba(255, 255, 255, 0.78);
   font-size: 13px;
   text-align: center;
 }
 
-.iot-state-pill {
+.pildora-estado-iot {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -642,16 +631,16 @@ body[data-breadcrumb*="Programador"] .store-machines-grid {
   letter-spacing: 0.3px;
 }
 
-.iot-state-clickable {
+.clicable-estado-iot {
   cursor: pointer;
 }
 
-.iot-state-on {
+.estado-iot-encendido {
   background: rgba(152, 255, 174, 0.12);
   color: #98ffae;
 }
 
-.iot-state-off {
+.estado-iot-apagado {
   background: rgba(255, 125, 137, 0.14);
   color: #ff7d89;
   border-color: rgba(255, 125, 137, 0.35);
@@ -683,7 +672,7 @@ body[data-breadcrumb*="Programador"] .store-machines-grid {
   font-size: 13px;
 }
 
-.iot-log-wrap {
+.contenedor-log-iot {
   margin-top: 20px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -691,7 +680,7 @@ body[data-breadcrumb*="Programador"] .store-machines-grid {
   padding: 14px;
 }
 
-.iot-log-wrap h4 {
+.contenedor-log-iot h4 {
   margin: 0 0 6px;
   font-size: 16px;
 }
@@ -702,26 +691,26 @@ body[data-breadcrumb*="Programador"] .store-machines-grid {
   font-size: 13px;
 }
 
-.iot-log-table-wrap {
+.tabla-log-iot-wrap {
   overflow: auto;
   border-radius: 12px;
 }
 
-.iot-log-table {
+.tabla-log-iot {
   width: 100%;
   min-width: 520px;
   border-collapse: collapse;
 }
 
-.iot-log-table th,
-.iot-log-table td {
+.tabla-log-iot th,
+.tabla-log-iot td {
   text-align: left;
   padding: 10px 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 13px;
 }
 
-.iot-log-table thead th {
+.tabla-log-iot thead th {
   border-top: none;
   color: rgba(255, 255, 255, 0.75);
   font-weight: 600;
@@ -730,14 +719,182 @@ body[data-breadcrumb*="Programador"] .store-machines-grid {
   text-transform: uppercase;
 }
 
-.cash-tabs {
+@media (min-width: 1200px) {
+  body[data-breadcrumb*="Programador"] .seccion-admin {
+    padding: 22px 26px 28px;
+  }
+
+  body[data-breadcrumb*="Programador"] .cabecera-seccion-admin h3 {
+    font-size: 1.55rem;
+    margin-bottom: 4px;
+    letter-spacing: 0.01em;
+  }
+
+  body[data-breadcrumb*="Programador"] .cabecera-seccion-admin p {
+    font-size: 0.98rem;
+    color: rgba(255, 255, 255, 0.76);
+  }
+
+  body[data-breadcrumb*="Programador"] .rejilla-principal-iot {
+    grid-template-columns: 0.92fr 0.92fr 1.16fr;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  body[data-breadcrumb*="Programador"] .tarjeta-iot {
+    padding: 14px 12px;
+    border-radius: 16px;
+    background: linear-gradient(110deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.09));
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    position: relative;
+  }
+
+  body[data-breadcrumb*="Programador"] .iot-check-esquina {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,.82);
+    margin: 0;
+    line-height: 1;
+  }
+
+  body[data-breadcrumb*="Programador"] .iot-check-esquina input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+  }
+
+  body[data-breadcrumb*="Programador"] .tarjeta-iot h4 {
+    font-size: 1.05rem;
+    line-height: 1.08;
+    margin-bottom: 2px;
+    letter-spacing: 0.04em;
+  }
+
+  body[data-breadcrumb*="Programador"] .estado-iot {
+    font-size: 0.92rem;
+    margin: 0 0 8px;
+    order: -2;
+    text-align: center;
+    align-self: center;
+  }
+
+  body[data-breadcrumb*="Programador"] .pildora-estado-iot {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+
+  body[data-breadcrumb*="Programador"] .acciones-iot {
+    display: none;
+  }
+
+  body[data-breadcrumb*="Programador"] .iot-schedule {
+    margin-top: 6px;
+    gap: 7px;
+  }
+
+  body[data-breadcrumb*="Programador"] .iot-schedule label {
+    font-size: 0.86rem;
+    line-height: 1.24;
+  }
+
+  body[data-breadcrumb*="Programador"] .etiqueta-bloque-maquinas {
+    text-align: left !important;
+    justify-items: start;
+    align-items: start;
+    letter-spacing: 0.04em;
+    font-weight: 800;
+  }
+
+  body[data-breadcrumb*="Programador"] .iot-schedule .entrada {
+    min-height: 32px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  body[data-breadcrumb*="Programador"] .store-rejilla-maquinas {
+    grid-template-columns: repeat(5, minmax(78px, max-content));
+    gap: 6px 12px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  body[data-breadcrumb*="Programador"] .store-rejilla-maquinas label {
+    min-height: 24px;
+    border-radius: 0;
+    font-size: 0.86rem;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: inline-flex;
+    justify-content: flex-start;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  body[data-breadcrumb*="Programador"] .store-rejilla-maquinas input[type="checkbox"] {
+    margin: 0;
+    width: 14px;
+    height: 14px;
+  }
+
+  body[data-breadcrumb*="Programador"] .iot-footer {
+    margin-top: 12px;
+    gap: 12px;
+  }
+
+  body[data-breadcrumb*="Programador"] #iotSaveSchedule {
+    min-width: 182px;
+    min-height: 40px;
+    font-size: 0.95rem;
+  }
+
+  body[data-breadcrumb*="Programador"] .contenedor-log-iot {
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 18px;
+    background: linear-gradient(110deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.09));
+    border: 1px solid rgba(255, 255, 255, 0.16);
+  }
+
+  body[data-breadcrumb*="Programador"] .contenedor-log-iot h4 {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+  }
+
+  body[data-breadcrumb*="Programador"] .iot-log-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  body[data-breadcrumb*="Programador"] .tabla-log-iot thead th {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+  }
+
+  body[data-breadcrumb*="Programador"] .tabla-log-iot td {
+    font-size: 0.87rem;
+  }
+}
+
+.pestanas-caja {
   margin-top: 12px;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.cash-tab {
+.pestana-caja {
   border-radius: 999px;
   padding: 9px 12px;
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -747,33 +904,33 @@ body[data-breadcrumb*="Programador"] .store-machines-grid {
   cursor: pointer;
 }
 
-.cash-tab.is-active {
+.pestana-caja.is-active {
   background: rgba(40, 240, 200, 0.18);
   border-color: rgba(40, 240, 200, 0.28);
   color: var(--turquesa-claro);
 }
 
-.cash-filters {
+.filtros-caja {
   margin-top: 12px;
   display: grid;
   gap: 10px;
 }
 
-.cash-filter {
+.filtro-caja {
   display: flex;
   gap: 10px;
   align-items: end;
   flex-wrap: wrap;
 }
 
-.cash-filter label {
+.filtro-caja label {
   display: grid;
   gap: 6px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.75);
 }
 
-.cash-summary {
+.resumen-caja {
   margin-top: 12px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -800,7 +957,7 @@ body[data-breadcrumb*="Programador"] .store-machines-grid {
   color: rgba(255, 255, 255, 0.92);
 }
 
-.cash-table-wrap {
+.contenedor-tabla-caja {
   margin-top: 12px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -808,7 +965,7 @@ body[data-breadcrumb*="Programador"] .store-machines-grid {
   overflow: auto;
 }
 
-.cash-table {
+.tabla-caja {
   width: 100%;
   border-collapse: collapse;
   min-width: 640px;

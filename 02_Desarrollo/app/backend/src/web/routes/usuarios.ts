@@ -4,6 +4,7 @@ import { db } from "../../db/pool.js";
 import type { UsuarioRow } from "../../db/types.js";
 import type { ResultSetHeader } from "mysql2/promise";
 import bcrypt from "bcryptjs";
+import { env } from "../../system/env.js";
 
 export const usuariosRouter = Router();
 
@@ -62,6 +63,26 @@ async function adminCanManageUserEverywhere(adminId: number, idUsuario: number) 
     { adminId, idUsuario },
   );
   return Number(rows[0]?.total ?? 0) === 0;
+}
+
+async function isSuperAdmin(idUsuario: number): Promise<boolean> {
+  // 1) Si hay login de super admin en .env, esa es la fuente de verdad.
+  const superLogin = String(process.env.SUPER_ADMIN_LOGIN ?? "").trim().toLowerCase();
+  if (superLogin) {
+    const [rows] = await db.query<
+      (import("mysql2/promise").RowDataPacket & { total: number })[]
+    >(
+      "SELECT COUNT(*) AS total FROM usuario WHERE id_usuario = :idUsuario AND LOWER(login) = :login LIMIT 1",
+      { idUsuario, login: superLogin },
+    );
+    return Number(rows[0]?.total ?? 0) > 0;
+  }
+
+  // 2) Fallback: el ADMIN con id más bajo actúa como super admin único.
+  const [rows] = await db.query<
+    (import("mysql2/promise").RowDataPacket & { id_usuario: number })[]
+  >("SELECT id_usuario FROM usuario WHERE rol = 'ADMIN' ORDER BY id_usuario ASC LIMIT 1");
+  return Number(rows[0]?.id_usuario ?? 0) === idUsuario;
 }
 
 usuariosRouter.get("/", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
@@ -403,6 +424,14 @@ usuariosRouter.delete("/:id", requireAuth, requireRole(["ADMIN"]), requireLavand
     { idUsuario, idLav: idLavanderia },
   );
   if (!rows[0]) return res.status(404).json({ ok: false, error: "USER_NOT_FOUND" });
+
+  // Regla de seguridad: solo el super admin puede borrar usuarios ADMIN.
+  if (rows[0].rol === "ADMIN") {
+    const canDeleteAdmin = await isSuperAdmin(currentUserId);
+    if (!canDeleteAdmin) {
+      return res.status(403).json({ ok: false, error: "ONLY_SUPER_ADMIN_CAN_DELETE_ADMIN" });
+    }
+  }
 
   const conn = await db.getConnection();
   try {

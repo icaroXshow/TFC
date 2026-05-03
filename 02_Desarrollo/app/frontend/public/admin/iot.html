@@ -11,114 +11,111 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-  <link rel="stylesheet" href="../css/admin/base.css?v=25" />
-  <link rel="stylesheet" href="../css/componentes/componentes-principales.css?v=25" />
-  <link rel="stylesheet" href="../css/componentes/componentes-responsive.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/estructura-paneles.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/vistas-admin.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/responsive-admin.css?v=25" />
+  <link rel="stylesheet" href="../css/admin/base.css?v=33" />
+  <link rel="stylesheet" href="../css/componentes/componentes-principales.css?v=31" />
+  <link rel="stylesheet" href="../css/componentes/componentes-responsive.css?v=31" />
+  <link rel="stylesheet" href="../css/admin/estructura-paneles.css?v=34" />
+  <link rel="stylesheet" href="../css/admin/vistas-admin.css?v=31" />
+  <link rel="stylesheet" href="../css/admin/responsive-admin.css?v=31" />
   </head>
 
   <body data-breadcrumb="Domótica|Programador">
-    <div class="admin-layout" id="adminApp">
-      <aside class="admin-sidebar" aria-label="Menú lateral">
-        <div class="admin-brand">
-          <img src="/assets/Logo_KWL.png" alt="KWL Aqua" class="admin-brand-logo" />
-          <div class="admin-brand-text">
+    <div class="diseno-admin" id="adminApp">
+      <aside class="barra-lateral-admin" aria-label="Menú lateral">
+        <div class="marca-admin">
+          <img src="/assets/Logo_KWL.png" alt="KWL Aqua" class="marca-admin-logo" />
+          <div class="marca-admin-text">
             <strong>KWL Aqua</strong>
             <span>Panel admin</span>
           </div>
         </div>
 
-        <nav class="admin-nav" aria-label="Navegación">
-          <a class="admin-nav-item" data-nav="inicio" href="/admin/inicio.html">Inicio</a>
+        <nav class="navegacion-admin" aria-label="Navegación">
+          <a class="item-navegacion-admin" data-nav="inicio" href="/admin/inicio.html">Inicio</a>
 
-          <div class="admin-nav-group">Domótica</div>
-          <a class="admin-nav-item" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
-          <a class="admin-nav-item" data-nav="iot" href="/admin/iot.html">Programador</a>
-          <a class="admin-nav-item" data-nav="camara" href="/admin/camara.html">Cámara</a>
+          <div class="grupo-navegacion-admin">Domótica</div>
+          <a class="item-navegacion-admin" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
+          <a class="item-navegacion-admin" data-nav="iot" href="/admin/iot.html">Programador</a>
+          <a class="item-navegacion-admin" data-nav="camara" href="/admin/camara.html">Cámara</a>
 
-          <div class="admin-nav-group">Contabilidad</div>
-          <a class="admin-nav-item" data-nav="caja" href="/admin/caja.html">Caja</a>
-          <a class="admin-nav-item" data-nav="informes" href="/admin/informes.html">Informes</a>
+          <div class="grupo-navegacion-admin">Contabilidad</div>
+          <a class="item-navegacion-admin" data-nav="caja" href="/admin/caja.html">Caja</a>
+          <a class="item-navegacion-admin" data-nav="informes" href="/admin/informes.html">Informes</a>
 
-          <div class="admin-nav-group">Gestión</div>
-          <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
-          <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
-          <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
-          <a class="admin-nav-item" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
+          <div class="grupo-navegacion-admin">Gestión</div>
+          <a class="item-navegacion-admin" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
+          <a class="item-navegacion-admin" data-nav="logs" href="/admin/logs.html">Logs</a>
+          <a class="item-navegacion-admin" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
+          <a class="item-navegacion-admin" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
         </nav>
 
-        <div class="admin-sidebar-bottom">
-          <a class="admin-logout" id="adminLogout" href="/index.html">Cerrar sesión</a>
+        <div class="barra-lateral-admin-bottom">
+          <a class="cierre-sesion-admin" id="adminLogout" href="/index.html">Cerrar sesión</a>
         </div>
       </aside>
 
-      <header class="admin-topbar">
-        <button class="admin-burger" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
-        <div class="admin-breadcrumbs" id="adminBreadcrumbs"></div>
-        <div class="admin-topbar-right">
-          <select class="admin-lav-select" id="adminLavSelect" aria-label="Lavandería activa"></select>
-          <span class="admin-location" id="adminLocation">—</span>
+      <header class="barra-superior-admin">
+        <button class="boton-menu-admin" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
+        <div class="migas-admin" id="adminBreadcrumbs"></div>
+        <div class="barra-superior-admin-right">
+          <select class="selector-lavanderia-admin" id="adminLavSelect" aria-label="Lavandería activa"></select>
+          <span class="ubicacion-admin" id="adminLocation">—</span>
         </div>
       </header>
 
-      <main class="admin-main">
-        <section class="admin-section">
-          <div class="admin-section-head">
+      <main class="principal-admin">
+        <section class="seccion-admin">
+          <div class="cabecera-seccion-admin">
             <h3>Programador</h3>
             <p>Control y horarios automáticos de IoT.</p>
           </div>
 
-          <div class="iot-grid iot-main-grid">
-            <article class="iot-tile">
+          <div class="rejilla-iot rejilla-principal-iot">
+            <article class="tarjeta-iot">
               <h4>Puerta</h4>
-              <p class="iot-status"><span id="iotDoorState" class="iot-state-pill iot-state-clickable">—</span></p>
-              <div class="iot-actions">
-                <button type="button" class="btn-primary" id="doorToggle">Encender / Apagar</button>
+              <label class="iot-check iot-check-esquina"><input type="checkbox" id="doorScheduleEnabled" /> ON/OFF</label>
+              <p class="estado-iot"><span id="iotDoorState" class="pildora-estado-iot clicable-estado-iot">—</span></p>
+              <div class="acciones-iot">
+                <button type="button" class="boton-primario" id="doorToggle">Encender / Apagar</button>
               </div>
               <div class="iot-schedule">
-                <label class="iot-check"><input type="checkbox" id="doorScheduleEnabled" /> Activar programador</label>
-                <label>Auto abrir <input type="time" class="input" id="doorOn" /></label>
-                <label>Auto cerrar <input type="time" class="input" id="doorOff" /></label>
+                <label>ENCENDIDO<input type="time" class="entrada" id="doorOn" /></label>
+                <label>APAGADO<input type="time" class="entrada" id="doorOff" /></label>
               </div>
             </article>
-            <article class="iot-tile">
+            <article class="tarjeta-iot">
               <h4>Luces</h4>
-              <p class="iot-status"><span id="iotLightsState" class="iot-state-pill iot-state-clickable">—</span></p>
-              <div class="iot-actions">
-                <button type="button" class="btn-primary" id="lightsToggle">Encender / Apagar</button>
+              <label class="iot-check iot-check-esquina"><input type="checkbox" id="lightsScheduleEnabled" /> ON/OFF</label>
+              <p class="estado-iot"><span id="iotLightsState" class="pildora-estado-iot clicable-estado-iot">—</span></p>
+              <div class="acciones-iot">
+                <button type="button" class="boton-primario" id="lightsToggle">Encender / Apagar</button>
               </div>
               <div class="iot-schedule">
-                <label class="iot-check"><input type="checkbox" id="lightsScheduleEnabled" /> Activar programador</label>
-                <label>Auto encender <input type="time" class="input" id="lightsOnTime" /></label>
-                <label>Auto apagar <input type="time" class="input" id="lightsOffTime" /></label>
+                <label>ENCENDIDO<input type="time" class="entrada" id="lightsOnTime" /></label>
+                <label>APAGADO<input type="time" class="entrada" id="lightsOffTime" /></label>
               </div>
             </article>
-            <article class="iot-tile">
+            <article class="tarjeta-iot">
               <h4>Máquinas</h4>
-              <p class="iot-status">Control horario de máquinas</p>
               <div class="iot-schedule">
-                <label>Hora encendido (apertura) <input type="time" class="input" id="iotMachineOnTime" /></label>
-                <label>Hora apagado (cierre) <input type="time" class="input" id="iotMachineOffTime" /></label>
-                <label>Encender al abrir</label>
-                <div id="iotOpenMachines" class="iot-grid store-machines-grid"></div>
-                <label>Apagar al cerrar</label>
-                <div id="iotCloseMachines" class="iot-grid store-machines-grid"></div>
+                <label class="etiqueta-bloque-maquinas">APERTURA<input type="time" class="entrada" id="iotMachineOnTime" /></label>
+                <div id="iotOpenMachines" class="rejilla-iot store-rejilla-maquinas"></div>
+                <label class="etiqueta-bloque-maquinas">CIERRE<input type="time" class="entrada" id="iotMachineOffTime" /></label>
+                <div id="iotCloseMachines" class="rejilla-iot store-rejilla-maquinas"></div>
               </div>
             </article>
           </div>
 
           <div class="iot-footer">
-            <button type="button" class="btn-primary" id="iotSaveSchedule">Guardar horarios</button>
+            <button type="button" class="boton-primario" id="iotSaveSchedule">Guardar horarios</button>
             <span class="iot-hint" id="iotHint" aria-live="polite"></span>
           </div>
 
-          <section class="iot-log-wrap" aria-label="Registro de cambios">
+          <section class="contenedor-log-iot" aria-label="Registro de cambios">
             <h4>Registro de cambios</h4>
             <p class="iot-log-subtitle">Actividad reciente del sistema y del panel.</p>
-            <div class="iot-log-table-wrap">
-              <table class="iot-log-table">
+            <div class="tabla-log-iot-wrap">
+              <table class="tabla-log-iot">
                 <thead>
                   <tr>
                     <th>Fecha</th>
@@ -136,6 +133,6 @@
         </section>
       </main>
     </div>
-    <script src="../js/admin.js?v=37"></script>
+    <script src="../js/admin.js?v=40"></script>
   </body>
 </html>

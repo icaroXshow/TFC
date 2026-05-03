@@ -27,6 +27,11 @@
 
   /* Otros*/
   --shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  --linea-admin: rgba(255, 255, 255, 0.14);
+  --linea-admin-activa: rgba(40, 240, 200, 0.32);
+  --fondo-panel-admin: transparent;
+  --fondo-panel-admin-suave: rgba(255, 255, 255, 0.06);
+  --radio-admin: 18px;
 }
 
 /* =========================================
@@ -41,6 +46,74 @@ html,
 body {
   height: 100%;
   margin: 0;
+}
+
+/* Base visual compartida con estilo público */
+.tarjeta-admin,
+.tarjeta-admin,
+.seccion-admin,
+.seccion-admin,
+.tarjeta-maquina,
+.tarjeta-maquina,
+.tarjeta-iot,
+.tarjeta-iot,
+.user-tile,
+.tarjeta-usuario,
+.contenedor-tabla-usuarios,
+.tabla-usuarios-contenedor,
+.contenedor-tabla-caja,
+.tabla-caja-contenedor,
+.pestana-informesle-wrap,
+.tabla-informes-contenedor,
+.contenedor-log-iot,
+.tabla-registros-iot-contenedor {
+  border-radius: var(--radio-admin);
+  border: 0 !important;
+  background: none;
+  box-shadow: none !important;
+}
+
+.boton-primario,
+.boton-secundario,
+.boton-primario,
+.boton-secundario {
+  min-height: 42px;
+  border-radius: 999px;
+  font-weight: 800;
+  transition: transform .18s ease, filter .18s ease, border-color .18s ease;
+}
+
+.boton-primario,
+.boton-primario {
+  background: linear-gradient(90deg, var(--turquesa-claro), #67ffe0);
+  color: #00120f;
+  border-color: rgba(0, 0, 0, 0.22);
+}
+
+.boton-secundario,
+.boton-secundario {
+  background: var(--fondo-panel-admin-suave);
+  border-color: var(--linea-admin);
+}
+
+.boton-primario:hover,
+.boton-secundario:hover,
+.boton-primario:hover,
+.boton-secundario:hover {
+  transform: translateY(-1px);
+  border-color: var(--linea-admin-activa);
+}
+
+.entrada,
+.entrada,
+.selector-lavanderia-admin,
+.selector-lavanderia-admin,
+select,
+textarea {
+  border-radius: 14px;
+  border: 1px solid var(--linea-admin);
+  background: rgba(8, 14, 24, 0.66);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 body {
@@ -684,4 +757,26 @@ html, body {
   .footer-politicas {
     font-size: 14px;
   }
+}
+
+/* Reset visual global de contenedores admin: sin borde/sombra */
+.seccion-admin,
+.tarjeta-admin,
+.tarjeta-maquina,
+.tarjeta-iot,
+.user-tile,
+.contenedor-tabla-usuarios,
+.tabla-usuarios-contenedor,
+.contenedor-tabla-caja,
+.tabla-caja-contenedor,
+.pestana-informesle-wrap,
+.tabla-informes-contenedor,
+.contenedor-log-iot,
+.tabla-registros-iot-contenedor,
+.tabla-admin,
+.modal-card,
+.tarjeta-config-tienda {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
 }

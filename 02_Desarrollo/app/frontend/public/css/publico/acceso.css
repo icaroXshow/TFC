@@ -5,51 +5,139 @@
   z-index: 100;
   display: none;
   place-items: center;
-  padding: 20px;
+  padding: clamp(8px, 2.2vw, 20px);
   background: rgba(0,0,0,.7);
   backdrop-filter: blur(12px);
+  overflow: auto;
 }
 .capa-acceso.mostrar { display: grid; }
 .panel-acceso {
-  width: min(420px, 94vw);
+  width: min(680px, 92vw);
+  box-sizing: border-box;
   background: #061c18;
   border: 1px solid var(--linea);
-  border-radius: 24px;
-  padding: 28px;
+  border-radius: clamp(14px, 2vw, 24px);
+  padding: clamp(14px, 2.8vw, 34px);
   color: #fff;
   box-shadow: var(--sombra);
   position: relative;
 }
 .boton-cerrar-acceso {
   position: absolute;
-  right: 18px;
-  top: 18px;
-  width: 38px;
-  height: 38px;
+  right: clamp(10px, 2vw, 18px);
+  top: clamp(10px, 2vw, 18px);
+  width: clamp(32px, 3vw, 38px);
+  height: clamp(32px, 3vw, 38px);
   border: 0;
   border-radius: 50%;
   background: rgba(255,255,255,.08);
   color: var(--rosa);
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 1.2vw, 1.2rem);
   cursor: pointer;
 }
-.panel-acceso h2 { margin: 0 0 18px; }
-.formulario-acceso { display: grid; gap: 12px; }
+.panel-acceso h2 {
+  margin: 0 0 clamp(14px, 2vw, 22px);
+  font-size: clamp(1.55rem, 3.8vw, 2.6rem);
+  line-height: 1.1;
+}
+.formulario-acceso { display: grid; gap: clamp(10px, 1.4vw, 12px); }
 .formulario-acceso input {
+  box-sizing: border-box;
+  width: 100%;
   border: 1px solid var(--linea);
   border-radius: 14px;
   background: rgba(255,255,255,.08);
   color: #fff;
-  padding: 14px 16px;
+  min-height: clamp(44px, 5.2vw, 58px);
+  padding: clamp(10px, 1.8vw, 14px) clamp(12px, 2vw, 18px);
   font: inherit;
+  font-size: clamp(0.96rem, 1.4vw, 1.08rem);
 }
 .boton-enviar-acceso {
-  min-height: 48px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: clamp(44px, 5.2vw, 58px);
   border: 0;
   border-radius: 999px;
   background: var(--turquesa);
   color: #00110e;
   font-weight: 800;
+  font-size: clamp(0.96rem, 1.4vw, 1.08rem);
   cursor: pointer;
 }
 .error-acceso { min-height: 20px; margin: 2px 0 0; color: #ffb4c7; font-size: .92rem; }
+
+@media (max-width: 900px) {
+  .capa-acceso {
+    padding: 12px;
+  }
+
+  .panel-acceso {
+    width: 100%;
+    max-width: min(430px, calc(100vw - 24px));
+    padding: 22px 18px;
+    margin-inline: auto;
+  }
+
+  .panel-acceso h2 {
+    margin: 0 0 18px;
+    font-size: 2rem;
+  }
+
+  .formulario-acceso input {
+    min-height: 50px;
+    padding: 12px 14px;
+    font-size: 1rem;
+  }
+
+  .boton-enviar-acceso {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .capa-acceso {
+    padding: 8px;
+  }
+
+  .panel-acceso {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    padding: 16px 12px;
+    border-radius: 14px;
+  }
+
+  .panel-acceso h2 {
+    font-size: 1.55rem;
+    margin-bottom: 12px;
+    padding-right: 34px;
+  }
+
+  .formulario-acceso {
+    gap: 9px;
+  }
+
+  .formulario-acceso input,
+  .boton-enviar-acceso {
+    min-height: 44px;
+    font-size: 0.96rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .panel-acceso {
+    width: calc(100vw - 12px);
+    max-width: calc(100vw - 12px);
+    padding: 14px 10px;
+  }
+
+  .panel-acceso h2 {
+    font-size: 1.42rem;
+  }
+
+  .formulario-acceso input,
+  .boton-enviar-acceso {
+    min-height: 42px;
+  }
+}

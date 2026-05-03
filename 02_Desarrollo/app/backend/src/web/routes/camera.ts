@@ -8,7 +8,7 @@ import { verifyToken } from "../auth/token.js";
 
 export const cameraRouter = Router();
 
-type CameraConfig = { baseUrl: string; user: string; pass: string; streamUser: string; streamPass: string };
+type CameraConfig = { baseUrl: string; user: string; pass: string };
 type ConfigRow = RowDataPacket & { valor: string };
 type LavAccessRow = RowDataPacket & { id_lavanderia: number };
 const EMPTY_GIF = Buffer.from("R0lGODlhAQABAPAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==", "base64");
@@ -20,15 +20,11 @@ async function resolveCameraConfig(cam: 1 | 2, idLav: number): Promise<CameraCon
           baseUrl: env.camera.baseUrl2,
           user: env.camera.user2,
           pass: env.camera.pass2,
-          streamUser: env.camera.streamUser2,
-          streamPass: env.camera.streamPass2,
         }
       : {
           baseUrl: env.camera.baseUrl,
           user: env.camera.user,
           pass: env.camera.pass,
-          streamUser: env.camera.streamUser,
-          streamPass: env.camera.streamPass,
         };
   const [rows] = await db.query<ConfigRow[]>(
     `
@@ -47,8 +43,6 @@ async function resolveCameraConfig(cam: 1 | 2, idLav: number): Promise<CameraCon
       baseUrl: String(parsed?.CAMERA_BASE_URL || fallback.baseUrl || ""),
       user: String(parsed?.CAMERA_USER || fallback.user || ""),
       pass: String(parsed?.CAMERA_PASS || fallback.pass || ""),
-      streamUser: String(parsed?.CAMERA_STREAM_USER || parsed?.CAMERA_USER || fallback.streamUser || fallback.user || ""),
-      streamPass: String(parsed?.CAMERA_STREAM_PASS || parsed?.CAMERA_PASS || fallback.streamPass || fallback.pass || ""),
     };
   } catch {
     return fallback;
@@ -57,6 +51,13 @@ async function resolveCameraConfig(cam: 1 | 2, idLav: number): Promise<CameraCon
 
 function resolveCamByLav(idLav: number): 1 | 2 {
   return idLav === 2 ? 2 : 1;
+}
+
+function resolveCamFromBody(req: any, idLav: number): 1 | 2 {
+  const raw = Number(req.body?.cam);
+  if (raw === 2) return 2;
+  if (raw === 1) return 1;
+  return resolveCamByLav(idLav);
 }
 
 async function userHasLavAccess(idUsuario: number, idLav: number): Promise<boolean> {
@@ -115,14 +116,12 @@ function buildUrl(path: string, cfg: CameraConfig) {
   return `${base}${p}`;
 }
 
-async function fetchWithTimeout(url: string, ms: number, cfg: CameraConfig, authMode: "control" | "stream" = "control") {
+async function fetchWithTimeout(url: string, ms: number, cfg: CameraConfig) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(new Error("timeout")), ms);
   try {
-    const user = authMode === "stream" ? cfg.streamUser || cfg.user : cfg.user;
-    const pass = authMode === "stream" ? cfg.streamPass || cfg.pass : cfg.pass;
     const fetchPromise = fetch(url, {
-      headers: { authorization: basicAuthHeader(user, pass) },
+      headers: { authorization: basicAuthHeader(cfg.user, cfg.pass) },
       signal: controller.signal,
     }).then((r) => ({ ok: true as const, response: r }));
 
@@ -157,7 +156,7 @@ async function audit(req: any, accion: string, detalle: string) {
 
 cameraRouter.get("/ptz/status", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = Number(req.auth?.id_lavanderia ?? 1);
-  const cam = resolveCamByLav(idLav);
+  const cam = resolveCamFromBody(req, idLav);
   const cfg = await resolveCameraConfig(cam, idLav);
   if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });
 
@@ -173,7 +172,7 @@ cameraRouter.get("/ptz/status", requireAuth, requireRole(["ADMIN"]), requireLava
 
 cameraRouter.post("/ptz/center", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = Number(req.auth?.id_lavanderia ?? 1);
-  const cam = resolveCamByLav(idLav);
+  const cam = resolveCamFromBody(req, idLav);
   const cfg = await resolveCameraConfig(cam, idLav);
   if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });
   const url = buildUrl("/control/click.cgi?center=yes", cfg);
@@ -189,25 +188,18 @@ cameraRouter.post("/ptz/center", requireAuth, requireRole(["ADMIN"]), requireLav
 
 cameraRouter.post("/zoom", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = Number(req.auth?.id_lavanderia ?? 1);
-  const cam = resolveCamByLav(idLav);
+  const cam = resolveCamFromBody(req, idLav);
   const cfg = await resolveCameraConfig(cam, idLav);
   if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });
 
   const mode = String(req.body?.mode ?? "");
   const value = Number(req.body?.value);
   if (!Number.isFinite(value)) return res.status(400).json({ ok: false, error: "BAD_VALUE" });
-  if (mode !== "absolute" && mode !== "relative") return res.status(400).json({ ok: false, error: "BAD_MODE" });
+  if (mode !== "relative") return res.status(400).json({ ok: false, error: "BAD_MODE" });
 
-  let url: string;
-  if (mode === "absolute") {
-    const v = clamp(Math.trunc(value), 1000, 8000);
-    url = buildUrl(`/control/click.cgi?zoom=${v}&snap`, cfg);
-    await audit(req, "CAMERA_ZOOM_ABS", `Zoom absoluto: ${v}`);
-  } else {
-    const v = clamp(Math.trunc(value), -1000, 1000);
-    url = buildUrl(`/control/click.cgi?zoomrel=${v}&snap`, cfg);
-    await audit(req, "CAMERA_ZOOM_REL", `Zoom relativo: ${v}`);
-  }
+  const v = clamp(Math.trunc(value), -1000, 1000);
+  const url = buildUrl(`/control/click.cgi?zoomrel=${v}&dummy=${Date.now()}`, cfg);
+  await audit(req, "CAMERA_ZOOM_REL", `Zoom relativo: ${v}`);
 
   const fr = await fetchWithTimeout(url, 5000, cfg);
   if (!fr.ok) return res.status(504).json({ ok: false, error: "CAMERA_TIMEOUT" });
@@ -220,33 +212,64 @@ cameraRouter.post("/zoom", requireAuth, requireRole(["ADMIN"]), requireLavanderi
 
 cameraRouter.post("/display-mode", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = Number(req.auth?.id_lavanderia ?? 1);
-  const cam = resolveCamByLav(idLav);
+  const cam = resolveCamFromBody(req, idLav);
   const cfg = await resolveCameraConfig(cam, idLav);
   if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });
 
-  const rawMode = String(req.body?.mode ?? "fullimage").trim().toLowerCase();
-  const modeMap: Record<string, string> = {
-    surround: "surround",
-    normal: "normal",
-    "full image": "fullimage",
-    fullimage: "fullimage",
-    full: "fullimage",
-    panorama: "panorama",
+  const rawMode = String(req.body?.mode ?? "surround").trim();
+  const key = rawMode.toLowerCase().replace(/\s+/g, " ");
+  const modeVariants: Record<string, string[]> = {
+    "full image": ["0", "Full Image", "fullimage", "full image"],
+    fullimage: ["0", "Full Image", "fullimage", "full image"],
+    full: ["0", "Full Image", "fullimage"],
+    surround: ["Surround", "surround", "2"],
+    panorama: ["Panorama", "panorama", "3"],
+    "0": ["Full Image", "fullimage", "0"],
+    "2": ["Surround", "surround", "2"],
+    "3": ["Panorama", "panorama", "3"],
   };
-  const mode = modeMap[rawMode];
-  if (!mode) return res.status(400).json({ ok: false, error: "BAD_MODE" });
-  const url = buildUrl(
-    `/control/control?no_http_header&set&section=quickcontrol&display_mode=${encodeURIComponent(mode)}`,
-    cfg,
-  );
-  const fr = await fetchWithTimeout(url, 5000, cfg);
-  if (!fr.ok) return res.status(504).json({ ok: false, error: "CAMERA_TIMEOUT" });
-  const r = fr.response;
-  const text = await r.text();
-  if (!r.ok) return res.status(502).json({ ok: false, error: "CAMERA_UPSTREAM_ERROR" });
+  const valuesToTry = modeVariants[key];
+  if (!valuesToTry) return res.status(400).json({ ok: false, error: "BAD_MODE" });
+  const urls: string[] = [];
+  for (const value of valuesToTry) {
+    urls.push(buildUrl(`/control/control?no_http_header&set&section=quickcontrol&display_mode=${encodeURIComponent(value)}`, cfg));
+    urls.push(buildUrl(`/control/control?set&section=quickcontrol&display_mode=${encodeURIComponent(value)}`, cfg));
+    urls.push(buildUrl(`/control/click.cgi?display_mode=${encodeURIComponent(value)}&dummy=${Date.now()}`, cfg));
+  }
 
-  await audit(req, "CAMERA_DISPLAY_MODE", `Modo visualización: ${mode}`);
-  return res.json({ ok: true, raw: text, mode });
+  // Mobotix: "Full Image" a veces no vuelve con un único set.
+  // Forzamos una secuencia adicional cuando se pide full image.
+  if (key === "full image" || key === "fullimage" || key === "full" || key === "0") {
+    urls.push(buildUrl(`/control/control?no_http_header&set&section=quickcontrol&display_mode=normal`, cfg));
+    urls.push(buildUrl(`/control/control?no_http_header&set&section=quickcontrol&display_mode=fullimage`, cfg));
+    urls.push(buildUrl(`/control/control?no_http_header&set&section=quickcontrol&display_mode=0`, cfg));
+  }
+
+  let lastStatus = 504;
+  let lastText = "";
+  let applied = false;
+  for (const url of urls) {
+    const fr = await fetchWithTimeout(url, 5000, cfg);
+    if (!fr.ok) {
+      lastStatus = 504;
+      continue;
+    }
+    const r = fr.response;
+    const text = await r.text();
+    lastStatus = r.status;
+    lastText = text;
+    if (r.ok) {
+      applied = true;
+      break;
+    }
+  }
+  if (!applied) {
+    if (lastStatus === 504) return res.status(504).json({ ok: false, error: "CAMERA_TIMEOUT" });
+    return res.status(502).json({ ok: false, error: "CAMERA_UPSTREAM_ERROR", raw: lastText });
+  }
+
+  await audit(req, "CAMERA_DISPLAY_MODE", `Modo visualización: ${rawMode}`);
+  return res.json({ ok: true, mode: rawMode });
 });
 
 cameraRouter.post("/audio/play", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
@@ -317,7 +340,7 @@ cameraRouter.get("/stream.jpg", async (req, res) => {
     ];
     let r: Response | null = null;
     for (const path of candidates) {
-      const fr = await fetchWithTimeout(buildUrl(path, cfg), 8000, cfg, "stream");
+      const fr = await fetchWithTimeout(buildUrl(path, cfg), 8000, cfg);
       if (fr.ok && fr.response.ok) {
         r = fr.response;
         break;
@@ -342,7 +365,7 @@ cameraRouter.get("/faststream.mjpg", async (req, res) => {
     const cfg = resolved.cfg;
     const url = buildUrl(`/control/faststream.jpg?stream=full&fps=16&rand=${Date.now()}`, cfg);
     const upstream = await fetch(url, {
-      headers: { authorization: basicAuthHeader(cfg.streamUser || cfg.user, cfg.streamPass || cfg.pass) },
+      headers: { authorization: basicAuthHeader(cfg.user, cfg.pass) },
     });
     if (!upstream.ok || !upstream.body) return sendStreamFallback(res, 502);
     res.status(200);
@@ -362,15 +385,33 @@ cameraRouter.get("/ui/:target", async (req, res) => {
     if (!resolved.ok) return res.status(resolved.status).send("Unauthorized");
     const cfg = resolved.cfg;
     const target = String(req.params?.target ?? "").toLowerCase();
-    let path = "/control/userimage.html";
-    if (target === "admin") path = "/admin/index.html";
-    if (target === "events") path = "/control/player?eventlist";
-    const fr = await fetchWithTimeout(buildUrl(path, cfg), 8000, cfg, "stream");
-    if (!fr.ok || !fr.response.ok) return res.status(502).send("Camera upstream error");
-    const body = await fr.response.text();
-    res.setHeader("content-type", fr.response.headers.get("content-type") || "text/html; charset=utf-8");
+    const candidates =
+      target === "admin"
+        ? ["/admin/index.html", "/admin/"]
+        : target === "events"
+          ? ["/control/player?eventlist", "/control/player"]
+          : ["/control/userimage.html", "/control/userimage"];
+
+    let html = "";
+    let contentType = "text/html; charset=utf-8";
+    let ok = false;
+
+    for (const path of candidates) {
+      const fr = await fetchWithTimeout(buildUrl(path, cfg), 8000, cfg);
+      if (!fr.ok) continue;
+      const r = fr.response;
+      const text = await r.text();
+      if (!r.ok) continue;
+      html = text;
+      contentType = r.headers.get("content-type") || contentType;
+      ok = true;
+      break;
+    }
+
+    if (!ok) return res.status(502).send("Camera upstream error");
+    res.setHeader("content-type", contentType);
     res.setHeader("cache-control", "no-store");
-    return res.status(200).send(body);
+    return res.status(200).send(html);
   } catch {
     return res.status(500).send("Camera proxy error");
   }

@@ -162,12 +162,12 @@
     };
 
     const setCashView = (view) => {
-      document.querySelectorAll(".cash-tab").forEach((b) => {
+      document.querySelectorAll(".pestana-caja").forEach((b) => {
         const active = b.getAttribute("data-tab") === view;
         b.classList.toggle("is-active", active);
         b.setAttribute("aria-selected", active ? "true" : "false");
       });
-      document.querySelectorAll(".cash-filter").forEach((f) => {
+      document.querySelectorAll(".filtro-caja").forEach((f) => {
         const show = f.getAttribute("data-view") === view;
         f.hidden = !show;
       });
@@ -180,7 +180,7 @@
       if (cashFrom && !cashFrom.value) cashFrom.value = t.slice(0, 8) + "01";
       if (cashTo && !cashTo.value) cashTo.value = t;
 
-      document.querySelectorAll(".cash-tab").forEach((b) => {
+      document.querySelectorAll(".pestana-caja").forEach((b) => {
         b.addEventListener("click", async () => {
           const view = b.getAttribute("data-tab") || "dia";
           setCashView(view);
@@ -306,7 +306,7 @@
         `<div style="display:flex;align-items:center;gap:8px"><div style="height:8px;flex:1;background:rgba(255,255,255,.1);border-radius:999px"><div style="height:8px;width:${pct}%;background:#40c2a8;border-radius:999px"></div></div><span>${txt}</span></div>`;
 
       const setReportsTab = (tab) => {
-        document.querySelectorAll(".reports-tab[data-tab]").forEach((b) => {
+        document.querySelectorAll(".pestana-informes[data-tab]").forEach((b) => {
           const active = b.getAttribute("data-tab") === tab;
           b.classList.toggle("is-active", active);
           b.setAttribute("aria-selected", active ? "true" : "false");
@@ -318,7 +318,7 @@
       };
       const setEvTab = (tab) => {
         evTab = tab;
-        document.querySelectorAll(".reports-tab[data-evtab]").forEach((b) => {
+        document.querySelectorAll(".pestana-informes[data-evtab]").forEach((b) => {
           const active = b.getAttribute("data-evtab") === tab;
           b.classList.toggle("is-active", active);
           b.setAttribute("aria-selected", active ? "true" : "false");
@@ -326,20 +326,20 @@
       };
       const setStTab = (tab) => {
         stTab = tab;
-        document.querySelectorAll(".reports-tab[data-sttab]").forEach((b) => {
+        document.querySelectorAll(".pestana-informes[data-sttab]").forEach((b) => {
           const active = b.getAttribute("data-sttab") === tab;
           b.classList.toggle("is-active", active);
           b.setAttribute("aria-selected", active ? "true" : "false");
         });
       };
 
-      document.querySelectorAll(".reports-tab[data-tab]").forEach((b) => {
+      document.querySelectorAll(".pestana-informes[data-tab]").forEach((b) => {
         b.addEventListener("click", () => setReportsTab(b.getAttribute("data-tab") || "ciclos"));
       });
-      document.querySelectorAll(".reports-tab[data-evtab]").forEach((b) => {
+      document.querySelectorAll(".pestana-informes[data-evtab]").forEach((b) => {
         b.addEventListener("click", () => setEvTab(b.getAttribute("data-evtab") || "semanal"));
       });
-      document.querySelectorAll(".reports-tab[data-sttab]").forEach((b) => {
+      document.querySelectorAll(".pestana-informes[data-sttab]").forEach((b) => {
         b.addEventListener("click", () => setStTab(b.getAttribute("data-sttab") || "diario"));
       });
       setReportsTab("ciclos");
@@ -548,8 +548,8 @@
       });
       evLoad?.addEventListener("click", loadEvolucion);
       stLoad?.addEventListener("click", loadEstadisticas);
-      document.querySelectorAll(".reports-tab[data-evtab]").forEach((b) => b.addEventListener("click", loadEvolucion));
-      document.querySelectorAll(".reports-tab[data-sttab]").forEach((b) => b.addEventListener("click", loadEstadisticas));
+      document.querySelectorAll(".pestana-informes[data-evtab]").forEach((b) => b.addEventListener("click", loadEvolucion));
+      document.querySelectorAll(".pestana-informes[data-sttab]").forEach((b) => b.addEventListener("click", loadEstadisticas));
 
       await loadCiclos();
       await loadEvolucion();
@@ -629,7 +629,7 @@
       loadMaquinas._busy = true;
       try {
         const isMachinesView = location.pathname.toLowerCase().endsWith("/admin/maquinas.html");
-        if (isMachinesView && machinesGrid?.querySelector(".machine-drawer.is-open")) return;
+        if (isMachinesView && machinesGrid?.querySelector(".cajon-maquina.is-open")) return;
         const res = await fetch(`${API_BASE}/api/maquinas`, {
           headers: {
             authorization: `Bearer ${token}`,
@@ -718,41 +718,41 @@
       const cancelBtn = e.target.closest(".js-amount-cancel");
 
       const closeAllDrawers = () => {
-        machinesGrid.querySelectorAll(".machine-drawer.is-open").forEach((d) => d.classList.remove("is-open"));
+        machinesGrid.querySelectorAll(".cajon-maquina.is-open").forEach((d) => d.classList.remove("is-open"));
       };
 
       if (cancelBtn) {
-        const tile = cancelBtn.closest(".machine-tile");
-        tile?.querySelector(".machine-drawer")?.classList.remove("is-open");
+        const tile = cancelBtn.closest(".tarjeta-maquina");
+        tile?.querySelector(".cajon-maquina")?.classList.remove("is-open");
         return;
       }
 
         if (creditBtn || extendBtn) {
-          const tile = (creditBtn || extendBtn).closest(".machine-tile");
+          const tile = (creditBtn || extendBtn).closest(".tarjeta-maquina");
           if (!tile) return;
-          const drawer = tile.querySelector(".machine-drawer");
-          const title = tile.querySelector(".machine-drawer-title");
+          const drawer = tile.querySelector(".cajon-maquina");
+          const title = tile.querySelector(".titulo-cajon-maquina");
           const apply = tile.querySelector(".js-amount-apply");
-          const input = tile.querySelector(".machine-drawer-input");
+          const entrada = tile.querySelector(".entrada-cajon-maquina");
           if (!drawer || !title || !apply) return;
           closeAllDrawers();
           const isCredit = Boolean(creditBtn);
           title.textContent = isCredit ? "Añadir crédito" : "Ampliar tiempo";
           apply.setAttribute("data-mode", isCredit ? "credito" : "ampliar");
-          if (input) {
+          if (entrada) {
             if (isCredit) {
-              input.min = "0.10";
-              input.max = "";
-              input.step = "0.10";
+              entrada.min = "0.10";
+              entrada.max = "";
+              entrada.step = "0.10";
             } else {
-              input.min = "0.10";
-              input.max = "";
-              input.step = "0.10";
-              if (!input.value || Number(input.value) <= 0) input.value = "1.00";
+              entrada.min = "0.10";
+              entrada.max = "";
+              entrada.step = "0.10";
+              if (!entrada.value || Number(entrada.value) <= 0) entrada.value = "1.00";
             }
           }
           drawer.classList.add("is-open");
-          input?.focus();
+          entrada?.focus();
           return;
         }
 
@@ -760,9 +760,9 @@
         const id = Number(applyBtn.getAttribute("data-id"));
         const mode = String(applyBtn.getAttribute("data-mode") || "");
         if (!Number.isFinite(id) || id <= 0 || (mode !== "credito" && mode !== "ampliar")) return;
-        const tile = applyBtn.closest(".machine-tile");
-        const input = tile?.querySelector(".machine-drawer-input");
-        const importe = Number(String(input?.value ?? "").replace(",", "."));
+        const tile = applyBtn.closest(".tarjeta-maquina");
+        const entrada = tile?.querySelector(".entrada-cajon-maquina");
+        const importe = Number(String(entrada?.value ?? "").replace(",", "."));
         if (!Number.isFinite(importe) || importe <= 0) return;
         applyBtn.disabled = true;
         try {
@@ -843,8 +843,8 @@
   });
 
   document.addEventListener("click", (e) => {
-    const sidebar = document.querySelector(".admin-sidebar");
+    const sidebar = document.querySelector(".barra-lateral-admin");
     if (!sidebar) return;
     if (!document.body.classList.contains("admin-menu-open")) return;
-    if (e.target.closest(".admin-sidebar") || e.target.closest("#adminBurger")) return;
+    if (e.target.closest(".barra-lateral-admin") || e.target.closest("#adminBurger")) return;
     document.body.classList.remove("admin-menu-open");

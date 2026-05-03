@@ -11,70 +11,70 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-  <link rel="stylesheet" href="../css/admin/base.css?v=25" />
-  <link rel="stylesheet" href="../css/componentes/componentes-principales.css?v=25" />
-  <link rel="stylesheet" href="../css/componentes/componentes-responsive.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/estructura-paneles.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/vistas-admin.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/responsive-admin.css?v=25" />
+  <link rel="stylesheet" href="../css/admin/base.css?v=33" />
+  <link rel="stylesheet" href="../css/componentes/componentes-principales.css?v=31" />
+  <link rel="stylesheet" href="../css/componentes/componentes-responsive.css?v=31" />
+  <link rel="stylesheet" href="../css/admin/estructura-paneles.css?v=31" />
+  <link rel="stylesheet" href="../css/admin/vistas-admin.css?v=31" />
+  <link rel="stylesheet" href="../css/admin/responsive-admin.css?v=31" />
   </head>
 
   <body data-breadcrumb="Domótica|Máquinas">
-    <div class="admin-layout" id="adminApp">
-      <aside class="admin-sidebar" aria-label="Menú lateral">
-        <div class="admin-brand">
-          <img src="/assets/Logo_KWL.png" alt="KWL Aqua" class="admin-brand-logo" />
-          <div class="admin-brand-text">
+    <div class="diseno-admin" id="adminApp">
+      <aside class="barra-lateral-admin" aria-label="Menú lateral">
+        <div class="marca-admin">
+          <img src="/assets/Logo_KWL.png" alt="KWL Aqua" class="marca-admin-logo" />
+          <div class="marca-admin-text">
             <strong>KWL Aqua</strong>
             <span>Panel admin</span>
           </div>
         </div>
 
-        <nav class="admin-nav" aria-label="Navegación">
-          <a class="admin-nav-item" data-nav="inicio" href="/admin/inicio.html">Inicio</a>
+        <nav class="navegacion-admin" aria-label="Navegación">
+          <a class="item-navegacion-admin" data-nav="inicio" href="/admin/inicio.html">Inicio</a>
 
-          <div class="admin-nav-group">Domótica</div>
-          <a class="admin-nav-item" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
-          <a class="admin-nav-item" data-nav="iot" href="/admin/iot.html">Programador</a>
-          <a class="admin-nav-item" data-nav="camara" href="/admin/camara.html">Cámara</a>
+          <div class="grupo-navegacion-admin">Domótica</div>
+          <a class="item-navegacion-admin" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
+          <a class="item-navegacion-admin" data-nav="iot" href="/admin/iot.html">Programador</a>
+          <a class="item-navegacion-admin" data-nav="camara" href="/admin/camara.html">Cámara</a>
 
-          <div class="admin-nav-group">Contabilidad</div>
-          <a class="admin-nav-item" data-nav="caja" href="/admin/caja.html">Caja</a>
-          <a class="admin-nav-item" data-nav="informes" href="/admin/informes.html">Informes</a>
+          <div class="grupo-navegacion-admin">Contabilidad</div>
+          <a class="item-navegacion-admin" data-nav="caja" href="/admin/caja.html">Caja</a>
+          <a class="item-navegacion-admin" data-nav="informes" href="/admin/informes.html">Informes</a>
 
-          <div class="admin-nav-group">Gestión</div>
-          <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
-          <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
-          <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
-          <a class="admin-nav-item" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
+          <div class="grupo-navegacion-admin">Gestión</div>
+          <a class="item-navegacion-admin" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
+          <a class="item-navegacion-admin" data-nav="logs" href="/admin/logs.html">Logs</a>
+          <a class="item-navegacion-admin" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
+          <a class="item-navegacion-admin" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
         </nav>
 
-        <div class="admin-sidebar-bottom">
-          <a class="admin-logout" id="adminLogout" href="/index.html">Cerrar sesión</a>
+        <div class="barra-lateral-admin-bottom">
+          <a class="cierre-sesion-admin" id="adminLogout" href="/index.html">Cerrar sesión</a>
         </div>
       </aside>
 
-      <header class="admin-topbar">
-        <button class="admin-burger" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
-        <div class="admin-breadcrumbs" id="adminBreadcrumbs"></div>
-        <div class="admin-topbar-right">
-          <select class="admin-lav-select" id="adminLavSelect" aria-label="Lavandería activa"></select>
-          <span class="admin-location" id="adminLocation">—</span>
+      <header class="barra-superior-admin">
+        <button class="boton-menu-admin" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
+        <div class="migas-admin" id="adminBreadcrumbs"></div>
+        <div class="barra-superior-admin-right">
+          <select class="selector-lavanderia-admin" id="adminLavSelect" aria-label="Lavandería activa"></select>
+          <span class="ubicacion-admin" id="adminLocation">—</span>
         </div>
       </header>
 
-      <main class="admin-main">
+      <main class="principal-admin">
         <section class="admin-hero">
           <div class="admin-hero-text">
             <h2>Máquinas</h2>
           </div>
         </section>
 
-        <section class="admin-section">
-          <div class="machines-grid" id="machinesGrid"></div>
+        <section class="seccion-admin">
+          <div class="rejilla-maquinas" id="machinesGrid"></div>
         </section>
       </main>
     </div>
-    <script src="../js/admin.js?v=37"></script>
+    <script src="../js/admin.js?v=40"></script>
   </body>
 </html>

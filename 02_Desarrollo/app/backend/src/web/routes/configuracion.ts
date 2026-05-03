@@ -4,11 +4,8 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { requireAuth, requireLavanderia, requireRole } from "../auth/middleware.js";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import nodemailer from "nodemailer";
 
 export const configuracionRouter = Router();
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type ConfigRow = RowDataPacket & {
   clave: string;
@@ -24,13 +21,9 @@ type EnvSettings = {
   MQTT_URL: string;
   MQTT_USER: string;
   MQTT_PASS: string;
-  CAMERA_STREAM_USER: string;
-  CAMERA_STREAM_PASS: string;
   CAMERA2_BASE_URL: string;
   CAMERA2_USER: string;
   CAMERA2_PASS: string;
-  CAMERA2_STREAM_USER: string;
-  CAMERA2_STREAM_PASS: string;
   REDIS_ENABLED: string;
   REDIS_HOST: string;
   REDIS_PORT: string;
@@ -44,13 +37,9 @@ const EDITABLE_ENV_KEYS = [
   "CAMERA_BASE_URL",
   "CAMERA_USER",
   "CAMERA_PASS",
-  "CAMERA_STREAM_USER",
-  "CAMERA_STREAM_PASS",
   "CAMERA2_BASE_URL",
   "CAMERA2_USER",
   "CAMERA2_PASS",
-  "CAMERA2_STREAM_USER",
-  "CAMERA2_STREAM_PASS",
   "MQTT_URL",
   "MQTT_USER",
   "MQTT_PASS",
@@ -277,13 +266,9 @@ configuracionRouter.get("/env", requireAuth, requireRole(["ADMIN"]), requireLava
     MQTT_URL: "",
     MQTT_USER: "",
     MQTT_PASS: "",
-    CAMERA_STREAM_USER: "",
-    CAMERA_STREAM_PASS: "",
     CAMERA2_BASE_URL: "",
     CAMERA2_USER: "",
     CAMERA2_PASS: "",
-    CAMERA2_STREAM_USER: "",
-    CAMERA2_STREAM_PASS: "",
     REDIS_ENABLED: "true",
     REDIS_HOST: "",
     REDIS_PORT: "",
@@ -302,13 +287,9 @@ configuracionRouter.get("/env", requireAuth, requireRole(["ADMIN"]), requireLava
       MQTT_URL: envCfg.MQTT_URL,
       MQTT_USER: envCfg.MQTT_USER,
       MQTT_PASS_SET: Boolean(envCfg.MQTT_PASS),
-      CAMERA_STREAM_USER: envCfg.CAMERA_STREAM_USER,
-      CAMERA_STREAM_PASS_SET: Boolean(envCfg.CAMERA_STREAM_PASS),
       CAMERA2_BASE_URL: envCfg.CAMERA2_BASE_URL,
       CAMERA2_USER: envCfg.CAMERA2_USER,
       CAMERA2_PASS_SET: Boolean(envCfg.CAMERA2_PASS),
-      CAMERA2_STREAM_USER: envCfg.CAMERA2_STREAM_USER,
-      CAMERA2_STREAM_PASS_SET: Boolean(envCfg.CAMERA2_STREAM_PASS),
       REDIS_ENABLED: envCfg.REDIS_ENABLED,
       REDIS_HOST: envCfg.REDIS_HOST,
       REDIS_PORT: envCfg.REDIS_PORT,
@@ -325,63 +306,6 @@ configuracionRouter.get("/web-public", async (req, res) => {
   const idLav = Number.isFinite(rawLav) && rawLav > 0 ? rawLav : 1;
   const publicWeb = await getConfigLav<PublicWebSettings>(idLav, "web_public_content", DEFAULT_PUBLIC_WEB_SETTINGS);
   res.json({ ok: true, contenido: { ...DEFAULT_PUBLIC_WEB_SETTINGS, ...publicWeb } });
-});
-
-configuracionRouter.post("/web-public/contacto", async (req, res) => {
-  const nombre = String(req.body?.nombre ?? "").trim();
-  const correo = String(req.body?.correo ?? "").trim();
-  const mensaje = String(req.body?.mensaje ?? "").trim();
-
-  if (!nombre || !correo || !mensaje) {
-    return res.status(400).json({ error: "Todos los campos son obligatorios." });
-  }
-  if (!EMAIL_REGEX.test(correo)) {
-    return res.status(400).json({ error: "El correo no tiene un formato válido." });
-  }
-  if (mensaje.length < 10) {
-    return res.status(400).json({ error: "El mensaje es demasiado corto." });
-  }
-
-  const host = String(process.env.SMTP_HOST ?? "smtp.gmail.com").trim();
-  const port = Number(process.env.SMTP_PORT ?? "587");
-  const secure = String(process.env.SMTP_SECURE ?? "false").toLowerCase() === "true";
-  const user = String(process.env.SMTP_USER ?? "").trim();
-  const pass = String(process.env.SMTP_PASS ?? "").trim();
-  const to = String(process.env.CONTACT_FORM_TO ?? user).trim();
-  const from = String(process.env.SMTP_FROM ?? user).trim();
-
-  if (!user || !pass || !to || !from) {
-    return res.status(500).json({ error: "Correo no configurado en servidor." });
-  }
-
-  try {
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      auth: { user, pass },
-    });
-
-    await transporter.sendMail({
-      from,
-      to,
-      replyTo: correo,
-      subject: `Nuevo mensaje web de ${nombre}`,
-      text: `Nombre: ${nombre}\nCorreo: ${correo}\n\nMensaje:\n${mensaje}`,
-      html: `
-        <h2>Nuevo mensaje desde el formulario web</h2>
-        <p><strong>Nombre:</strong> ${nombre}</p>
-        <p><strong>Correo:</strong> ${correo}</p>
-        <p><strong>Mensaje:</strong></p>
-        <p>${mensaje.replaceAll("\n", "<br/>")}</p>
-      `,
-    });
-
-    return res.json({ ok: true });
-  } catch (error) {
-    console.error("Error enviando formulario de contacto:", error);
-    return res.status(502).json({ error: "No se pudo enviar el correo." });
-  }
 });
 
 configuracionRouter.get("/web-public/admin", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
@@ -461,13 +385,9 @@ configuracionRouter.put("/env", requireAuth, requireRole(["ADMIN"]), requireLava
     MQTT_URL: "",
     MQTT_USER: "",
     MQTT_PASS: "",
-    CAMERA_STREAM_USER: "",
-    CAMERA_STREAM_PASS: "",
     CAMERA2_BASE_URL: "",
     CAMERA2_USER: "",
     CAMERA2_PASS: "",
-    CAMERA2_STREAM_USER: "",
-    CAMERA2_STREAM_PASS: "",
     REDIS_ENABLED: "true",
     REDIS_HOST: "",
     REDIS_PORT: "",

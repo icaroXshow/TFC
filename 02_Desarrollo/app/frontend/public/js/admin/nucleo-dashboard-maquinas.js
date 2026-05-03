@@ -28,13 +28,9 @@
   const envMqttUrl = $("#envMqttUrl");
   const envMqttUser = $("#envMqttUser");
   const envMqttPass = $("#envMqttPass");
-  const envCameraStreamUser = $("#envCameraStreamUser");
-  const envCameraStreamPass = $("#envCameraStreamPass");
   const envCamera2Base = $("#envCamera2Base");
   const envCamera2User = $("#envCamera2User");
   const envCamera2Pass = $("#envCamera2Pass");
-  const envCamera2StreamUser = $("#envCamera2StreamUser");
-  const envCamera2StreamPass = $("#envCamera2StreamPass");
   const envRedisEnabled = $("#envRedisEnabled");
   const envRedisHost = $("#envRedisHost");
   const envRedisPort = $("#envRedisPort");
@@ -177,8 +173,8 @@
             <p style="margin:0;color:rgba(255,255,255,.9)">${message}</p>
           </div>
           <div class="modal-foot">
-            <button type="button" class="btn-secondary js-cancel">${cancelLabel}</button>
-            <button type="button" class="btn-primary js-ok">${okLabel}</button>
+            <button type="button" class="boton-secundario js-cancel">${cancelLabel}</button>
+            <button type="button" class="boton-primario js-ok">${okLabel}</button>
           </div>
         </form>
       `;
@@ -213,7 +209,7 @@
           <p style="margin:0;color:rgba(255,255,255,.9)">${message}</p>
         </div>
         <div class="modal-foot">
-          <button type="button" class="btn-primary js-ok">Aceptar</button>
+          <button type="button" class="boton-primario js-ok">Aceptar</button>
         </div>
       </form>
     `;
@@ -273,29 +269,61 @@
     ];
     const current = navMap.find(([, url]) => path.endsWith(url));
     const key = current?.[0] ?? null;
-    document.querySelectorAll(".admin-nav-item").forEach((a) => {
+    document.querySelectorAll(".item-navegacion-admin, .item-nav-admin").forEach((a) => {
       a.classList.toggle("is-active", key ? a.getAttribute("data-nav") === key : false);
     });
   }
 
   function applyRoleUI(rol) {
     const isAdmin = rol === "ADMIN";
-    document.querySelectorAll('[data-nav="usuarios"]').forEach((el) => {
-      el.style.display = isAdmin ? "" : "none";
+    const isOperador = rol === "OPERADOR";
+
+    const navVisibilidad = {
+      inicio: isAdmin || isOperador,
+      maquinas: isAdmin || isOperador,
+      iot: isAdmin || isOperador,
+      camara: isAdmin || isOperador,
+      caja: isAdmin,
+      informes: isAdmin,
+      usuarios: isAdmin,
+      logs: isAdmin || isOperador,
+      "editor-web": isAdmin,
+      ajustes: isAdmin,
+    };
+
+    Object.entries(navVisibilidad).forEach(([key, visible]) => {
+      document.querySelectorAll(`[data-nav="${key}"]`).forEach((el) => {
+        el.style.display = visible ? "" : "none";
+      });
     });
+
     if (storeEnvBtn) storeEnvBtn.style.display = isAdmin ? "" : "none";
-    // Si alguien entra a /admin/usuarios.html sin ser admin: fuera.
-    if (!isAdmin && location.pathname.toLowerCase().endsWith("/admin/usuarios.html")) {
-      window.location.href = "/admin/inicio.html";
+
+    const rutaActual = location.pathname.toLowerCase();
+    const rutasPermitidasOperador = new Set([
+      "/admin/inicio.html",
+      "/admin/maquinas.html",
+      "/admin/iot.html",
+      "/admin/camara.html",
+      "/admin/logs.html",
+    ]);
+    if (isOperador && !rutasPermitidasOperador.has(rutaActual)) {
+      window.location.href = "/admin/maquinas.html";
+      return;
+    }
+
+    // Si rol desconocido o sin permisos en admin, lo devolvemos al inicio público.
+    if (!isAdmin && !isOperador) {
+      window.location.href = "/index.html";
     }
   }
 
   function ensureEditorWebNavLink() {
-    const nav = document.querySelector(".admin-nav");
+    const nav = document.querySelector(".navegacion-admin, .navegacion-admin");
     if (!nav) return;
     if (nav.querySelector('[data-nav="editor-web"]')) return;
     const a = document.createElement("a");
-    a.className = "admin-nav-item";
+    a.className = "item-navegacion-admin";
     a.setAttribute("data-nav", "editor-web");
     a.setAttribute("href", "/admin/editor-web.html");
     a.textContent = "Editor Web";
@@ -362,7 +390,10 @@
       locationEl.textContent = "—";
     }
 
-    lavSelect.hidden = lavanderias.length <= 1;
+    const unaSolaTienda = lavanderias.length <= 1;
+    lavSelect.hidden = unaSolaTienda;
+    // Si solo hay una tienda asignada, mostramos su ubicación en texto fijo.
+    locationEl.style.display = unaSolaTienda ? "inline" : "";
   }
 
   function isSimulatorLav(lav) {
@@ -390,13 +421,13 @@
     if (!machinesGrid) return;
     machinesGrid.innerHTML = "";
     if (!maquinas?.length) {
-      machinesGrid.innerHTML = `<div class="admin-empty">Sin máquinas</div>`;
+      machinesGrid.innerHTML = `<div class="vacio-admin">Sin máquinas</div>`;
       return;
     }
 
     maquinas.forEach((m) => {
       const el = document.createElement("article");
-      el.className = "machine-tile";
+      el.className = "tarjeta-maquina";
       const estado = String(m.estado_actual || "STOP");
       const id = Number(m.id_maquina);
       const canStart = estado === "STOP";
@@ -421,42 +452,42 @@
       const ss = restSec % 60;
       const timerLabel = restSec > 0 ? `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}` : (restMin > 0 ? `~${restMin} min` : "—");
       el.innerHTML = `
-        <div class="machine-meta">
+        <div class="meta-maquina">
           <strong>${m.codigo_visible}</strong>
           <span>${tipoLabel(m.tipo_maquina)}</span>
         </div>
-        <div class="machine-state">
-          <div class="machine-state-left">
+        <div class="estado-maquina">
+          <div class="izquierda-estado-maquina">
             <span class="state-pill ${stateClass(estado)}">${estado}</span>
             <span class="state-pill ${fanEnabled ? "state-running" : "state-stop"}">REFRIGERAR ${fanEnabled ? "ON" : "OFF"}</span>
             <span class="state-pill ${puertaAbierta ? "state-running" : "state-stop"}">PUERTA ${puertaAbierta ? "ABIERTA" : "CERRADA"}</span>
           </div>
           <span
-            class="machine-timer"
+            class="temporizador-maquina"
             data-codigo="${m.codigo_visible || ""}"
             data-start="${m.fecha_hora_inicio || ""}"
             data-duration-min="${Number(m.duracion_total_programada_min ?? 0)}"
             data-rest-sec="${restSec}"
           >${timerLabel}</span>
         </div>
-        <div class="machine-actions">
-          <button type="button" class="btn-primary js-start" data-id="${id}" ${canStart ? "" : "disabled"}>Encender</button>
-          <button type="button" class="btn-secondary js-stop" data-id="${id}" ${canStop ? "" : "disabled"}>Apagar</button>
-          ${canCredit ? `<button type="button" class="btn-secondary js-credit" data-id="${id}">Crédito</button>` : ""}
-          ${canExtend ? `<button type="button" class="btn-secondary js-extend" data-id="${id}">Ampliar</button>` : ""}
+        <div class="acciones-maquina">
+          <button type="button" class="boton-primario js-start" data-id="${id}" ${canStart ? "" : "disabled"}>Encender</button>
+          <button type="button" class="boton-secundario js-stop" data-id="${id}" ${canStop ? "" : "disabled"}>Apagar</button>
+          ${canCredit ? `<button type="button" class="boton-secundario js-credit" data-id="${id}">Crédito</button>` : ""}
+          ${canExtend ? `<button type="button" class="boton-secundario js-extend" data-id="${id}">Ampliar</button>` : ""}
         </div>
         <button
           type="button"
-          class="btn-secondary machine-fan-toggle js-fan-auto-btn"
+          class="boton-secundario toggle-ventilador-maquina js-fan-auto-btn"
           data-id="${id}"
           data-enabled="${fanEnabled ? "1" : "0"}"
         >Refrigerar</button>
-        <div class="machine-drawer" data-id="${id}">
-          <p class="machine-drawer-title">Importe</p>
-          <div class="machine-drawer-row">
-            <input type="number" min="0.10" step="0.10" class="input machine-drawer-input" value="1.00" />
-            <button type="button" class="btn-primary js-amount-apply" data-id="${id}" data-mode="">Aplicar</button>
-            <button type="button" class="btn-secondary js-amount-cancel" data-id="${id}">Cancelar</button>
+        <div class="cajon-maquina" data-id="${id}">
+          <p class="titulo-cajon-maquina">Importe</p>
+          <div class="fila-cajon-maquina">
+            <input type="number" min="0.10" step="0.10" class="entrada entrada-cajon-maquina" value="1.00" />
+            <button type="button" class="boton-primario js-amount-apply" data-id="${id}" data-mode="">Aplicar</button>
+            <button type="button" class="boton-secundario js-amount-cancel" data-id="${id}">Cancelar</button>
           </div>
         </div>
       `;
@@ -471,7 +502,7 @@
       machineTimerInterval = null;
     }
     const update = () => {
-      const timers = document.querySelectorAll(".machine-timer");
+      const timers = document.querySelectorAll(".temporizador-maquina");
       let nextMinSec = Number.POSITIVE_INFINITY;
       let nextCode = "";
       timers.forEach((el) => {
@@ -638,10 +669,10 @@
         luces: { on: openLights?.checked ? (storeOpenTime?.value || null) : null, off: closeLights?.checked ? (storeCloseTime?.value || null) : null },
       };
       const selectedOpenMachines = storeOpenMachines
-        ? [...storeOpenMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        ? [...storeOpenMachines.querySelectorAll("entrada[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
         : [];
       const selectedCloseMachines = storeCloseMachines
-        ? [...storeCloseMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        ? [...storeCloseMachines.querySelectorAll("entrada[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
         : [];
       return { actionsPayload, schedulePayload, selectedOpenMachines, selectedCloseMachines };
     };
@@ -756,10 +787,8 @@
       if (envCameraPass) envCameraPass.value = d?.env?.CAMERA_PASS || "";
       if (envMqttUrl) envMqttUrl.value = d?.env?.MQTT_URL || "";
       if (envMqttUser) envMqttUser.value = d?.env?.MQTT_USER || "";
-      if (envCameraStreamUser) envCameraStreamUser.value = d?.env?.CAMERA_STREAM_USER || "";
       if (envCamera2Base) envCamera2Base.value = d?.env?.CAMERA2_BASE_URL || "";
       if (envCamera2User) envCamera2User.value = d?.env?.CAMERA2_USER || "";
-      if (envCamera2StreamUser) envCamera2StreamUser.value = d?.env?.CAMERA2_STREAM_USER || "";
       if (envRedisEnabled) envRedisEnabled.value = String(d?.env?.REDIS_ENABLED || "true");
       if (envRedisHost) envRedisHost.value = d?.env?.REDIS_HOST || "";
       if (envRedisPort) envRedisPort.value = d?.env?.REDIS_PORT || "";
@@ -840,8 +869,8 @@
       const d = await r.json();
       const content = d?.contenido || {};
       getWebEditorKeys().forEach((key) => {
-        const input = document.getElementById(`web_${key}`);
-        if (input) input.value = String(content[key] ?? "");
+        const entrada = document.getElementById(`web_${key}`);
+        if (entrada) entrada.value = String(content[key] ?? "");
       });
     };
     if (webEditorForm) {
@@ -897,8 +926,8 @@
       const collectWebEditorPayload = () => {
         const payload = {};
         getWebEditorKeys().forEach((key) => {
-          const input = document.getElementById(`web_${key}`);
-          payload[key] = String(input?.value ?? "").trim();
+          const entrada = document.getElementById(`web_${key}`);
+          payload[key] = String(entrada?.value ?? "").trim();
         });
         return payload;
       };

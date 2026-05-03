@@ -46,9 +46,9 @@
   .boton-menu-movil::before { transform: translateY(-9px); }
   .boton-menu-movil::after { transform: translateY(9px); }
   .seccion-inicio { min-height: calc(100vh - 84px); }
-  .texto-bienvenida { font-size: clamp(3rem, 9vw, 5rem); }
-  .texto-somos { font-size: clamp(2.85rem, 8.5vw, 4.8rem); max-width: none; }
-  .texto-servicio { font-size: clamp(3rem, 9vw, 5.1rem); max-width: none; }
+  .texto-bienvenida { font-size: clamp(2rem, 9vw, 5rem); }
+  .texto-somos { font-size: clamp(2rem, 8.5vw, 4.8rem); max-width: none; }
+  .texto-servicio { font-size: clamp(2rem, 9vw, 5.1rem); max-width: none; }
   .rejilla-tarjetas { grid-template-columns: 1fr; }
   .contacto-layout,
   .faq-layout { grid-template-columns: 1fr; }
@@ -137,6 +137,141 @@
     padding-top: 4px;
   }
   .legal-pie { flex-direction: column; gap: 8px; align-items: center; }
+
+  .contenedor {
+    width: min(94vw, 100%);
+    margin-inline: auto;
+    overflow-x: clip;
+  }
+
+  .seccion-pagina {
+    overflow-x: clip;
+  }
+
+  .titulo-pagina {
+    font-size: clamp(1.85rem, 10.5vw, 2.5rem);
+    line-height: 1.08;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  .contacto-layout .hero-pagina,
+  .contacto-layout .tarjeta-contacto,
+  .contacto-layout .ubicacion-contacto,
+  .contacto-layout .horario-contacto {
+    width: 100%;
+    margin-inline: 0;
+  }
+
+  .datos-contacto strong,
+  .datos-contacto span {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 }
 
 body.menu-abierto, body.acceso-abierto { overflow: hidden; }
+
+@media (max-width: 380px) {
+  :root { --ancho-contenido: 92vw; }
+
+  .cabecera-publica {
+    grid-template-columns: 64px minmax(0, 1fr);
+    min-height: 64px;
+  }
+  .zona-logo, .zona-marca { min-height: 64px; }
+  .boton-menu-movil { width: 42px; height: 42px; }
+  .boton-menu-movil span,
+  .boton-menu-movil::before,
+  .boton-menu-movil::after { width: 22px; }
+  .boton-menu-movil::before { transform: translateY(-7px); }
+  .boton-menu-movil::after { transform: translateY(7px); }
+  .titulo-marca {
+    font-size: clamp(1.15rem, 9vw, 1.5rem);
+    letter-spacing: .06em;
+    line-height: .96;
+    padding-right: 6px;
+  }
+
+  .seccion-inicio {
+    min-height: calc(100vh - 64px);
+    padding-top: 16px;
+    padding-bottom: 26px;
+  }
+  .bloque-texto-inicio { gap: 8px; }
+  .texto-bienvenida {
+    font-size: clamp(1.9rem, 13vw, 2.5rem);
+    line-height: 1.05;
+  }
+  .texto-somos {
+    font-size: clamp(1.85rem, 12.8vw, 2.45rem);
+    line-height: 1.05;
+  }
+  .texto-servicio {
+    font-size: clamp(1.78rem, 12.2vw, 2.35rem);
+    line-height: 1.05;
+    text-wrap: balance;
+    -webkit-text-stroke: 1.4px var(--turquesa);
+  }
+
+  .hero-pagina,
+  .tarjeta-contacto,
+  .tarjeta-destacada,
+  .bloque-faq,
+  .bloque-duda,
+  .panel-faq-top {
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .titulo-pagina {
+    font-size: clamp(1.5rem, 10.4vw, 2rem);
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+  .texto-grande { font-size: .98rem; line-height: 1.55; }
+
+  .pregunta-faq summary {
+    padding: 14px 12px;
+    gap: 10px;
+    font-size: .96rem;
+  }
+  .pregunta-faq p {
+    padding: 0 12px 14px;
+    font-size: .94rem;
+    line-height: 1.5;
+  }
+
+  .formulario-contacto input,
+  .formulario-contacto textarea {
+    padding: 12px;
+    border-radius: 12px;
+  }
+  .formulario-contacto textarea { min-height: 120px; }
+  .enlace-accion,
+  .boton-formulario,
+  .boton-duda {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: .95rem;
+  }
+
+  .marca-pie { grid-template-columns: 48px 1fr; gap: 8px; }
+  .logo-pie { width: 48px; height: 48px; padding: 6px; border-radius: 10px; }
+  .titulo-pie { font-size: 1.05rem; }
+  .texto-pie { font-size: .92rem; }
+  .navegacion-pie a { padding: 6px 8px; font-size: .9rem; }
+  .mapa-pie iframe { height: 130px; border-radius: 12px; }
+  .redes-pie a { width: 36px; height: 36px; }
+  .redes-pie img { width: 20px; height: 20px; }
+  .legal-pie a { font-size: .95rem; text-align: center; }
+  .copy-pie { font-size: .82rem; padding-bottom: 9px; }
+
+  .menu-lateral {
+    width: min(300px, 92vw);
+    padding: 18px 14px;
+    gap: 16px;
+  }
+  .enlace-menu-lateral { padding: 12px 8px; font-size: .92rem; }
+}

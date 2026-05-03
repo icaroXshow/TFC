@@ -1,5 +1,5 @@
-.cash-table th,
-.cash-table td {
+.tabla-caja th,
+.tabla-caja td {
   padding: 12px 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   vertical-align: middle;
@@ -8,13 +8,13 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-.cash-table thead th {
+.tabla-caja thead th {
   border-top: 0;
   background: rgba(0, 0, 0, 0.22);
   font-weight: 800;
 }
 
-.cash-note {
+.nota-caja {
   margin-top: 12px;
   padding: 12px 14px;
   border-radius: 18px;
@@ -23,14 +23,14 @@
   color: rgba(255, 255, 255, 0.88);
 }
 
-.reports-tabs {
+.pestanas-informes {
   margin-top: 12px;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.reports-tab {
+.pestana-informes {
   border-radius: 999px;
 
   padding: 9px 12px;
@@ -41,13 +41,13 @@
   cursor: pointer;
 }
 
-.reports-tab.is-active {
+.pestana-informes.is-active {
   background: rgba(40, 240, 200, 0.18);
   border-color: rgba(40, 240, 200, 0.28);
   color: var(--turquesa-claro);
 }
 
-.reports-filters {
+.filtros-informes {
   margin-top: 12px;
   display: flex;
   gap: 10px;
@@ -55,21 +55,21 @@
   flex-wrap: wrap;
 }
 
-.reports-filters label {
+.filtros-informes label {
   display: grid;
   gap: 6px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.75);
 }
 
-.reports-meta {
+.meta-informes {
   margin-top: 12px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
-.reports-table-wrap {
+.pestana-informesle-wrap {
   margin-top: 12px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -77,14 +77,14 @@
   overflow: auto;
 }
 
-.reports-table {
+.pestana-informesle {
   width: 100%;
   border-collapse: collapse;
   min-width: 860px;
 }
 
-.reports-table th,
-.reports-table td {
+.pestana-informesle th,
+.pestana-informesle td {
   padding: 12px 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   vertical-align: middle;
@@ -93,13 +93,13 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-.reports-table thead th {
+.pestana-informesle thead th {
   border-top: 0;
   background: rgba(0, 0, 0, 0.22);
   font-weight: 800;
 }
 
-.reports-pager {
+.paginador-informes {
   margin-top: 12px;
   display: flex;
   gap: 10px;
@@ -107,19 +107,19 @@
   flex-wrap: wrap;
 }
 
-.reports-hint {
+.pista-informes {
   color: rgba(255, 255, 255, 0.78);
   font-size: 13px;
 }
 
-.admin-table {
+.tabla-admin {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 18px;
   overflow: hidden;
 }
 
-.admin-table-row {
+.fila-tabla-admin {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr 1.3fr 0.7fr;
   gap: 10px;
@@ -127,13 +127,13 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.admin-table-head {
+.cabecera-tabla-admin {
   border-top: 0;
   background: rgba(0, 0, 0, 0.22);
   font-weight: 800;
 }
 
-.users-grid {
+.rejilla-usuarios {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 14px;
@@ -144,7 +144,7 @@
   gap: 10px;
 }
 
-.users-toolbar {
+.barra-usuarios {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -152,17 +152,17 @@
   margin-top: 12px;
 }
 
-.users-filters {
+.filtros-usuarios {
   display: flex;
   gap: 10px;
   align-items: center;
 }
 
-.users-filters .input {
+.filtros-usuarios .entrada {
   min-width: 320px;
 }
 
-.users-table-wrap {
+.contenedor-tabla-usuarios {
   margin-top: 12px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -170,14 +170,14 @@
   overflow: auto;
 }
 
-.users-table {
+.tabla-usuarios {
   width: 100%;
   border-collapse: collapse;
   min-width: 760px;
 }
 
-.users-table th,
-.users-table td {
+.tabla-usuarios th,
+.tabla-usuarios td {
   padding: 12px 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   vertical-align: middle;
@@ -186,13 +186,13 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-.users-table thead th {
+.tabla-usuarios thead th {
   border-top: 0;
   background: rgba(0, 0, 0, 0.22);
   font-weight: 800;
 }
 
-.users-table .pill {
+.tabla-usuarios .pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -215,13 +215,13 @@
   border-color: rgba(255, 125, 137, 0.35);
 }
 
-.users-actions-inline {
+.acciones-usuarios-linea {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.users-note {
+.nota-usuarios {
   margin-top: 12px;
   padding: 12px 14px;
   border-radius: 18px;
@@ -282,23 +282,23 @@
   padding: 10px 8px 6px;
 }
 
-.store-config-card {
+.tarjeta-config-tienda {
   width: min(760px, calc(100vw - 28px));
 }
 
-.store-config-body {
+.cuerpo-config-tienda {
   display: grid;
   gap: 14px;
 }
 
-.store-config-section {
+.seccion-config-tienda {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   background: rgba(0, 0, 0, 0.18);
   padding: 12px;
 }
 
-.store-config-title {
+.titulo-config-tienda {
   margin: 0 0 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -307,14 +307,14 @@
   font-size: 13px;
 }
 
-.store-config-checks {
+.checks-config-tienda {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
   margin-top: 10px;
 }
 
-.store-config-checks label {
+.checks-config-tienda label {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -324,16 +324,16 @@
   padding: 6px 10px;
 }
 
-.store-config-checks input[type="checkbox"] {
+.checks-config-tienda input[type="checkbox"] {
   accent-color: var(--turquesa-claro);
 }
 
-.store-machines-grid {
+.store-rejilla-maquinas {
   grid-template-columns: repeat(3, minmax(140px, 1fr));
   gap: 10px;
 }
 
-.store-machines-grid label {
+.store-rejilla-maquinas label {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -347,6 +347,38 @@
   display: grid;
   gap: 14px;
   padding: 18px;
+}
+
+.controles-vista-previa-web {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
+.controles-vista-previa-web .field {
+  flex: 1 1 auto;
+}
+
+.web-preview-frame-wrap {
+  max-height: none;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.web-preview-frame {
+  width: 100%;
+  height: clamp(300px, 46vh, 520px);
+  min-height: 300px;
+  border: 0;
+  background: #0b1220;
+  display: block;
+}
+
+.controles-vista-previa-web #webPreviewReload {
+  margin-left: auto;
+  align-self: end;
+  width: auto;
+  white-space: nowrap;
 }
 
 .web-editor-visibility {
@@ -432,7 +464,7 @@
   margin-bottom: 6px;
 }
 
-.input {
+.entrada {
   width: 100%;
   border-radius: 12px;
   padding: 10px 12px;
@@ -466,15 +498,15 @@
     margin-top: 0;
   }
 
-  .machines-grid {
+  .rejilla-maquinas {
     grid-template-columns: 1fr 1fr;
   }
 
-  .iot-grid {
+  .rejilla-iot {
     grid-template-columns: 1fr;
   }
 
-  .store-machines-grid {
+  .store-rejilla-maquinas {
     grid-template-columns: repeat(2, minmax(140px, 1fr));
   }
 
@@ -482,11 +514,11 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .cash-summary {
+  .resumen-caja {
     grid-template-columns: 1fr;
   }
 
-  .reports-meta {
+  .meta-informes {
     grid-template-columns: 1fr;
   }
 }
@@ -496,20 +528,20 @@
     font-size: 34px;
   }
 
-  .machines-grid {
+  .rejilla-maquinas {
     grid-template-columns: 1fr;
   }
 
-  .users-grid {
+  .rejilla-usuarios {
     grid-template-columns: 1fr;
   }
 
-  .users-toolbar {
+  .barra-usuarios {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .users-filters .input {
+  .filtros-usuarios .entrada {
     min-width: 0;
   }
 
@@ -517,120 +549,17 @@
     grid-template-columns: 1fr;
   }
 
-  .store-config-checks {
+  .checks-config-tienda {
     gap: 8px;
   }
 
-  .store-machines-grid {
+  .store-rejilla-maquinas {
     grid-template-columns: 1fr;
   }
 
   .web-editor-visibility-grid {
     grid-template-columns: 1fr;
   }
-}
-
-/* (antiguo .admin-main eliminado: ahora se usa .admin-layout/.admin-main) */
-
-/* Columna Izquierda */
-.welcome-msg h2 {
-  font-size: 7rem;
-  line-height: 1.1;
-  font-weight: 400;
-  color: var(--turquesa-claro); /* Usamos tu variable global */
-}
-.welcome-msg span {
-  color: var(--turquesa-claro); /* El verde admin */
-  font-weight: 400;
-}
-
-/* Columna Derecha (Panel) */
-.control-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-}
-
-/* FILA DE MÁQUINAS (FLEXBOX) */
-.machines-row {
-  display: flex;
-  gap: 20px;
-  justify-content: space-between;
-}
-
-.machine-card {
-  background: white;
-  color: black;
-  border-radius: 20px;
-  padding: 15px;
-  flex: 1; /* Crecen igual */
-  text-align: center;
-  border: 2px solid var(--turquesa-claro);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 190px;
-  max-width: 200px;
-}
-
-.machine-card strong {
-  font-size: 1.1rem;
-  display: block;
-}
-.machine-card small {
-  color: var(--gris);
-  font-size: 0.9rem;
-  margin-bottom: 10px;
-  display: block;
-}
-
-/*CIRCULOS LAVADORAS*/
-.status-dot {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  border: 3px solid #ddd;
-  margin-top: auto; /* Empuja el círculo al fondo */
-}
-.busy {
-  background-color: var(--apagado);
-}
-.free {
-  background-color: var(--activo);
-}
-.chill{
-  background-color: var(--reposo);
-}
-
-/* FILAS DE DATOS (INPUTS) */
-.data-pill {
-  background: white;
-  border-radius: 50px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 30px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.data-label {
-  color: var(--trans);
-  -webkit-text-stroke: 2px var(--turquesa-claro);
-  font-weight: 400;
-  font-size: 2rem;
-}
-
-.data-value {
-  color: #333;
-  font-weight: 500;
-  font-size: 1.1rem;
-  text-align: right;
-  border: none;
-  outline: none;
-  background: transparent;
-  width: 50%;
 }
 
 /* =========================================

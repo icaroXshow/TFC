@@ -11,84 +11,84 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-  <link rel="stylesheet" href="../css/admin/base.css?v=25" />
-  <link rel="stylesheet" href="../css/componentes/componentes-principales.css?v=25" />
-  <link rel="stylesheet" href="../css/componentes/componentes-responsive.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/estructura-paneles.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/vistas-admin.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/responsive-admin.css?v=25" />
+  <link rel="stylesheet" href="../css/admin/base.css?v=33" />
+  <link rel="stylesheet" href="../css/componentes/componentes-principales.css?v=31" />
+  <link rel="stylesheet" href="../css/componentes/componentes-responsive.css?v=31" />
+  <link rel="stylesheet" href="../css/admin/estructura-paneles.css?v=31" />
+  <link rel="stylesheet" href="../css/admin/vistas-admin.css?v=31" />
+  <link rel="stylesheet" href="../css/admin/responsive-admin.css?v=31" />
   </head>
 
   <body data-breadcrumb="Contabilidad|Informes">
-    <div class="admin-layout" id="adminApp">
-      <aside class="admin-sidebar" aria-label="Menú lateral">
-        <div class="admin-brand">
-          <img src="/assets/Logo_KWL.png" alt="KWL Aqua" class="admin-brand-logo" />
-          <div class="admin-brand-text">
+    <div class="diseno-admin" id="adminApp">
+      <aside class="barra-lateral-admin" aria-label="Menú lateral">
+        <div class="marca-admin">
+          <img src="/assets/Logo_KWL.png" alt="KWL Aqua" class="marca-admin-logo" />
+          <div class="marca-admin-text">
             <strong>KWL Aqua</strong>
             <span>Panel admin</span>
           </div>
         </div>
 
-        <nav class="admin-nav" aria-label="Navegación">
-          <a class="admin-nav-item" data-nav="inicio" href="/admin/inicio.html">Inicio</a>
+        <nav class="navegacion-admin" aria-label="Navegación">
+          <a class="item-navegacion-admin" data-nav="inicio" href="/admin/inicio.html">Inicio</a>
 
-          <div class="admin-nav-group">Domótica</div>
-          <a class="admin-nav-item" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
-          <a class="admin-nav-item" data-nav="iot" href="/admin/iot.html">Programador</a>
-          <a class="admin-nav-item" data-nav="camara" href="/admin/camara.html">Cámara</a>
+          <div class="grupo-navegacion-admin">Domótica</div>
+          <a class="item-navegacion-admin" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
+          <a class="item-navegacion-admin" data-nav="iot" href="/admin/iot.html">Programador</a>
+          <a class="item-navegacion-admin" data-nav="camara" href="/admin/camara.html">Cámara</a>
 
-          <div class="admin-nav-group">Contabilidad</div>
-          <a class="admin-nav-item" data-nav="caja" href="/admin/caja.html">Caja</a>
-          <a class="admin-nav-item" data-nav="informes" href="/admin/informes.html">Informes</a>
+          <div class="grupo-navegacion-admin">Contabilidad</div>
+          <a class="item-navegacion-admin" data-nav="caja" href="/admin/caja.html">Caja</a>
+          <a class="item-navegacion-admin" data-nav="informes" href="/admin/informes.html">Informes</a>
 
-          <div class="admin-nav-group">Gestión</div>
-          <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
-          <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
-          <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
-          <a class="admin-nav-item" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
+          <div class="grupo-navegacion-admin">Gestión</div>
+          <a class="item-navegacion-admin" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
+          <a class="item-navegacion-admin" data-nav="logs" href="/admin/logs.html">Logs</a>
+          <a class="item-navegacion-admin" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
+          <a class="item-navegacion-admin" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
         </nav>
 
-        <div class="admin-sidebar-bottom">
-          <a class="admin-logout" id="adminLogout" href="/index.html">Cerrar sesión</a>
+        <div class="barra-lateral-admin-bottom">
+          <a class="cierre-sesion-admin" id="adminLogout" href="/index.html">Cerrar sesión</a>
         </div>
       </aside>
 
-      <header class="admin-topbar">
-        <button class="admin-burger" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
-        <div class="admin-breadcrumbs" id="adminBreadcrumbs"></div>
-        <div class="admin-topbar-right">
-          <select class="admin-lav-select" id="adminLavSelect" aria-label="Lavandería activa"></select>
-          <span class="admin-location" id="adminLocation">—</span>
+      <header class="barra-superior-admin">
+        <button class="boton-menu-admin" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
+        <div class="migas-admin" id="adminBreadcrumbs"></div>
+        <div class="barra-superior-admin-right">
+          <select class="selector-lavanderia-admin" id="adminLavSelect" aria-label="Lavandería activa"></select>
+          <span class="ubicacion-admin" id="adminLocation">—</span>
         </div>
       </header>
 
-      <main class="admin-main">
-        <section class="admin-section">
-          <div class="admin-section-head">
+      <main class="principal-admin">
+        <section class="seccion-admin">
+          <div class="cabecera-seccion-admin">
             <h3>Informes</h3>
             <p>Consulta de ciclos, evolución y estadísticas.</p>
           </div>
 
-          <div class="reports-tabs" role="tablist" aria-label="Secciones de informes">
-            <button type="button" class="reports-tab is-active" data-tab="ciclos" aria-selected="true">Ciclos</button>
-            <button type="button" class="reports-tab" data-tab="evolucion" aria-selected="false">Evolución</button>
-            <button type="button" class="reports-tab" data-tab="estadisticas" aria-selected="false">Estadísticas</button>
+          <div class="pestanas-informes" role="tablist" aria-label="Secciones de informes">
+            <button type="button" class="pestana-informes is-active" data-tab="ciclos" aria-selected="true">Ciclos</button>
+            <button type="button" class="pestana-informes" data-tab="evolucion" aria-selected="false">Evolución</button>
+            <button type="button" class="pestana-informes" data-tab="estadisticas" aria-selected="false">Estadísticas</button>
           </div>
 
           <div class="reports-view" data-view="ciclos">
-            <div class="reports-filters">
+            <div class="filtros-informes">
               <label>Desde
-                <input type="date" class="input" id="repFrom" />
+                <input type="date" class="entrada" id="repFrom" />
               </label>
               <label>Hasta
-                <input type="date" class="input" id="repTo" />
+                <input type="date" class="entrada" id="repTo" />
               </label>
               <label>Máquina (ID)
-                <input type="number" class="input" id="repMachineId" min="1" placeholder="(opcional)" />
+                <input type="number" class="entrada" id="repMachineId" min="1" placeholder="(opcional)" />
               </label>
               <label>Estado
-                <select class="input" id="repEstado">
+                <select class="entrada" id="repEstado">
                   <option value="">(todos)</option>
                   <option value="INICIADO">INICIADO</option>
                   <option value="FINALIZADO">FINALIZADO</option>
@@ -96,10 +96,10 @@
                   <option value="INCIDENCIA">INCIDENCIA</option>
                 </select>
               </label>
-              <button type="button" class="btn-primary" id="repLoad">Ver</button>
+              <button type="button" class="boton-primario" id="repLoad">Ver</button>
             </div>
 
-            <div class="reports-meta">
+            <div class="meta-informes">
               <div class="cash-card">
                 <span>Total ciclos</span>
                 <strong id="repTotal">—</strong>
@@ -114,8 +114,8 @@
               </div>
             </div>
 
-            <div class="reports-table-wrap">
-              <table class="reports-table" aria-label="Tabla de ciclos">
+            <div class="pestana-informesle-wrap">
+              <table class="pestana-informesle" aria-label="Tabla de ciclos">
                 <thead>
                   <tr>
                     <th>ID</th>
@@ -131,39 +131,39 @@
               </table>
             </div>
 
-            <div class="reports-pager">
-              <button type="button" class="btn-secondary" id="repPrev">←</button>
-              <button type="button" class="btn-secondary" id="repNext">→</button>
-              <span class="reports-hint" id="repHint" aria-live="polite"></span>
+            <div class="paginador-informes">
+              <button type="button" class="boton-secundario" id="repPrev">←</button>
+              <button type="button" class="boton-secundario" id="repNext">→</button>
+              <span class="pista-informes" id="repHint" aria-live="polite"></span>
             </div>
           </div>
 
           <div class="reports-view" data-view="evolucion" hidden>
-            <div class="reports-tabs" role="tablist" aria-label="Comparativas evolución">
-              <button type="button" class="reports-tab is-active" data-evtab="semanal" aria-selected="true">Semanal</button>
-              <button type="button" class="reports-tab" data-evtab="mensual" aria-selected="false">Mensual</button>
-              <button type="button" class="reports-tab" data-evtab="anual" aria-selected="false">Anual</button>
+            <div class="pestanas-informes" role="tablist" aria-label="Comparativas evolución">
+              <button type="button" class="pestana-informes is-active" data-evtab="semanal" aria-selected="true">Semanal</button>
+              <button type="button" class="pestana-informes" data-evtab="mensual" aria-selected="false">Mensual</button>
+              <button type="button" class="pestana-informes" data-evtab="anual" aria-selected="false">Anual</button>
             </div>
-            <div class="reports-filters">
+            <div class="filtros-informes">
               <label>Semana (día referencia)
-                <input type="date" class="input" id="evWeekDate" />
+                <input type="date" class="entrada" id="evWeekDate" />
               </label>
               <label>Mes
-                <input type="month" class="input" id="evMonth" />
+                <input type="month" class="entrada" id="evMonth" />
               </label>
               <label>Año
-                <input type="number" class="input" id="evYear" min="2020" max="2100" />
+                <input type="number" class="entrada" id="evYear" min="2020" max="2100" />
               </label>
-              <button type="button" class="btn-primary" id="evLoad">Comparar</button>
+              <button type="button" class="boton-primario" id="evLoad">Comparar</button>
             </div>
-            <div class="reports-meta">
+            <div class="meta-informes">
               <div class="cash-card"><span>Actual</span><strong id="evCurrentLabel">—</strong></div>
               <div class="cash-card"><span>Anterior</span><strong id="evPrevLabel">—</strong></div>
               <div class="cash-card"><span>Δ total</span><strong id="evDeltaTotal">—</strong></div>
               <div class="cash-card"><span>Δ ciclos</span><strong id="evDeltaCycles">—</strong></div>
             </div>
-            <div class="reports-table-wrap">
-              <table class="reports-table" aria-label="Tabla de evolución">
+            <div class="pestana-informesle-wrap">
+              <table class="pestana-informesle" aria-label="Tabla de evolución">
                 <thead>
                   <tr>
                     <th>Máquina</th>
@@ -178,46 +178,46 @@
                 <tbody id="evTbody"></tbody>
               </table>
             </div>
-            <div class="reports-table-wrap">
-              <table class="reports-table" aria-label="Gráfico evolución" id="evChartTable"></table>
+            <div class="pestana-informesle-wrap">
+              <table class="pestana-informesle" aria-label="Gráfico evolución" id="evChartTable"></table>
             </div>
-            <div class="reports-pager"><span class="reports-hint" id="evHint" aria-live="polite"></span></div>
+            <div class="paginador-informes"><span class="pista-informes" id="evHint" aria-live="polite"></span></div>
           </div>
 
           <div class="reports-view" data-view="estadisticas" hidden>
-            <div class="reports-tabs" role="tablist" aria-label="Tramos estadísticas">
-              <button type="button" class="reports-tab is-active" data-sttab="diario" aria-selected="true">Diaria</button>
-              <button type="button" class="reports-tab" data-sttab="mensual" aria-selected="false">Mensual</button>
-              <button type="button" class="reports-tab" data-sttab="anual" aria-selected="false">Anual</button>
+            <div class="pestanas-informes" role="tablist" aria-label="Tramos estadísticas">
+              <button type="button" class="pestana-informes is-active" data-sttab="diario" aria-selected="true">Diaria</button>
+              <button type="button" class="pestana-informes" data-sttab="mensual" aria-selected="false">Mensual</button>
+              <button type="button" class="pestana-informes" data-sttab="anual" aria-selected="false">Anual</button>
             </div>
-            <div class="reports-filters">
+            <div class="filtros-informes">
               <label>Día
-                <input type="date" class="input" id="stDate" />
+                <input type="date" class="entrada" id="stDate" />
               </label>
               <label>Mes
-                <input type="month" class="input" id="stMonth" />
+                <input type="month" class="entrada" id="stMonth" />
               </label>
               <label>Año
-                <input type="number" class="input" id="stYear" min="2020" max="2100" />
+                <input type="number" class="entrada" id="stYear" min="2020" max="2100" />
               </label>
-              <button type="button" class="btn-primary" id="stLoad">Ver tramos</button>
+              <button type="button" class="boton-primario" id="stLoad">Ver tramos</button>
             </div>
-            <div class="reports-meta">
+            <div class="meta-informes">
               <div class="cash-card"><span>Periodo</span><strong id="stPeriod">—</strong></div>
               <div class="cash-card"><span>Total</span><strong id="stTotal">—</strong></div>
               <div class="cash-card"><span>Ciclos</span><strong id="stCycles">—</strong></div>
             </div>
-            <div class="reports-table-wrap" style="overflow:auto">
-              <table class="reports-table" aria-label="Tabla tramos" id="stTable"></table>
+            <div class="pestana-informesle-wrap" style="overflow:auto">
+              <table class="pestana-informesle" aria-label="Tabla tramos" id="stTable"></table>
             </div>
-            <div class="reports-table-wrap">
-              <table class="reports-table" aria-label="Gráfico tramos" id="stChartTable"></table>
+            <div class="pestana-informesle-wrap">
+              <table class="pestana-informesle" aria-label="Gráfico tramos" id="stChartTable"></table>
             </div>
-            <div class="reports-pager"><span class="reports-hint" id="stHint" aria-live="polite"></span></div>
+            <div class="paginador-informes"><span class="pista-informes" id="stHint" aria-live="polite"></span></div>
           </div>
         </section>
       </main>
     </div>
-    <script src="../js/admin.js?v=37"></script>
+    <script src="../js/admin.js?v=40"></script>
   </body>
 </html>

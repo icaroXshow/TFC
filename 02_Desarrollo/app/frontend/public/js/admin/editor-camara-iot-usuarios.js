@@ -56,19 +56,19 @@
           <article class="js-faq-item" style="border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:10px;">
             <label class="field">
               <span>FAQ extra ${idx + 1} · Pregunta</span>
-              <input class="input js-faq-question" value="${escapeHtml(String(item?.q || ""))}" />
+              <input class="entrada js-faq-question" value="${escapeHtml(String(item?.q || ""))}" />
             </label>
             <label class="field">
               <span>FAQ extra ${idx + 1} · Respuesta</span>
-              <input class="input js-faq-answer" value="${escapeHtml(String(item?.a || ""))}" />
+              <input class="entrada js-faq-answer" value="${escapeHtml(String(item?.a || ""))}" />
             </label>
-            <button type="button" class="btn-secondary js-faq-remove">Eliminar FAQ</button>
+            <button type="button" class="boton-secundario js-faq-remove">Eliminar FAQ</button>
           </article>
         `,
           )
           .join("");
         faqList.querySelectorAll(".js-faq-question, .js-faq-answer").forEach((el) => {
-          el.addEventListener("input", syncFaqItemsToHidden);
+          el.addEventListener("entrada", syncFaqItemsToHidden);
         });
         faqList.querySelectorAll(".js-faq-remove").forEach((btn) => {
           btn.addEventListener("click", () => {
@@ -123,8 +123,8 @@
       webPreviewReload?.addEventListener("click", loadPreviewFrame);
 
       let previewDebounce = null;
-      webEditorForm.querySelectorAll("input, textarea, select").forEach((el) => {
-        el.addEventListener("input", () => {
+      webEditorForm.querySelectorAll("entrada, textarea, select").forEach((el) => {
+        el.addEventListener("entrada", () => {
           if (previewDebounce) clearTimeout(previewDebounce);
           previewDebounce = setTimeout(() => {
             applyPreviewToFrame();
@@ -207,13 +207,9 @@
           CAMERA_BASE_URL: envCameraBase?.value?.trim() || "",
           CAMERA_USER: envCameraUser?.value?.trim() || "",
           CAMERA_PASS: envCameraPass?.value || "",
-          CAMERA_STREAM_USER: envCameraStreamUser?.value?.trim() || "",
-          CAMERA_STREAM_PASS: envCameraStreamPass?.value || "",
           CAMERA2_BASE_URL: envCamera2Base?.value?.trim() || "",
           CAMERA2_USER: envCamera2User?.value?.trim() || "",
           CAMERA2_PASS: envCamera2Pass?.value || "",
-          CAMERA2_STREAM_USER: envCamera2StreamUser?.value?.trim() || "",
-          CAMERA2_STREAM_PASS: envCamera2StreamPass?.value || "",
           MQTT_URL: envMqttUrl?.value?.trim() || "",
           MQTT_USER: envMqttUser?.value?.trim() || "",
           MQTT_PASS: envMqttPass?.value || "",
@@ -332,30 +328,30 @@
       if (ok) reconnectCameraStreams();
     });
     camZoomOut?.addEventListener("click", async () => {
-      const ok = await callCamera("/zoom", { mode: "relative", value: -250 });
-      if (ok) reconnectCameraStreams();
-    });
-    camZoom1x?.addEventListener("click", async () => {
-      const ok = await callCamera("/zoom", { mode: "absolute", value: 1000 });
-      if (ok) reconnectCameraStreams();
-    });
-    camZoom2x?.addEventListener("click", async () => {
-      const ok = await callCamera("/zoom", { mode: "absolute", value: 2000 });
-      if (ok) reconnectCameraStreams();
-    });
-    camZoom4x?.addEventListener("click", async () => {
-      const ok = await callCamera("/zoom", { mode: "absolute", value: 4000 });
-      if (ok) reconnectCameraStreams();
-    });
-    camZoom8x?.addEventListener("click", async () => {
-      const ok = await callCamera("/zoom", { mode: "absolute", value: 8000 });
+      const ok = await callCamera("/zoom", { mode: "relative", value: -200 });
       if (ok) reconnectCameraStreams();
     });
     camDisplayApply?.addEventListener("click", async () => {
       const ok = await callCamera("/display-mode", { mode: String(camDisplayMode?.value || "surround") });
       if (ok) reconnectCameraStreams();
     });
+    const getCamaraActivaParaUi = () => (camaraActiva === 2 && hayCamaraAdicional ? 2 : 1);
+
+    let cameraBasePrincipal = "";
+    const normalizarBaseCamara = (base) => String(base || "").trim().replace(/\/+$/, "");
+    const construirUrlCamaraDirecta = (target) => {
+      const base = normalizarBaseCamara(cameraBasePrincipal);
+      if (!base) return "";
+      if (target === "admin") return `${base}/admin/index.html`;
+      if (target === "events") return `${base}/control/player?eventlist`;
+      return `${base}/control/userimage.html`;
+    };
     const openCamUi = (target) => {
+      const directa = construirUrlCamaraDirecta(target);
+      if (directa) {
+        window.open(directa, "_blank", "noopener,noreferrer");
+        return;
+      }
       const url = `${API_BASE}/api/camera/ui/${encodeURIComponent(target)}?t=${encodeURIComponent(
         token,
       )}&lav=${encodeURIComponent(String(activeLavId))}`;
@@ -364,12 +360,14 @@
     camOpenMobotix?.addEventListener("click", () => openCamUi("userimage"));
     camOpenAdmin?.addEventListener("click", () => openCamUi("admin"));
     camOpenEvents?.addEventListener("click", () => openCamUi("events"));
-    camDetach?.addEventListener("click", () => {
-      const popup = window.open("", "kwl-camera-popup", "noopener,noreferrer,width=1280,height=860");
+    const abrirCamaraDesprendida = (camForzada = null) => {
+      const popup = window.open("", "kwl-camera-popup", "width=1280,height=860");
       if (!popup) return;
+      const camActiva = camForzada === 2 || camForzada === 1 ? camForzada : getCamaraActivaParaUi();
       const safeApi = JSON.stringify(API_BASE);
       const safeToken = JSON.stringify(token);
       const safeLav = JSON.stringify(String(activeLavId));
+      const safeCam = JSON.stringify(String(camActiva));
       popup.document.write(`<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cámara desprendida</title>
@@ -377,38 +375,35 @@
 body{margin:0;background:#0f172a;color:#e5e7eb;font-family:system-ui,sans-serif}
 .bar{display:flex;gap:8px;flex-wrap:wrap;padding:10px;background:#111827;position:sticky;top:0}
 button,select{padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#1f2937;color:#fff;font-weight:600}
-.frame{padding:10px}.frame img{width:100%;max-height:calc(100vh - 86px);object-fit:contain;border-radius:12px;border:1px solid #334155;background:#000}
+.frame{padding:10px}.frame img{width:100%;max-height:calc(100vh - 86px);object-fit:contain;object-position:center;border-radius:12px;border:1px solid #334155;background:#000}
 </style></head><body>
 <div class="bar">
 <button id="center">Centrar</button><button id="zin">Zoom +</button><button id="zout">Zoom -</button>
-<button id="z1">1x</button><button id="z2">2x</button><button id="z4">4x</button><button id="z8">8x</button>
-<select id="mode"><option value="fullimage">Full Image</option><option value="surround">Modo surround</option><option value="normal">Modo normal</option><option value="panorama">Modo panorama</option></select>
+<select id="mode"><option value="fullimage">Full Image</option><option value="surround">Surround</option><option value="panorama">Panorama</option></select>
 <button id="apply">Aplicar modo</button>
 </div>
 <div class="frame"><img id="stream" alt="Cámara"></div>
 <script>
-const API_BASE=${safeApi}, token=${safeToken}, lav=${safeLav};
+const API_BASE=${safeApi}, token=${safeToken}, lav=${safeLav}, cam=${safeCam};
 const stream=document.getElementById("stream");
-const refresh=()=>{stream.src=\`\${API_BASE}/api/camera/faststream.mjpg?t=\${encodeURIComponent(token)}&lav=\${encodeURIComponent(lav)}&cam=1&cb=\${Date.now()}\`;};
+const refresh=()=>{stream.src=\`\${API_BASE}/api/camera/faststream.mjpg?t=\${encodeURIComponent(token)}&lav=\${encodeURIComponent(lav)}&cam=\${encodeURIComponent(cam)}&cb=\${Date.now()}\`;};
 const call=async(path,body)=>{await fetch(\`\${API_BASE}/api/camera\${path}\`,{method:"POST",headers:{authorization:\`Bearer \${token}\`,"x-lavanderia-id":lav,"content-type":"application/json"},body:JSON.stringify(body||{})});refresh();};
 document.getElementById("center").onclick=()=>call("/ptz/center");
 document.getElementById("zin").onclick=()=>call("/zoom",{mode:"relative",value:250});
-document.getElementById("zout").onclick=()=>call("/zoom",{mode:"relative",value:-250});
-document.getElementById("z1").onclick=()=>call("/zoom",{mode:"absolute",value:1000});
-document.getElementById("z2").onclick=()=>call("/zoom",{mode:"absolute",value:2000});
-document.getElementById("z4").onclick=()=>call("/zoom",{mode:"absolute",value:4000});
-document.getElementById("z8").onclick=()=>call("/zoom",{mode:"absolute",value:8000});
+document.getElementById("zout").onclick=()=>call("/zoom",{mode:"relative",value:-200});
 document.getElementById("apply").onclick=()=>call("/display-mode",{mode:document.getElementById("mode").value});
 refresh();
 </script></body></html>`);
       popup.document.close();
-    });
+    };
+    camDetach?.addEventListener("click", () => abrirCamaraDesprendida());
 
-    // Cámara: ambas vistas usan MJPEG directo (1 sola conexión por <img>, sin bucles JS).
+    // Cámara: panel principal + panel adicional (si existe).
     const cameraTargets = [];
-    if (cameraImg) cameraTargets.push({ el: cameraImg, cam: null, mode: "mjpeg" });
     if (cameraImg1) cameraTargets.push({ el: cameraImg1, cam: 1, mode: "mjpeg" });
     if (cameraImg2) cameraTargets.push({ el: cameraImg2, cam: 2, mode: "mjpeg" });
+    let camaraActiva = 1;
+    let hayCamaraAdicional = false;
 
     const setCameraHint = (msg = "") => {
       if (cameraHint) cameraHint.textContent = msg;
@@ -430,6 +425,50 @@ refresh();
       });
     }
 
+    const panelCamara2 = document.getElementById("panelCamara2");
+    const rejillaCamaras = document.querySelector(".rejilla-camaras-admin");
+    const actualizarPanelesCamara = () => {
+      if (panelCamara2) panelCamara2.hidden = !hayCamaraAdicional;
+      if (rejillaCamaras) rejillaCamaras.classList.toggle("una-camara", !hayCamaraAdicional);
+      if (cameraImg2 && !hayCamaraAdicional) cameraImg2.removeAttribute("src");
+    };
+
+    const detectarCamaraAdicional = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/configuracion/env`, {
+          headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+        });
+        if (!r.ok) return;
+        const d = await r.json().catch(() => ({}));
+        const env = d?.env || {};
+        cameraBasePrincipal = String(env.CAMERA_BASE_URL || "").trim();
+        hayCamaraAdicional = Boolean(String(env.CAMERA2_BASE_URL || "").trim());
+        actualizarPanelesCamara();
+      } catch {
+        cameraBasePrincipal = "";
+        hayCamaraAdicional = false;
+        actualizarPanelesCamara();
+      }
+    };
+    detectarCamaraAdicional().catch(() => {});
+
+    const enlazarControlesCamara = (cam) => {
+      const suf = cam === 2 ? "2" : "1";
+      const btnCenter = document.getElementById(`camCenter${suf}`);
+      const btnZoomIn = document.getElementById(`camZoomIn${suf}`);
+      const btnZoomOut = document.getElementById(`camZoomOut${suf}`);
+      const btnDetach = document.getElementById(`camDetach${suf}`);
+      const selMode = document.getElementById(`camDisplayMode${suf}`);
+      const btnApply = document.getElementById(`camDisplayApply${suf}`);
+      btnCenter?.addEventListener("click", async () => { await callCamera("/ptz/center", { cam }); reconnectCameraStreams(); });
+      btnZoomIn?.addEventListener("click", async () => { await callCamera("/zoom", { mode: "relative", value: 250, cam }); reconnectCameraStreams(); });
+      btnZoomOut?.addEventListener("click", async () => { await callCamera("/zoom", { mode: "relative", value: -200, cam }); reconnectCameraStreams(); });
+      btnApply?.addEventListener("click", async () => { await callCamera("/display-mode", { mode: String(selMode?.value || "surround"), cam }); reconnectCameraStreams(); });
+      btnDetach?.addEventListener("click", () => abrirCamaraDesprendida(cam));
+    };
+    enlazarControlesCamara(1);
+    enlazarControlesCamara(2);
+
     // IOT / Programador
     const isIotView = Boolean(iotSaveSchedule || doorToggle || lightsToggle || fanOn);
     let currentIotState = { puerta_abierta: false, luces_encendidas: false, ventilacion_encendida: false };
@@ -440,8 +479,8 @@ refresh();
     };
     const setPill = (el, on) => {
       if (!el) return;
-      el.classList.toggle("iot-state-on", Boolean(on));
-      el.classList.toggle("iot-state-off", !on);
+      el.classList.toggle("estado-iot-encendido", Boolean(on));
+      el.classList.toggle("estado-iot-apagado", !on);
       el.textContent = on ? "ON" : "OFF";
     };
     const loadIot = async () => {
@@ -674,7 +713,7 @@ refresh();
     [doorScheduleEnabled, lightsScheduleEnabled, doorOn, doorOff, lightsOnTime, lightsOffTime, iotMachineOnTime, iotMachineOffTime, fanOnTime, fanOffTime, iotOpenMachines, iotCloseMachines]
       .filter(Boolean)
       .forEach((el) => {
-        el.addEventListener("input", () => {
+        el.addEventListener("entrada", () => {
           iotScheduleDirty = true;
         });
         el.addEventListener("change", () => {
@@ -701,10 +740,10 @@ refresh();
         ventilacion: { on: String(fanOnTime?.value ?? "").trim() || null, off: String(fanOffTime?.value ?? "").trim() || null },
       };
       const selectedOpenMachines = iotOpenMachines
-        ? [...iotOpenMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        ? [...iotOpenMachines.querySelectorAll("entrada[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
         : [];
       const selectedCloseMachines = iotCloseMachines
-        ? [...iotCloseMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        ? [...iotCloseMachines.querySelectorAll("entrada[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
         : [];
       const [res, openRes, closeRes] = await Promise.all([
         fetch(`${API_BASE}/api/iot/schedule`, {
@@ -821,13 +860,13 @@ refresh();
           <td>${pill}</td>
           <td>${escapeHtml(formatDate(u.ultimo_acceso))}</td>
           <td>
-            <div class="users-actions-inline">
-              <button type="button" class="btn-secondary js-user-edit" data-id="${Number(u.id_usuario)}">Editar</button>
-              <button type="button" class="btn-secondary js-user-lavs" data-id="${Number(u.id_usuario)}">Tiendas</button>
-              <button type="button" class="btn-secondary js-user-toggle" data-id="${Number(u.id_usuario)}" ${
+            <div class="acciones-usuarios-linea">
+              <button type="button" class="boton-secundario js-user-edit" data-id="${Number(u.id_usuario)}">Editar</button>
+              <button type="button" class="boton-secundario js-user-lavs" data-id="${Number(u.id_usuario)}">Tiendas</button>
+              <button type="button" class="boton-secundario js-user-toggle" data-id="${Number(u.id_usuario)}" ${
                 canToggle ? "" : "disabled"
               }>${u.activo ? "Desactivar" : "Activar"}</button>
-              <button type="button" class="btn-secondary js-user-delete" data-id="${Number(u.id_usuario)}" ${
+              <button type="button" class="boton-secundario js-user-delete" data-id="${Number(u.id_usuario)}" ${
                 canToggle ? "" : "disabled"
               }>Borrar</button>
             </div>
@@ -870,7 +909,7 @@ refresh();
       });
     };
 
-    usersSearch?.addEventListener("input", () => {
+    usersSearch?.addEventListener("entrada", () => {
       renderUsers(filteredUsers());
     });
 

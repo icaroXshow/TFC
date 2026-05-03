@@ -11,156 +11,156 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-  <link rel="stylesheet" href="../css/admin/base.css?v=25" />
-  <link rel="stylesheet" href="../css/componentes/componentes-principales.css?v=25" />
-  <link rel="stylesheet" href="../css/componentes/componentes-responsive.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/estructura-paneles.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/vistas-admin.css?v=25" />
-  <link rel="stylesheet" href="../css/admin/responsive-admin.css?v=25" />
+  <link rel="stylesheet" href="../css/admin/base.css?v=33" />
+  <link rel="stylesheet" href="../css/componentes/componentes-principales.css?v=31" />
+  <link rel="stylesheet" href="../css/componentes/componentes-responsive.css?v=31" />
+  <link rel="stylesheet" href="../css/admin/estructura-paneles.css?v=34" />
+  <link rel="stylesheet" href="../css/admin/vistas-admin.css?v=32" />
+  <link rel="stylesheet" href="../css/admin/responsive-admin.css?v=32" />
   </head>
 
   <body data-breadcrumb="Gestión|Editor Web">
-    <div class="admin-layout" id="adminApp">
-      <aside class="admin-sidebar" aria-label="Menú lateral">
-        <div class="admin-brand">
-          <img src="/assets/Logo_KWL.png" alt="KWL Aqua" class="admin-brand-logo" />
-          <div class="admin-brand-text">
+    <div class="diseno-admin" id="adminApp">
+      <aside class="barra-lateral-admin" aria-label="Menú lateral">
+        <div class="marca-admin">
+          <img src="/assets/Logo_KWL.png" alt="KWL Aqua" class="marca-admin-logo" />
+          <div class="marca-admin-text">
             <strong>KWL Aqua</strong>
             <span>Panel admin</span>
           </div>
         </div>
 
-        <nav class="admin-nav" aria-label="Navegación">
-          <a class="admin-nav-item" data-nav="inicio" href="/admin/inicio.html">Inicio</a>
+        <nav class="navegacion-admin" aria-label="Navegación">
+          <a class="item-navegacion-admin" data-nav="inicio" href="/admin/inicio.html">Inicio</a>
 
-          <div class="admin-nav-group">Domótica</div>
-          <a class="admin-nav-item" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
-          <a class="admin-nav-item" data-nav="iot" href="/admin/iot.html">Programador</a>
-          <a class="admin-nav-item" data-nav="camara" href="/admin/camara.html">Cámara</a>
+          <div class="grupo-navegacion-admin">Domótica</div>
+          <a class="item-navegacion-admin" data-nav="maquinas" href="/admin/maquinas.html">Máquinas</a>
+          <a class="item-navegacion-admin" data-nav="iot" href="/admin/iot.html">Programador</a>
+          <a class="item-navegacion-admin" data-nav="camara" href="/admin/camara.html">Cámara</a>
 
-          <div class="admin-nav-group">Contabilidad</div>
-          <a class="admin-nav-item" data-nav="caja" href="/admin/caja.html">Caja</a>
-          <a class="admin-nav-item" data-nav="informes" href="/admin/informes.html">Informes</a>
+          <div class="grupo-navegacion-admin">Contabilidad</div>
+          <a class="item-navegacion-admin" data-nav="caja" href="/admin/caja.html">Caja</a>
+          <a class="item-navegacion-admin" data-nav="informes" href="/admin/informes.html">Informes</a>
 
-          <div class="admin-nav-group">Gestión</div>
-          <a class="admin-nav-item" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
-          <a class="admin-nav-item" data-nav="logs" href="/admin/logs.html">Logs</a>
-          <a class="admin-nav-item" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
-          <a class="admin-nav-item" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
+          <div class="grupo-navegacion-admin">Gestión</div>
+          <a class="item-navegacion-admin" data-nav="usuarios" href="/admin/usuarios.html">Usuarios</a>
+          <a class="item-navegacion-admin" data-nav="logs" href="/admin/logs.html">Logs</a>
+          <a class="item-navegacion-admin" data-nav="editor-web" href="/admin/editor-web.html">Editor Web</a>
+          <a class="item-navegacion-admin" data-nav="ajustes" href="/admin/ajustes.html">Ajustes</a>
         </nav>
 
-        <div class="admin-sidebar-bottom">
-          <a class="admin-logout" id="adminLogout" href="/index.html">Cerrar sesión</a>
+        <div class="barra-lateral-admin-bottom">
+          <a class="cierre-sesion-admin" id="adminLogout" href="/index.html">Cerrar sesión</a>
         </div>
       </aside>
 
-      <header class="admin-topbar">
-        <button class="admin-burger" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
-        <div class="admin-breadcrumbs" id="adminBreadcrumbs"></div>
-        <div class="admin-topbar-right">
-          <select class="admin-lav-select" id="adminLavSelect" aria-label="Lavandería activa"></select>
-          <span class="admin-location" id="adminLocation">—</span>
+      <header class="barra-superior-admin">
+        <button class="boton-menu-admin" type="button" id="adminBurger" aria-label="Abrir menú">☰</button>
+        <div class="migas-admin" id="adminBreadcrumbs"></div>
+        <div class="barra-superior-admin-right">
+          <select class="selector-lavanderia-admin" id="adminLavSelect" aria-label="Lavandería activa"></select>
+          <span class="ubicacion-admin" id="adminLocation">—</span>
         </div>
       </header>
 
-      <main class="admin-main">
+      <main class="principal-admin">
         <section class="admin-hero">
           <div class="admin-hero-text">
             <h2>Editor Web</h2>
-            <p class="admin-card-hint">Edita textos visibles en la web pública sin tocar código.</p>
+            <p class="pista-tarjeta-admin">Edita textos visibles en la web pública sin tocar código.</p>
           </div>
         </section>
 
-        <section class="admin-section">
-          <details class="admin-card web-preview-panel" style="margin-bottom:14px;" open>
+        <section class="seccion-admin">
+          <details class="tarjeta-admin web-preview-panel" style="margin-bottom:14px;" open>
             <summary style="cursor:pointer; font-weight:800; padding:10px 12px;">Vista previa web</summary>
-            <div class="users-toolbar" style="margin-top:0;">
-              <div class="users-filters" style="width:100%;">
+            <div class="barra-usuarios fila-vista-previa-web" style="margin-top:0;">
+              <div class="filtros-usuarios controles-vista-previa-web" style="width:100%;">
                 <label class="field" style="min-width:220px;">
                   <span>Vista previa</span>
-                  <select class="input" id="webPreviewPage">
+                  <select class="entrada" id="webPreviewPage">
                     <option value="index.html">Inicio</option>
                     <option value="about.html">About</option>
                     <option value="contact.html">Contacto</option>
                     <option value="faqs.html">FAQs</option>
                   </select>
                 </label>
-                <button type="button" class="btn-secondary" id="webPreviewReload" aria-label="Recargar vista" title="Recargar vista">Recargar vista</button>
+                <button type="button" class="boton-secundario" id="webPreviewReload" aria-label="Recargar vista" title="Recargar vista">Recargar vista</button>
               </div>
             </div>
-            <div class="admin-camera-frame" style="margin-top:10px; max-height:none; min-height:320px;">
-              <iframe id="webPreviewFrame" title="Vista previa web pública" style="width:100%;height:58vh;min-height:320px;border:0;background:#0b1220;"></iframe>
+            <div class="web-preview-frame-wrap" style="margin-top:10px;">
+              <iframe id="webPreviewFrame" class="web-preview-frame" title="Vista previa web pública"></iframe>
             </div>
           </details>
 
-          <form id="webEditorForm" class="admin-card web-editor-form">
+          <form id="webEditorForm" class="tarjeta-admin web-editor-form">
             <details class="web-editor-panel" id="webPanelNav">
               <summary>Navegación y marca</summary>
               <div class="form-grid">
-                <label class="field"><span>Marca</span><input class="input" id="web_brand_name" /></label>
-                <label class="field"><span>Nav Inicio</span><input class="input" id="web_nav_inicio" /></label>
-                <label class="field"><span>Nav About</span><input class="input" id="web_nav_about" /></label>
-                <label class="field"><span>Nav Contacto</span><input class="input" id="web_nav_contacto" /></label>
-                <label class="field"><span>Nav FAQs</span><input class="input" id="web_nav_faqs" /></label>
+                <label class="field"><span>Marca</span><input class="entrada" id="web_brand_name" /></label>
+                <label class="field"><span>Nav Inicio</span><input class="entrada" id="web_nav_inicio" /></label>
+                <label class="field"><span>Nav About</span><input class="entrada" id="web_nav_about" /></label>
+                <label class="field"><span>Nav Contacto</span><input class="entrada" id="web_nav_contacto" /></label>
+                <label class="field"><span>Nav FAQs</span><input class="entrada" id="web_nav_faqs" /></label>
               </div>
             </details>
 
             <details class="web-editor-panel" id="webPanelInicio">
               <summary>Página Inicio</summary>
               <div class="form-grid">
-                <label class="field"><span>Inicio Bienvenida</span><input class="input" id="web_inicio_bienvenida" /></label>
-                <label class="field"><span>Inicio Título</span><input class="input" id="web_inicio_titulo" /></label>
-                <label class="field"><span>Inicio Subtítulo</span><input class="input" id="web_inicio_subtitulo" /></label>
+                <label class="field"><span>Inicio Bienvenida</span><input class="entrada" id="web_inicio_bienvenida" /></label>
+                <label class="field"><span>Inicio Título</span><input class="entrada" id="web_inicio_titulo" /></label>
+                <label class="field"><span>Inicio Subtítulo</span><input class="entrada" id="web_inicio_subtitulo" /></label>
               </div>
             </details>
 
             <details class="web-editor-panel" id="webPanelAbout">
               <summary>Página About</summary>
               <div class="form-grid">
-                <label class="field"><span>About título</span><input class="input" id="web_about_titulo" /></label>
-                <label class="field"><span>About subtítulo</span><input class="input" id="web_about_subtitulo" /></label>
-                <label class="field"><span>About párrafo 1</span><input class="input" id="web_about_parrafo_1" /></label>
-                <label class="field"><span>About párrafo 2</span><input class="input" id="web_about_parrafo_2" /></label>
-                <label class="field"><span>Tarjeta 1 título</span><input class="input" id="web_about_card_1_titulo" /></label>
-                <label class="field"><span>Tarjeta 1 texto</span><input class="input" id="web_about_card_1_texto" /></label>
-                <label class="field"><span>Tarjeta 2 título</span><input class="input" id="web_about_card_2_titulo" /></label>
-                <label class="field"><span>Tarjeta 2 texto</span><input class="input" id="web_about_card_2_texto" /></label>
-                <label class="field"><span>Tarjeta 3 título</span><input class="input" id="web_about_card_3_titulo" /></label>
-                <label class="field"><span>Tarjeta 3 texto</span><input class="input" id="web_about_card_3_texto" /></label>
+                <label class="field"><span>About título</span><input class="entrada" id="web_about_titulo" /></label>
+                <label class="field"><span>About subtítulo</span><input class="entrada" id="web_about_subtitulo" /></label>
+                <label class="field"><span>About párrafo 1</span><input class="entrada" id="web_about_parrafo_1" /></label>
+                <label class="field"><span>About párrafo 2</span><input class="entrada" id="web_about_parrafo_2" /></label>
+                <label class="field"><span>Tarjeta 1 título</span><input class="entrada" id="web_about_card_1_titulo" /></label>
+                <label class="field"><span>Tarjeta 1 texto</span><input class="entrada" id="web_about_card_1_texto" /></label>
+                <label class="field"><span>Tarjeta 2 título</span><input class="entrada" id="web_about_card_2_titulo" /></label>
+                <label class="field"><span>Tarjeta 2 texto</span><input class="entrada" id="web_about_card_2_texto" /></label>
+                <label class="field"><span>Tarjeta 3 título</span><input class="entrada" id="web_about_card_3_titulo" /></label>
+                <label class="field"><span>Tarjeta 3 texto</span><input class="entrada" id="web_about_card_3_texto" /></label>
               </div>
             </details>
 
             <details class="web-editor-panel" id="webPanelContacto">
               <summary>Página Contacto</summary>
               <div class="form-grid">
-                <label class="field"><span>Contacto Título</span><input class="input" id="web_contacto_titulo" /></label>
-                <label class="field"><span>Contacto Subtítulo</span><input class="input" id="web_contacto_subtitulo" /></label>
-                <label class="field"><span>Teléfono</span><input class="input" id="web_contacto_telefono" /></label>
-                <label class="field"><span>Email</span><input class="input" id="web_contacto_email" /></label>
-                <label class="field"><span>Dirección</span><input class="input" id="web_direccion_texto" /></label>
-                <label class="field"><span>Ubicación título</span><input class="input" id="web_contacto_ubicacion_titulo" /></label>
-                <label class="field"><span>Ubicación texto</span><input class="input" id="web_contacto_ubicacion_texto" /></label>
-                <label class="field"><span>Mapa URL (iframe)</span><input class="input" id="web_mapa_url" /></label>
-                <label class="field"><span>Horario · Lunes</span><input class="input" id="web_horario_lunes" /></label>
-                <label class="field"><span>Horario · Martes</span><input class="input" id="web_horario_martes" /></label>
-                <label class="field"><span>Horario · Miércoles</span><input class="input" id="web_horario_miercoles" /></label>
-                <label class="field"><span>Horario · Jueves</span><input class="input" id="web_horario_jueves" /></label>
-                <label class="field"><span>Horario · Viernes</span><input class="input" id="web_horario_viernes" /></label>
-                <label class="field"><span>Horario · Sábado</span><input class="input" id="web_horario_sabado" /></label>
-                <label class="field"><span>Horario · Domingo</span><input class="input" id="web_horario_domingo" /></label>
+                <label class="field"><span>Contacto Título</span><input class="entrada" id="web_contacto_titulo" /></label>
+                <label class="field"><span>Contacto Subtítulo</span><input class="entrada" id="web_contacto_subtitulo" /></label>
+                <label class="field"><span>Teléfono</span><input class="entrada" id="web_contacto_telefono" /></label>
+                <label class="field"><span>Email</span><input class="entrada" id="web_contacto_email" /></label>
+                <label class="field"><span>Dirección</span><input class="entrada" id="web_direccion_texto" /></label>
+                <label class="field"><span>Ubicación título</span><input class="entrada" id="web_contacto_ubicacion_titulo" /></label>
+                <label class="field"><span>Ubicación texto</span><input class="entrada" id="web_contacto_ubicacion_texto" /></label>
+                <label class="field"><span>Mapa URL (iframe)</span><input class="entrada" id="web_mapa_url" /></label>
+                <label class="field"><span>Horario · Lunes</span><input class="entrada" id="web_horario_lunes" /></label>
+                <label class="field"><span>Horario · Martes</span><input class="entrada" id="web_horario_martes" /></label>
+                <label class="field"><span>Horario · Miércoles</span><input class="entrada" id="web_horario_miercoles" /></label>
+                <label class="field"><span>Horario · Jueves</span><input class="entrada" id="web_horario_jueves" /></label>
+                <label class="field"><span>Horario · Viernes</span><input class="entrada" id="web_horario_viernes" /></label>
+                <label class="field"><span>Horario · Sábado</span><input class="entrada" id="web_horario_sabado" /></label>
+                <label class="field"><span>Horario · Domingo</span><input class="entrada" id="web_horario_domingo" /></label>
               </div>
             </details>
 
             <details class="web-editor-panel" id="webPanelFaqs">
               <summary>Página FAQs</summary>
               <div class="form-grid" style="padding:12px 12px 0;">
-                <label class="field"><span>Título FAQs</span><input class="input" id="web_faqs_titulo" /></label>
-                <label class="field"><span>Subtítulo FAQs</span><input class="input" id="web_faqs_subtitulo" /></label>
-                <label class="field"><span>Bloque duda título</span><input class="input" id="web_faqs_duda_titulo" /></label>
-                <label class="field"><span>Bloque duda texto</span><input class="input" id="web_faqs_duda_texto" /></label>
+                <label class="field"><span>Título FAQs</span><input class="entrada" id="web_faqs_titulo" /></label>
+                <label class="field"><span>Subtítulo FAQs</span><input class="entrada" id="web_faqs_subtitulo" /></label>
+                <label class="field"><span>Bloque duda título</span><input class="entrada" id="web_faqs_duda_titulo" /></label>
+                <label class="field"><span>Bloque duda texto</span><input class="entrada" id="web_faqs_duda_texto" /></label>
               </div>
               <div style="display:flex; justify-content:flex-end; padding:10px 12px 0;">
-                <button type="button" class="btn-secondary" id="webFaqAdd">Añadir FAQ</button>
+                <button type="button" class="boton-secundario" id="webFaqAdd">Añadir FAQ</button>
               </div>
               <div id="webFaqList" class="form-grid" style="padding:12px;"></div>
               <input type="hidden" id="web_faq_q1" />
@@ -181,18 +181,18 @@
             <details class="web-editor-panel" id="webPanelFooter">
               <summary>Footer</summary>
               <div class="form-grid">
-                <label class="field"><span>Footer título mapa</span><input class="input" id="web_footer_titulo_mapa" /></label>
-                <label class="field"><span>Footer copy</span><input class="input" id="web_footer_copy" /></label>
+                <label class="field"><span>Footer título mapa</span><input class="entrada" id="web_footer_titulo_mapa" /></label>
+                <label class="field"><span>Footer copy</span><input class="entrada" id="web_footer_copy" /></label>
               </div>
             </details>
 
             <div>
-              <button type="submit" class="btn-primary" id="webEditorSave">Guardar cambios web</button>
+              <button type="submit" class="boton-primario" id="webEditorSave">Guardar cambios web</button>
             </div>
           </form>
         </section>
       </main>
     </div>
-    <script src="../js/admin.js?v=39"></script>
+    <script src="../js/admin.js?v=40"></script>
   </body>
 </html>

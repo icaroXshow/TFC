@@ -53,7 +53,7 @@
     width: 30%;
   }
 
-  .admin-main {
+  .principal-admin {
     grid-template-columns: 1fr;
     gap: 2rem;
     padding: 2rem 5%;
@@ -72,31 +72,6 @@
     gap: 12px;
   }
 
-  .machine-card {
-    width: min(220px, 100%);
-    max-width: none;
-    min-height: 170px;
-  }
-
-  .status-dot {
-    width: 40px;
-    height: 40px;
-  }
-
-  .data-pill {
-    height: 56px;
-    padding: 0 16px;
-  }
-
-  .data-label {
-    font-size: 1rem;
-    -webkit-text-stroke: 1.2px var(--turquesa-claro);
-  }
-
-  .data-value {
-    width: 50%;
-    font-size: 1rem;
-  }
 
   /* FOOTER ADMIN */
   .footer-politicas-admin {
@@ -122,47 +97,21 @@
 
   .cabecera-admin { display: none; }
   
-  .machine-card {
-    width: min(220px, 100%);
-    max-width: none;
-    min-height: 170px;
-  }
-
-  .status-dot {
-    width: 40px;
-    height: 40px;
-  }
-
-  .data-pill {
-    height: 65px;
-    padding: 0 16px;
-  }
-
-  .data-label {
-    font-size: 1rem;
-    -webkit-text-stroke: 1px var(--turquesa-claro);
-  }
-
-  .data-value {
-    width: 40%;
-    font-size: 1rem;
-  }
-
 }
 
 
 @media (max-width: 900px) {
-  .admin-layout {
+  .diseno-admin {
     grid-template-columns: 1fr;
   }
 
-  .admin-burger {
+  .boton-menu-admin {
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }
 
-  .admin-sidebar {
+  .barra-lateral-admin {
     position: fixed;
     left: 0;
     top: 0;
@@ -176,50 +125,50 @@
     box-shadow: 20px 0 40px rgba(0, 0, 0, 0.45);
   }
 
-  body.admin-menu-open .admin-sidebar {
+  body.admin-menu-open .barra-lateral-admin {
     transform: translateX(0);
   }
 
-  .admin-topbar {
+  .barra-superior-admin {
     grid-column: 1;
   }
 
-  .admin-main {
+  .principal-admin {
     grid-column: 1;
   }
 }
 
 /* UX refinements 2026-04-28 */
-.btn-primary:hover,
-.btn-secondary:hover {
+.boton-primario:hover,
+.boton-secundario:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
 }
 
-.btn-primary:active,
-.btn-secondary:active {
+.boton-primario:active,
+.boton-secundario:active {
   transform: translateY(0);
 }
 
-.btn-primary.is-busy,
-.btn-secondary.is-busy {
+.boton-primario.is-busy,
+.boton-secundario.is-busy {
   opacity: 0.75;
   cursor: progress;
 }
 
-body[data-breadcrumb*="Programador"] .iot-main-grid {
+body[data-breadcrumb*="Programador"] .rejilla-principal-iot {
   grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) minmax(380px, 1.35fr);
 }
 
-body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
+body[data-breadcrumb*="Programador"] .rejilla-principal-iot > .tarjeta-iot:last-child {
   min-height: 100%;
 }
 
-.cash-table tbody tr:hover,
+.tabla-caja tbody tr:hover,
 
-.reports-table tbody tr:hover,
-.users-table tbody tr:hover,
-.iot-log-table tbody tr:hover {
+.pestana-informesle tbody tr:hover,
+.tabla-usuarios tbody tr:hover,
+.tabla-log-iot tbody tr:hover {
   background: rgba(40, 240, 200, 0.08);
 }
 
@@ -229,44 +178,44 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
 }
 
 @media (max-width: 1380px) {
-  body[data-breadcrumb*="Programador"] .iot-main-grid {
+  body[data-breadcrumb*="Programador"] .rejilla-principal-iot {
     grid-template-columns: repeat(2, minmax(260px, 1fr));
   }
 
-  body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
+  body[data-breadcrumb*="Programador"] .rejilla-principal-iot > .tarjeta-iot:last-child {
     grid-column: 1 / -1;
   }
 }
 
 /* Responsive hardening 2026-04-28 */
-.admin-main,
-.admin-topbar,
-.admin-sidebar {
+.principal-admin,
+.barra-superior-admin,
+.barra-lateral-admin {
   min-width: 0;
 }
 
-.admin-section,
-.admin-card,
-.iot-tile,
-.machine-tile,
+.seccion-admin,
+.tarjeta-admin,
+.tarjeta-iot,
+.tarjeta-maquina,
 .user-tile,
-.cash-table-wrap,
-.reports-table-wrap,
-.users-table-wrap,
-.iot-log-wrap {
+.contenedor-tabla-caja,
+.pestana-informesle-wrap,
+.contenedor-tabla-usuarios,
+.contenedor-log-iot {
   min-width: 0;
 }
 
-.admin-lav-select {
+.selector-lavanderia-admin {
   max-width: min(420px, 58vw);
 }
 
 @media (max-width: 1280px) {
-  .admin-main {
+  .principal-admin {
     padding: 18px 20px 38px;
   }
 
-  .machines-grid {
+  .rejilla-maquinas {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
 
@@ -284,16 +233,16 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
     font-size: 28px;
   }
 
-  .reports-filters,
-  .cash-filter,
-  .users-toolbar,
-  .users-filters {
+  .filtros-informes,
+  .filtro-caja,
+  .barra-usuarios,
+  .filtros-usuarios {
     row-gap: 8px;
   }
 }
 
 @media (max-width: 1024px) {
-  .admin-topbar {
+  .barra-superior-admin {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-rows: auto auto;
@@ -302,13 +251,13 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
     overflow: visible;
   }
 
-  .admin-breadcrumbs {
+  .migas-admin {
     grid-column: 1 / -1;
     grid-row: 2;
     width: 100%;
   }
 
-  .admin-topbar-right {
+  .barra-superior-admin-right {
     grid-column: 2;
     grid-row: 1;
     width: 100%;
@@ -321,7 +270,7 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
     min-width: 0;
   }
 
-  .admin-lav-select {
+  .selector-lavanderia-admin {
     max-width: none;
     width: 100%;
     min-width: 0;
@@ -330,8 +279,8 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
     max-width: min(520px, calc(100vw - 190px));
   }
 
-  .cash-summary,
-  .reports-meta {
+  .resumen-caja,
+  .meta-informes {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -340,53 +289,53 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
   }
 
   .modal-card,
-  .store-config-card {
+  .tarjeta-config-tienda {
     width: min(92vw, 760px);
   }
 }
 
 @media (max-width: 900px) {
-  .admin-main {
+  .principal-admin {
     padding: 14px;
   }
 
-  .admin-section {
+  .seccion-admin {
     margin-top: 20px;
   }
 
-  .admin-card,
-  .machine-tile,
-  .iot-tile,
+  .tarjeta-admin,
+  .tarjeta-maquina,
+  .tarjeta-iot,
   .user-tile {
     border-radius: 14px;
   }
 
-  .machines-grid,
-  .users-grid,
-  .iot-main-grid,
-  .iot-grid {
+  .rejilla-maquinas,
+  .rejilla-usuarios,
+  .rejilla-principal-iot,
+  .rejilla-iot {
     grid-template-columns: 1fr !important;
   }
 
-  .cash-summary,
-  .reports-meta,
+  .resumen-caja,
+  .meta-informes,
   .form-grid,
   .web-editor-visibility-grid {
     grid-template-columns: 1fr !important;
   }
 
-  .cash-table,
-  .reports-table,
-  .users-table,
-  .iot-log-table {
+  .tabla-caja,
+  .pestana-informesle,
+  .tabla-usuarios,
+  .tabla-log-iot {
     min-width: 640px;
   }
 
-  .machine-actions {
+  .acciones-maquina {
     padding-bottom: 40px;
   }
 
-  .machine-fan-toggle {
+  .toggle-ventilador-maquina {
     position: static;
     margin-top: 8px;
     width: 100%;
@@ -394,47 +343,47 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
 }
 
 @media (max-width: 640px) {
-  .admin-topbar {
+  .barra-superior-admin {
     padding: 10px;
   }
 
-  .admin-burger {
+  .boton-menu-admin {
     width: 40px;
     height: 40px;
   }
 
-  .admin-breadcrumbs {
+  .migas-admin {
     font-size: 12px;
   }
 
-  .admin-section-head h3 {
+  .cabecera-seccion-admin h3 {
     font-size: 20px;
   }
 
-  .admin-section-head p {
+  .cabecera-seccion-admin p {
     font-size: 13px;
   }
 
-  .btn-primary,
-  .btn-secondary,
-  .input {
+  .boton-primario,
+  .boton-secundario,
+  .entrada {
     width: 100%;
   }
 
-  .machine-actions .btn-primary,
-  .machine-actions .btn-secondary {
+  .acciones-maquina .boton-primario,
+  .acciones-maquina .boton-secundario {
     flex: 1 1 100%;
   }
 
-  .cash-table,
-  .reports-table,
-  .users-table,
-  .iot-log-table {
+  .tabla-caja,
+  .pestana-informesle,
+  .tabla-usuarios,
+  .tabla-log-iot {
     min-width: 560px;
   }
 
   .modal-card,
-  .store-config-card {
+  .tarjeta-config-tienda {
     width: calc(100vw - 16px);
     border-radius: 14px;
     padding: 8px;
@@ -445,28 +394,28 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
    TABLAS - RESPONSIVE SOLO TABLET/MOVIL
 ========================================= */
 @media (max-width: 1024px) {
-  .cash-table-wrap,
-  .reports-table-wrap,
-  .users-table-wrap,
-  .iot-log-table-wrap,
+  .contenedor-tabla-caja,
+  .pestana-informesle-wrap,
+  .contenedor-tabla-usuarios,
+  .tabla-log-iot-wrap,
   .logs-table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     border-radius: 14px;
   }
 
-  .cash-table,
-  .reports-table,
-  .users-table,
-  .iot-log-table,
+  .tabla-caja,
+  .pestana-informesle,
+  .tabla-usuarios,
+  .tabla-log-iot,
   .logs-table {
     min-width: 720px;
   }
 
-  .cash-table thead th,
-  .reports-table thead th,
-  .users-table thead th,
-  .iot-log-table thead th,
+  .tabla-caja thead th,
+  .pestana-informesle thead th,
+  .tabla-usuarios thead th,
+  .tabla-log-iot thead th,
   .logs-table thead th {
     position: sticky;
     top: 0;
@@ -476,10 +425,21 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
 }
 
 @media (max-width: 700px) {
-  .cash-table,
-  .reports-table,
-  .users-table,
-  .iot-log-table,
+  .controles-vista-previa-web {
+    align-items: end;
+    justify-content: center;
+  }
+
+  .controles-vista-previa-web #webPreviewReload {
+    width: auto;
+    margin-left: auto;
+    align-self: end;
+  }
+
+  .tabla-caja,
+  .pestana-informesle,
+  .tabla-usuarios,
+  .tabla-log-iot,
   .logs-table {
     min-width: 0;
     width: 100%;
@@ -487,37 +447,37 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
     border-spacing: 0 10px;
   }
 
-  .cash-table thead,
-  .reports-table thead,
-  .users-table thead,
-  .iot-log-table thead,
+  .tabla-caja thead,
+  .pestana-informesle thead,
+  .tabla-usuarios thead,
+  .tabla-log-iot thead,
   .logs-table thead {
     display: none;
   }
 
-  .cash-table tbody,
-  .reports-table tbody,
-  .users-table tbody,
-  .iot-log-table tbody,
+  .tabla-caja tbody,
+  .pestana-informesle tbody,
+  .tabla-usuarios tbody,
+  .tabla-log-iot tbody,
   .logs-table tbody,
-  .cash-table tr,
-  .reports-table tr,
-  .users-table tr,
-  .iot-log-table tr,
+  .tabla-caja tr,
+  .pestana-informesle tr,
+  .tabla-usuarios tr,
+  .tabla-log-iot tr,
   .logs-table tr,
-  .cash-table td,
-  .reports-table td,
-  .users-table td,
-  .iot-log-table td,
+  .tabla-caja td,
+  .pestana-informesle td,
+  .tabla-usuarios td,
+  .tabla-log-iot td,
   .logs-table td {
     display: block;
     width: 100%;
   }
 
-  .cash-table tr,
-  .reports-table tr,
-  .users-table tr,
-  .iot-log-table tr,
+  .tabla-caja tr,
+  .pestana-informesle tr,
+  .tabla-usuarios tr,
+  .tabla-log-iot tr,
   .logs-table tr {
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 14px;
@@ -525,10 +485,10 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
     padding: 8px 10px;
   }
 
-  .cash-table td,
-  .reports-table td,
-  .users-table td,
-  .iot-log-table td,
+  .tabla-caja td,
+  .pestana-informesle td,
+  .tabla-usuarios td,
+  .tabla-log-iot td,
   .logs-table td {
     border: 0;
     border-top: 1px dashed rgba(255, 255, 255, 0.12);
@@ -536,10 +496,10 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
     text-align: left;
   }
 
-  .cash-table td:first-child,
-  .reports-table td:first-child,
-  .users-table td:first-child,
-  .iot-log-table td:first-child,
+  .tabla-caja td:first-child,
+  .pestana-informesle td:first-child,
+  .tabla-usuarios td:first-child,
+  .tabla-log-iot td:first-child,
   .logs-table td:first-child {
     border-top: 0;
     padding-top: 2px;
@@ -550,29 +510,29 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
 
 /* Tablet and mobile polish */
 @media (max-width: 1024px) {
-  .admin-topbar {
+  .barra-superior-admin {
     gap: 10px;
     padding: 10px 12px;
   }
 
-  .admin-main {
+  .principal-admin {
     padding: 16px;
   }
 
-  .admin-card,
-  .admin-section {
+  .tarjeta-admin,
+  .seccion-admin {
     border-radius: 14px;
   }
 }
 
 @media (max-width: 760px) {
-  .admin-topbar {
+  .barra-superior-admin {
     position: sticky;
     top: 0;
     z-index: 40;
   }
 
-  .admin-topbar-right {
+  .barra-superior-admin-right {
     width: 100%;
     gap: 6px;
     grid-template-columns: 1fr;
@@ -582,7 +542,7 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
     display: none;
   }
 
-  .admin-lav-select {
+  .selector-lavanderia-admin {
     min-width: 0;
     width: 100%;
     max-width: 100%;
@@ -590,15 +550,15 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
     margin-inline: 0;
   }
 
-  .admin-main {
+  .principal-admin {
     padding: 12px;
   }
 
-  .admin-section-head {
+  .cabecera-seccion-admin {
     gap: 6px;
   }
 
-  .admin-section-head h3 {
+  .cabecera-seccion-admin h3 {
     line-height: 1.15;
   }
 
@@ -647,6 +607,10 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
 }
 
 .logs-filters-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 16px;
@@ -654,8 +618,20 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
   margin-bottom: 12px;
 }
 
-.logs-filters-card .btn-primary {
+.logs-filters-card label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.98rem;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.logs-filters-card .entrada {
+  min-height: 44px;
+}
+
+.logs-filters-card .boton-primario {
   min-width: 130px;
+  align-self: end;
 }
 
 .logs-table-wrap {
@@ -738,7 +714,13 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
 
 @media (max-width: 900px) {
   .logs-filters-card {
+    grid-template-columns: 1fr;
+    gap: 12px;
     padding: 12px;
+  }
+
+  .logs-filters-card .boton-primario {
+    width: 100%;
   }
 
   .logs-table {
@@ -753,14 +735,14 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
 }
 
 /* Caja: filtros en fila */
-.cash-filters-row {
+.fila-filtros-caja {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(360px, 1.4fr);
   gap: 12px;
   align-items: end;
 }
 
-.cash-filters-row .cash-filter {
+.fila-filtros-caja .filtro-caja {
   margin: 0;
   padding: 12px;
   border-radius: 14px;
@@ -768,11 +750,11 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.cash-filters-row .cash-filter .btn-primary {
+.fila-filtros-caja .filtro-caja .boton-primario {
   min-width: 86px;
 }
 
-.cash-filter-range {
+.filtro-caja-range {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
   gap: 10px;
@@ -780,21 +762,21 @@ body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
 }
 
 @media (max-width: 1200px) {
-  .cash-filters-row {
+  .fila-filtros-caja {
     grid-template-columns: 1fr 1fr;
   }
 
-  .cash-filters-row .cash-filter-range {
+  .fila-filtros-caja .filtro-caja-range {
     grid-column: 1 / -1;
   }
 }
 
 @media (max-width: 700px) {
-  .cash-filters-row {
+  .fila-filtros-caja {
     grid-template-columns: 1fr;
   }
 
-  .cash-filter-range {
+  .filtro-caja-range {
     grid-template-columns: 1fr;
   }
 }
