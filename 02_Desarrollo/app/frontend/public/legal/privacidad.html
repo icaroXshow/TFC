@@ -4,30 +4,30 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Política de privacidad · KWL Aqua</title>
+    <link rel="icon" type="image/png" href="../assets/Logo_KWL.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="_viewer.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="_viewer.css?v=23" />
   </head>
   <body>
-    <div class="wrap">
-      <div class="top">
-        <a href="../index.html">← Volver</a>
-        <h1>Política de privacidad</h1>
-      </div>
-
-      <div class="frame">
-        <object data="privacidad.pdf" type="application/pdf">
-          <div class="fallback">
-            PDF no disponible todavía. Cuando lo tengas, ponlo en
-            `app/frontend/public/legal/privacidad.pdf`.
+    <main class="contenedor-legal">
+      <header class="cabecera-legal">
+        <a class="enlace-volver" href="../index.html" aria-label="Volver a la web pública">← Volver</a>
+        <h1 class="titulo-legal">Política de privacidad</h1>
+        <a class="enlace-descarga" href="privacidad.pdf" download>Descargar PDF</a>
+      </header>
+      <p class="descripcion-legal">Información básica sobre datos de contacto.</p>
+      <section class="visor-pdf" aria-label="Visor PDF de Política de privacidad">
+        <object data="privacidad.pdf#toolbar=1&navpanes=0&view=FitH" type="application/pdf">
+          <div class="fallback-legal">
+            <h2>Política de privacidad</h2>
+            <p>Información básica sobre datos de contacto.</p>
+            <p>Tu navegador no pudo mostrar el PDF integrado.</p>
+            <p><a href="privacidad.pdf" download>Descargar PDF</a></p>
           </div>
         </object>
-      </div>
-    </div>
+      </section>
+    </main>
   </body>
 </html>
-

@@ -405,7 +405,7 @@ Verificación:
   - `Ciclos` (ya existente)
   - `Evolución` semanal/mensual/anual (comparativa con periodo anterior)
   - `Estadísticas` de tramos diario/mensual/anual (tabla por tramo/máquina + totales)
-- Se amplía `Editor Web` para cubrir también textos de `About us` y `FAQs` (además de header/footer/contacto).
+- Se amplía `Editor Web` para cubrir también textos de `Sobre nosotros` y `FAQs` (además de header/footer/contacto).
 - Se integra Redis real en backend como caché operativa en rutas IoT con fallback a BD.
 
 ### Cómo

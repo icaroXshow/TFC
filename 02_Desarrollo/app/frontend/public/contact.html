@@ -3,194 +3,266 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Inicio · KWL Aqua</title>
-    <!-- FUENTES-->
+    <meta name="description" content="Contacto, ubicación y horario de KWL Aqua, lavandería autoservicio en Ponferrada." />
+    <meta name="theme-color" content="#061314" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:title" content="Contacto · KWL Aqua" />
+    <meta property="og:description" content="Contacto, ubicación y horario de KWL Aqua, lavandería autoservicio en Ponferrada." />
+    <meta property="og:image" content="assets/Logo_KWL.png" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" type="image/png" href="assets/Logo_KWL.png" />
+    <link rel="apple-touch-icon" href="assets/Logo_KWL.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-
-    <!-- ESTILOS-->
-    <link rel="stylesheet" href="css/styles.css" />
-    <link rel="stylesheet" href="css/auth.css" />
-    <link rel="stylesheet" href="css/componentes.css" />
+    <link rel="stylesheet" href="css/public.css?v=34" />
+    <title>Contacto · KWL Aqua</title>
+    <script type="application/ld+json">
+          {
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": "KWL Aqua",
+            "description": "Lavandería autoservicio en Ponferrada.",
+            "image": "assets/Logo_KWL.png",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Ponferrada",
+              "addressRegion": "León",
+              "addressCountry": "ES"
+            },
+            "url": "./index.html"
+          }
+        </script>
   </head>
-
   <body>
-    <!-- ===== MODAL GLOBAL DE AUTENTICACIÓN ===== -->
-    <div class="auth-overlay" id="authOverlay">
-      <div class="auth-modal">
-        <!-- Botón cerrar -->
-        <button class="auth-close" id="authClose" type="button">✕</button>
-
-        <!-- Login -->
-        <div class="auth-view active" id="view-login">
-          <h2>Iniciar sesión</h2>
-
-          <input id="authLogin" type="email" placeholder="Correo electrónico" />
-          <input id="authPassword" type="password" placeholder="Contraseña" />
-
-          <button class="auth-btn" id="authSubmit">👤 LOGIN</button>
-
-        </div>
-
-      </div>
+    <div class="capa-acceso" id="capaAcceso" aria-hidden="true">
+      <section
+        class="panel-acceso"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tituloAcceso"
+      >
+        <button
+          class="boton-cerrar-acceso"
+          id="cerrarAcceso"
+          type="button"
+          aria-label="Cerrar acceso privado"
+        >
+          ✕
+        </button>
+        <h2 id="tituloAcceso">Acceso privado</h2>
+        <form class="formulario-acceso">
+          <input
+            id="correoAcceso"
+            type="email"
+            autocomplete="username"
+            placeholder="Correo electrónico"
+          />
+          <input
+            id="claveAcceso"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Contraseña"
+          />
+          <button class="boton-enviar-acceso" id="enviarAcceso" type="button">
+            ENTRAR
+          </button>
+          <p class="error-acceso" id="errorAcceso" aria-live="polite"></p>
+        </form>
+      </section>
     </div>
-
-    <header class="topbar">
-      <div class="cabecera">
-        <div class="logo">
-          <img src="assets/Logo_KWL.png" alt="KWL Aqua" class="logo-img" />
-        </div>
-        <div class="titulo">
-          <h1 data-web-key="brand_name">KWL AQUA</h1>
-        </div>
-        <div class="loguin">
-          <a class="btn login-btn" id="openLogin" href="#login">👤Login</a>
-        </div>
+    <a class="salto-accesible" href="#contenidoPrincipal"
+      >Saltar al contenido</a
+    >
+    <header class="cabecera-publica">
+      <div class="zona-logo">
+        <a class="enlace-logo" href="index.html" aria-label="Ir al inicio">
+          <img class="imagen-logo" src="assets/Logo_KWL.png" alt="KWL Aqua" />
+        </a>
+        <button
+          class="boton-menu-movil"
+          id="botonMenuMovil"
+          type="button"
+          aria-label="Abrir menú"
+          aria-expanded="false"
+        >
+          <span></span>
+        </button>
       </div>
-
-      <div class="navegador">
-        <nav>
-          <ul>
-            <li><a href="index.html" data-web-key="nav_inicio">Inicio</a></li>
-            <li><a href="about.html" data-web-key="nav_about">About us</a></li>
-            <li><a href="contact.html" data-web-key="nav_contacto">Contacto</a></li>
-            <li><a href="faqs.html" data-web-key="nav_faqs">FAQs</a></li>
+      <div class="zona-marca">
+        <h1 class="titulo-marca" data-web-key="brand_name">KWL AQUA</h1>
+        <nav class="panel-navegacion" aria-label="Navegación principal">
+          <ul class="lista-navegacion">
+            <li><a class="enlace-navegacion" href="index.html" data-web-key="nav_inicio">Inicio</a></li>
+            <li><a class="enlace-navegacion" href="about.html" data-web-key="nav_about">Sobre nosotros</a></li>
+            <li>
+              <a class="enlace-navegacion" href="contact.html" data-web-key="nav_contacto">Contacto</a>
+            </li>
+            <li><a class="enlace-navegacion" href="faqs.html" data-web-key="nav_faqs">FAQs</a></li>
           </ul>
-        </nav>
+            </nav>
+      </div>
+      <div class="zona-acceso">
+        <button
+          class="boton-acceso-escritorio"
+          type="button"
+          data-accion="abrir-acceso"
+        >
+          ENTRAR
+        </button>
       </div>
     </header>
-
-    <!-- CONTENIDO -->
-    <main class="contact-wrapper">
-      <!-- FILA PRINCIPAL: IMAGEN A LA IZQUIERDA + TEXTO + FORMULARIO -->
-      <section class="contact-main container">
-        <!-- Imagen -->
-        <div class="left-image">
-          <img src="assets/about-photo.png" alt="Lavandería KWL Aqua" />
-        </div>
-
-        <!-- Texto + Formulario -->
-        <div class="right-content">
-          <div class="contact-text">
-            <h2 data-web-key="contacto_titulo">CONTACTANOS</h2>
-            <p class="subtitulo" data-web-key="contacto_subtitulo">Estamos a tu disposición las 24h</p>
-            <div class="data">
-              <p>TELEFONO: <span data-web-key="contacto_telefono">+34 636 684 021</span></p>
-              <p>CORREO: <span data-web-key="contacto_email">asistenciakwl@gmail.com</span></p> 
+    <div class="fondo-menu" id="fondoMenu"></div>
+    <aside class="menu-lateral" id="menuLateral" aria-label="Menú móvil">
+      <div class="cabecera-menu-lateral">
+        <button
+          class="boton-cerrar-menu"
+          id="botonCerrarMenu"
+          type="button"
+          aria-label="Cerrar menú"
+        >
+          ×
+        </button>
+      </div>
+      <nav class="navegacion-menu-lateral">
+        <a class="enlace-menu-lateral" href="index.html">Inicio</a
+        ><a class="enlace-menu-lateral" href="about.html">Sobre nosotros</a
+        ><a class="enlace-menu-lateral" href="contact.html">Contacto</a
+        ><a class="enlace-menu-lateral" href="faqs.html" data-web-key="nav_faqs">FAQs</a>
+      </nav>
+      <button
+        class="boton-acceso-menu"
+        type="button"
+        data-accion="abrir-acceso"
+      >
+        ENTRAR
+      </button>
+    </aside>
+    <main id="contenidoPrincipal">
+      <section class="seccion-pagina contenedor">
+        <div class="contacto-layout">
+          <article class="hero-pagina">
+            <span class="etiqueta-pagina">Contacto</span>
+            <h2 class="titulo-pagina" data-web-key="contacto_titulo">Estamos para ayudarte</h2>
+            <p class="texto-grande" data-web-key="contacto_subtitulo">
+              Contacta con KWL Aqua para resolver dudas sobre horario,
+              ubicación, máquinas o cualquier incidencia durante tu colada.
+            </p>
+            <div class="datos-contacto">
+              <strong data-web-key="contacto_telefono">+34 636 684 021</strong>
+              <strong data-web-key="contacto_email">asistenciakwl@gmail.com</strong>
+              <span data-web-key="direccion_texto">Calle Dr. Fleming, 26 · Ponferrada</span>
             </div>
-          </div>
-
-          <div class="form-card">
-            <form action="#" method="post">
-              <label>Nombre</label>
-              <input class="input" type="text" placeholder="Nombre" />
-
-              <label>Correo</label>
-              <input class="input" type="email" placeholder="Correo" />
-
-              <label>Cuéntanos qué necesitas</label>
+          </article>
+          <section class="tarjeta-contacto formulario-contacto-panel">
+            <h2>Envíanos un mensaje</h2>
+            <form class="formulario-contacto">
+              <label for="nombreContacto">Nombre</label>
+              <input
+                id="nombreContacto"
+                name="nombre"
+                type="text"
+                placeholder="Tu nombre"
+              />
+              <label for="correoContacto">Correo</label>
+              <input
+                id="correoContacto"
+                name="correo"
+                type="email"
+                placeholder="tu@email.com"
+              />
+              <label for="mensajeContacto">Mensaje</label>
               <textarea
-                class="input"
-                rows="4"
+                id="mensajeContacto"
+                name="mensaje"
                 placeholder="Cuéntanos qué necesitas"
               ></textarea>
-
-              <button type="submit" class="btn form-btn">Enviar</button>
+              <button class="boton-formulario" type="submit">Enviar</button>
             </form>
-          </div>
-        </div>
-      </section>
-
-      <!-- MAPA ABAJO -->
-      <section class="contact-map container">
-        <h2 class="map-title">Dónde encontrarnos</h2>
-
-        <div class="map-box">
-          <iframe data-web-key="mapa_url" title="Mapa KWL Aqua"
-            loading="lazy"
-            allowfullscreen
-            referrerpolicy="no-referrer-when-downgrade"
-            src="https://www.google.com/maps?q=Calle%20Dr.%20Fleming%2C%2026%2C%2024402%20Ponferrada&output=embed"
-          >
-          </iframe>
-        </div>
-
-        <p class="address" data-web-key="direccion_texto">Calle Dr. Fleming, 26, Bajo, 24402 Ponferrada, León</p>
-      </section>
-    </main>
-
-    <!-- FOOTER FOOTER FOOTER-->
-    <footer class="footer">
-      <div class="footer-top">
-        <!-- Columna 1: Logo + Menú -->
-        <div class="footer-col-1">
-          <img
-            src="assets/Logo_KWL.png"
-            alt="KWL Aqua"
-            class="footer-logo-big"
-          />
-
-          <ul class="footer-menu">
-            <li><a href="contact.html" data-web-key="nav_contacto">Contacto</a></li>
-            <li><a href="about.html" data-web-key="nav_about">Sobre nosotros</a></li>
-            <li><a href="faqs.html" data-web-key="nav_faqs">FAQs</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-top-drch">
-          <!-- Columna 2: Horario -->
-          <div class="footer-col-2">
-            <h4 data-web-key="footer_titulo_horario">Horario</h4>
-            <ul class="hours-list">
-              <li><span>Lunes</span><span data-web-key="horario_lunes">8:30-22:00</span></li>
-              <li><span>Martes</span><span data-web-key="horario_martes">8:30-22:00</span></li>
-              <li><span>Miércoles</span><span data-web-key="horario_miercoles">8:30-22:00</span></li>
-              <li><span>Jueves</span><span data-web-key="horario_jueves">8:30-22:00</span></li>
-              <li><span>Viernes</span><span data-web-key="horario_viernes">8:30-22:00</span></li>
-              <li><span>Sábado</span><span data-web-key="horario_sabado">8:30-22:00</span></li>
-              <li><span>Domingo</span><span data-web-key="horario_domingo">8:30-22:00</span></li>
-            </ul>
-          </div>
-
-          <!-- Columna 3: Mapa -->
-          <div class="footer-col-3">
-            <h4 data-web-key="footer_titulo_mapa">Donde encontrarnos</h4>
-
-            <div class="footer-map">
-              <iframe data-web-key="mapa_url"
+          </section>
+          <section class="ubicacion-contacto" id="ubicacion">
+            <h2 class="titulo-pagina" data-web-key="contacto_ubicacion_titulo">Ubicación</h2>
+            <p class="texto-grande" data-web-key="contacto_ubicacion_texto">
+              Nos encontrarás en Calle Dr. Fleming, 26, Ponferrada.
+            </p>
+            <div class="mapa-contacto">
+              <iframe
                 src="https://www.google.com/maps?q=Calle%20Dr.%20Fleming%2C%2026%2C%2024402%20Ponferrada&output=embed"
                 loading="lazy"
                 allowfullscreen
-              >
-              </iframe>
+                title="Mapa de KWL Aqua"
+              ></iframe>
             </div>
-          </div>
-
-          <!-- Columna 4: Redes Sociales -->
-          <div class="footer-col-4">
-            <div class="footer-social">
-              <a href="#"><img src="assets/ln.png" alt="LinkedIn" /></a>
-              <a href="#"><img src="assets/ig.png" alt="Instagram" /></a>
-              <a href="#"><img src="assets/facebook.png" alt="Facebook" /></a>
-            </div>
-          </div>
+          </section>
+          <section class="tarjeta-contacto horario-contacto" aria-label="Horario">
+            <h2>Horario</h2>
+            <p class="subtitulo-footer">Abierto todos los días</p>
+            <ul class="lista-horario">
+              <li><span>Lunes</span><strong data-web-key="horario_lunes">8:30-22:00</strong></li>
+              <li><span>Martes</span><strong data-web-key="horario_martes">8:30-22:00</strong></li>
+              <li><span>Miércoles</span><strong data-web-key="horario_miercoles">8:30-22:00</strong></li>
+              <li><span>Jueves</span><strong data-web-key="horario_jueves">8:30-22:00</strong></li>
+              <li><span>Viernes</span><strong data-web-key="horario_viernes">8:30-22:00</strong></li>
+              <li><span>Sábado</span><strong data-web-key="horario_sabado">8:30-22:00</strong></li>
+              <li><span>Domingo</span><strong data-web-key="horario_domingo">8:30-22:00</strong></li>
+            </ul>
+          </section>
         </div>
+      </section>
+    </main>
+    <footer class="pie-publico">
+      <div class="contenido-pie">
+        <section class="marca-pie" aria-label="KWL Aqua">
+          <img class="logo-pie" src="assets/Logo_KWL.png" alt="KWL Aqua" />
+          <div>
+            <h2 class="titulo-pie">KWL Aqua</h2>
+            <p class="texto-pie">Lavandería autoservicio en Ponferrada.</p>
+            <nav class="navegacion-pie" aria-label="Navegación secundaria">
+              <a href="contact.html" data-web-key="nav_contacto">Contacto</a>
+              <a href="about.html" data-web-key="nav_about">Sobre nosotros</a>
+              <a href="faqs.html" data-web-key="nav_faqs">FAQs</a>
+              <a href="#" class="enlace-entrar-pie" data-accion="abrir-acceso">ENTRAR</a>
+            </nav>
+          </div>
+        </section>
+        <section class="ubicacion-pie" aria-label="Ubicación">
+          <div class="mapa-pie">
+            <iframe
+              data-web-key="mapa_url"
+              src="https://www.google.com/maps?q=Calle%20Dr.%20Fleming%2C%2026%2C%2024402%20Ponferrada&output=embed"
+              loading="lazy"
+              allowfullscreen
+              title="Mapa de KWL Aqua"
+            ></iframe>
+          </div>
+        </section>
+        <section class="redes-pie" aria-label="Redes sociales">
+          <a href="#" aria-label="LinkedIn"><img src="assets/ln.png" alt="" /></a>
+          <a href="#" aria-label="Instagram"><img src="assets/ig.png" alt="" /></a>
+          <a href="#" aria-label="Facebook"><img src="assets/facebook.png" alt="" /></a>
+        </section>
       </div>
-
-      <!-- Franja inferior -->
-      <div class="footer-politicas">
-        <a href="legal/cookies.html">Políticas de cookies</a>
-        <a href="legal/aviso-legal.html">Aviso Legal</a>
-        <a href="legal/privacidad.html">Políticas de privacidad</a>
-      </div>
-
-      <div class="footer-copy" data-web-key="footer_copy">© 2025 KWL Aqua. Todos los derechos reservados.</div>
+      <nav class="legal-pie" aria-label="Legal">
+        <a href="legal/cookies.html">Política de cookies</a>
+        <a href="legal/aviso-legal.html">Aviso legal</a>
+        <a href="legal/privacidad.html">Política de privacidad</a>
+      </nav>
+      <p class="copy-pie" data-web-key="footer_copy">
+        © 2025 KWL Aqua. Todos los derechos reservados.
+      </p>
     </footer>
-
-    <script src="js/app.js?v=20260428f"></script>
+    <button
+      class="boton-tema"
+      id="botonTema"
+      type="button"
+      aria-label="Cambiar modo claro u oscuro"
+    >
+      💡
+    </button>
+    <script type="module" src="js/publico/principal.js?v=28"></script>
   </body>
 </html>

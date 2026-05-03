@@ -3,31 +3,31 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Políticas de cookies · KWL Aqua</title>
+    <title>Política de cookies · KWL Aqua</title>
+    <link rel="icon" type="image/png" href="../assets/Logo_KWL.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="_viewer.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="_viewer.css?v=23" />
   </head>
   <body>
-    <div class="wrap">
-      <div class="top">
-        <a href="../index.html">← Volver</a>
-        <h1>Políticas de cookies</h1>
-      </div>
-
-      <div class="frame">
-        <object data="cookies.pdf" type="application/pdf">
-          <div class="fallback">
-            PDF no disponible todavía. Cuando lo tengas, ponlo en
-            `app/frontend/public/legal/cookies.pdf`.
+    <main class="contenedor-legal">
+      <header class="cabecera-legal">
+        <a class="enlace-volver" href="../index.html" aria-label="Volver a la web pública">← Volver</a>
+        <h1 class="titulo-legal">Política de cookies</h1>
+        <a class="enlace-descarga" href="cookies.pdf" download>Descargar PDF</a>
+      </header>
+      <p class="descripcion-legal">Información básica sobre el uso de cookies técnicas y de terceros.</p>
+      <section class="visor-pdf" aria-label="Visor PDF de Política de cookies">
+        <object data="cookies.pdf#toolbar=1&navpanes=0&view=FitH" type="application/pdf">
+          <div class="fallback-legal">
+            <h2>Política de cookies</h2>
+            <p>Información básica sobre el uso de cookies técnicas y de terceros.</p>
+            <p>Tu navegador no pudo mostrar el PDF integrado.</p>
+            <p><a href="cookies.pdf" download>Descargar PDF</a></p>
           </div>
         </object>
-      </div>
-    </div>
+      </section>
+    </main>
   </body>
 </html>
-

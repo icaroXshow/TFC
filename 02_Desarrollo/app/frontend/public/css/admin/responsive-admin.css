@@ -1,0 +1,800 @@
+/* ===========================
+   RESPONSIVE MÓVIL (<900px)
+=========================== */
+@media (max-width: 1200px) {
+
+  * { max-width: 100%; }
+  img { max-width: 100%; height: auto; }
+
+  /* TOPBAR / CABECERA ADMIN */
+  .topbar-admin { max-width: 90%; }
+
+  .cabecera-admin {
+    height: auto;
+    padding: 6px 8px;
+    gap: 100px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .titulo-admin { font-size: 20px; text-align: center; }
+
+  .logo-admin { padding: 5px; }
+
+  .logo-img-admin {
+    width: 75px;
+    height: 75px;
+  }
+
+  .navegador-admin {
+    margin-left: 0;
+    max-width: 60%;
+    margin-left: 50%;
+    padding: 8px 0;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .navegador-admin ul {
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 10px;
+    margin: 0;
+  }
+
+  .navegador-admin li a {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 6px;
+  }
+
+  .logout-btn {
+    margin-right: 0;
+    width: 30%;
+  }
+
+  .admin-main {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem 5%;
+  }
+
+  .welcome-msg h2 {
+    font-size: 3.2rem;
+    text-align: center;
+  }
+
+  .control-panel { gap: 16px; }
+
+  .machines-row {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .machine-card {
+    width: min(220px, 100%);
+    max-width: none;
+    min-height: 170px;
+  }
+
+  .status-dot {
+    width: 40px;
+    height: 40px;
+  }
+
+  .data-pill {
+    height: 56px;
+    padding: 0 16px;
+  }
+
+  .data-label {
+    font-size: 1rem;
+    -webkit-text-stroke: 1.2px var(--turquesa-claro);
+  }
+
+  .data-value {
+    width: 50%;
+    font-size: 1rem;
+  }
+
+  /* FOOTER ADMIN */
+  .footer-politicas-admin {
+    flex-direction: column;
+    gap: 10px;
+    font-size: 16px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+
+  .footer-copy-admin {
+    font-size: 14px;
+    padding: 10px;
+    text-align: center;
+  }
+}
+/* ===========================
+   RESPONSIVE MÓVIL (<600px)
+=========================== */
+@media (max-width: 760px) {
+    /* TOPBAR / CABECERA ADMIN */
+  .topbar-admin { display: none; }
+
+  .cabecera-admin { display: none; }
+  
+  .machine-card {
+    width: min(220px, 100%);
+    max-width: none;
+    min-height: 170px;
+  }
+
+  .status-dot {
+    width: 40px;
+    height: 40px;
+  }
+
+  .data-pill {
+    height: 65px;
+    padding: 0 16px;
+  }
+
+  .data-label {
+    font-size: 1rem;
+    -webkit-text-stroke: 1px var(--turquesa-claro);
+  }
+
+  .data-value {
+    width: 40%;
+    font-size: 1rem;
+  }
+
+}
+
+
+@media (max-width: 900px) {
+  .admin-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    transform: translateX(-110%);
+    transition: transform 0.2s ease;
+    z-index: 30;
+    width: min(320px, 86vw);
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    background: #0a1320;
+    backdrop-filter: none;
+    box-shadow: 20px 0 40px rgba(0, 0, 0, 0.45);
+  }
+
+  body.admin-menu-open .admin-sidebar {
+    transform: translateX(0);
+  }
+
+  .admin-topbar {
+    grid-column: 1;
+  }
+
+  .admin-main {
+    grid-column: 1;
+  }
+}
+
+/* UX refinements 2026-04-28 */
+.btn-primary:hover,
+.btn-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+}
+
+.btn-primary:active,
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+.btn-primary.is-busy,
+.btn-secondary.is-busy {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+body[data-breadcrumb*="Programador"] .iot-main-grid {
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) minmax(380px, 1.35fr);
+}
+
+body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
+  min-height: 100%;
+}
+
+.cash-table tbody tr:hover,
+
+.reports-table tbody tr:hover,
+.users-table tbody tr:hover,
+.iot-log-table tbody tr:hover {
+  background: rgba(40, 240, 200, 0.08);
+}
+
+.table-empty {
+  color: rgba(255, 255, 255, 0.72);
+  font-style: italic;
+}
+
+@media (max-width: 1380px) {
+  body[data-breadcrumb*="Programador"] .iot-main-grid {
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+  }
+
+  body[data-breadcrumb*="Programador"] .iot-main-grid > .iot-tile:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Responsive hardening 2026-04-28 */
+.admin-main,
+.admin-topbar,
+.admin-sidebar {
+  min-width: 0;
+}
+
+.admin-section,
+.admin-card,
+.iot-tile,
+.machine-tile,
+.user-tile,
+.cash-table-wrap,
+.reports-table-wrap,
+.users-table-wrap,
+.iot-log-wrap {
+  min-width: 0;
+}
+
+.admin-lav-select {
+  max-width: min(420px, 58vw);
+}
+
+@media (max-width: 1280px) {
+  .admin-main {
+    padding: 18px 20px 38px;
+  }
+
+  .machines-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+
+  .admin-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-hero-cards {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+    margin-top: 0;
+  }
+
+  #cardNextFinish {
+    font-size: 28px;
+  }
+
+  .reports-filters,
+  .cash-filter,
+  .users-toolbar,
+  .users-filters {
+    row-gap: 8px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .admin-topbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 8px 10px;
+    overflow: visible;
+  }
+
+  .admin-breadcrumbs {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+  }
+
+  .admin-topbar-right {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+    justify-content: stretch;
+    align-items: center;
+    overflow: visible;
+    min-width: 0;
+  }
+
+  .admin-lav-select {
+    max-width: none;
+    width: 100%;
+    min-width: 0;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    max-width: min(520px, calc(100vw - 190px));
+  }
+
+  .cash-summary,
+  .reports-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .web-editor-form {
+    padding: 14px;
+  }
+
+  .modal-card,
+  .store-config-card {
+    width: min(92vw, 760px);
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-main {
+    padding: 14px;
+  }
+
+  .admin-section {
+    margin-top: 20px;
+  }
+
+  .admin-card,
+  .machine-tile,
+  .iot-tile,
+  .user-tile {
+    border-radius: 14px;
+  }
+
+  .machines-grid,
+  .users-grid,
+  .iot-main-grid,
+  .iot-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cash-summary,
+  .reports-meta,
+  .form-grid,
+  .web-editor-visibility-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cash-table,
+  .reports-table,
+  .users-table,
+  .iot-log-table {
+    min-width: 640px;
+  }
+
+  .machine-actions {
+    padding-bottom: 40px;
+  }
+
+  .machine-fan-toggle {
+    position: static;
+    margin-top: 8px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-topbar {
+    padding: 10px;
+  }
+
+  .admin-burger {
+    width: 40px;
+    height: 40px;
+  }
+
+  .admin-breadcrumbs {
+    font-size: 12px;
+  }
+
+  .admin-section-head h3 {
+    font-size: 20px;
+  }
+
+  .admin-section-head p {
+    font-size: 13px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .input {
+    width: 100%;
+  }
+
+  .machine-actions .btn-primary,
+  .machine-actions .btn-secondary {
+    flex: 1 1 100%;
+  }
+
+  .cash-table,
+  .reports-table,
+  .users-table,
+  .iot-log-table {
+    min-width: 560px;
+  }
+
+  .modal-card,
+  .store-config-card {
+    width: calc(100vw - 16px);
+    border-radius: 14px;
+    padding: 8px;
+  }
+}
+
+/* =========================================
+   TABLAS - RESPONSIVE SOLO TABLET/MOVIL
+========================================= */
+@media (max-width: 1024px) {
+  .cash-table-wrap,
+  .reports-table-wrap,
+  .users-table-wrap,
+  .iot-log-table-wrap,
+  .logs-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 14px;
+  }
+
+  .cash-table,
+  .reports-table,
+  .users-table,
+  .iot-log-table,
+  .logs-table {
+    min-width: 720px;
+  }
+
+  .cash-table thead th,
+  .reports-table thead th,
+  .users-table thead th,
+  .iot-log-table thead th,
+  .logs-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@media (max-width: 700px) {
+  .cash-table,
+  .reports-table,
+  .users-table,
+  .iot-log-table,
+  .logs-table {
+    min-width: 0;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+  }
+
+  .cash-table thead,
+  .reports-table thead,
+  .users-table thead,
+  .iot-log-table thead,
+  .logs-table thead {
+    display: none;
+  }
+
+  .cash-table tbody,
+  .reports-table tbody,
+  .users-table tbody,
+  .iot-log-table tbody,
+  .logs-table tbody,
+  .cash-table tr,
+  .reports-table tr,
+  .users-table tr,
+  .iot-log-table tr,
+  .logs-table tr,
+  .cash-table td,
+  .reports-table td,
+  .users-table td,
+  .iot-log-table td,
+  .logs-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .cash-table tr,
+  .reports-table tr,
+  .users-table tr,
+  .iot-log-table tr,
+  .logs-table tr {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 8px 10px;
+  }
+
+  .cash-table td,
+  .reports-table td,
+  .users-table td,
+  .iot-log-table td,
+  .logs-table td {
+    border: 0;
+    border-top: 1px dashed rgba(255, 255, 255, 0.12);
+    padding: 8px 2px;
+    text-align: left;
+  }
+
+  .cash-table td:first-child,
+  .reports-table td:first-child,
+  .users-table td:first-child,
+  .iot-log-table td:first-child,
+  .logs-table td:first-child {
+    border-top: 0;
+    padding-top: 2px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.95);
+  }
+}
+
+/* Tablet and mobile polish */
+@media (max-width: 1024px) {
+  .admin-topbar {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .admin-main {
+    padding: 16px;
+  }
+
+  .admin-card,
+  .admin-section {
+    border-radius: 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  .admin-topbar-right {
+    width: 100%;
+    gap: 6px;
+    grid-template-columns: 1fr;
+  }
+
+  #storeEnvBtn {
+    display: none;
+  }
+
+  .admin-lav-select {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    font-size: 13px;
+    margin-inline: 0;
+  }
+
+  .admin-main {
+    padding: 12px;
+  }
+
+  .admin-section-head {
+    gap: 6px;
+  }
+
+  .admin-section-head h3 {
+    line-height: 1.15;
+  }
+
+  body[data-breadcrumb*="Editor Web"] #webPreviewReload {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 12px;
+    font-size: 0;
+    line-height: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  body[data-breadcrumb*="Editor Web"] #webPreviewReload::before {
+    content: "↻";
+    font-size: 22px;
+    line-height: 1;
+    color: currentColor;
+  }
+
+  /* Camara movil: dejar solo Zoom +, Zoom -, selector de modo */
+  body[data-breadcrumb*="Cámara"] #camDetach,
+  body[data-breadcrumb*="Cámara"] #camCenter,
+  body[data-breadcrumb*="Cámara"] #camZoom1x,
+  body[data-breadcrumb*="Cámara"] #camZoom2x,
+  body[data-breadcrumb*="Cámara"] #camZoom4x,
+  body[data-breadcrumb*="Cámara"] #camZoom8x,
+  body[data-breadcrumb*="Cámara"] #camDisplayApply {
+    display: none !important;
+  }
+
+  body[data-breadcrumb*="Cámara"] #camZoomIn,
+  body[data-breadcrumb*="Cámara"] #camZoomOut,
+  body[data-breadcrumb*="Cámara"] #camDisplayMode {
+    flex: 1 1 calc(33.333% - 8px);
+    min-width: 0;
+  }
+}
+
+/* Logs redesign 2026-04-28 */
+.logs-head p {
+  max-width: 52ch;
+}
+
+.logs-filters-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.logs-filters-card .btn-primary {
+  min-width: 130px;
+}
+
+.logs-table-wrap {
+  margin-top: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  overflow: auto;
+}
+
+.logs-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+}
+
+.logs-table th,
+.logs-table td {
+  padding: 13px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.logs-table thead th {
+  border-top: 0;
+  background: rgba(0, 0, 0, 0.24);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.logs-table tbody tr:hover {
+  background: rgba(40, 240, 200, 0.08);
+}
+
+.logs-date {
+  color: rgba(255, 255, 255, 0.86);
+  font-variant-numeric: tabular-nums;
+}
+
+.logs-action-chip,
+.logs-machine-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+.logs-action-chip {
+  border-color: rgba(40, 240, 200, 0.3);
+  background: rgba(40, 240, 200, 0.12);
+  color: rgba(211, 255, 245, 0.96);
+}
+
+.logs-machine-chip {
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.logs-ip {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.logs-note {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 125, 137, 0.34);
+  background: rgba(255, 125, 137, 0.11);
+  color: rgba(255, 233, 235, 0.95);
+}
+
+@media (max-width: 900px) {
+  .logs-filters-card {
+    padding: 12px;
+  }
+
+  .logs-table {
+    min-width: 760px;
+  }
+}
+
+@media (max-width: 640px) {
+  .logs-table {
+    min-width: 680px;
+  }
+}
+
+/* Caja: filtros en fila */
+.cash-filters-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(360px, 1.4fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.cash-filters-row .cash-filter {
+  margin: 0;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cash-filters-row .cash-filter .btn-primary {
+  min-width: 86px;
+}
+
+.cash-filter-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 1200px) {
+  .cash-filters-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cash-filters-row .cash-filter-range {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .cash-filters-row {
+    grid-template-columns: 1fr;
+  }
+
+  .cash-filter-range {
+    grid-template-columns: 1fr;
+  }
+}

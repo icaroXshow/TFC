@@ -1,0 +1,89 @@
+
+:root {
+  --turquesa: #28f0c8;
+  --turquesa-medio: #15847c;
+  --turquesa-profundo: #064f47;
+  --fondo: #010b08;
+  --fondo-panel: rgba(9, 27, 23, 0.84);
+  --texto: #f5fffb;
+  --texto-suave: #c8d7d3;
+  --linea: rgba(40, 240, 200, 0.26);
+  --rosa: #f4b6df;
+  --rosa-intenso: #ff8dda;
+  --sombra: 0 24px 70px rgba(0, 0, 0, 0.42);
+  --radio-grande: 28px;
+  --radio-medio: 18px;
+  --ancho-contenido: min(90vw, 1400px);
+  --ancho-cabecera: 100%;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  color: var(--texto);
+  background:
+    radial-gradient(1200px 700px at 8% 12%, rgba(40, 240, 200, 0.10), transparent 60%),
+    radial-gradient(1100px 620px at 92% 80%, rgba(13, 117, 105, 0.18), transparent 58%),
+    linear-gradient(180deg, #010d0a 0%, #010b08 48%, #031613 100%);
+  font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow-x: hidden;
+}
+body.modo-claro {
+  --fondo: #eef9f6;
+  --fondo-panel: rgba(255, 255, 255, 0.88);
+  --texto: #10211d;
+  --texto-suave: #344b46;
+  --linea: rgba(21, 132, 124, 0.22);
+  background:
+    radial-gradient(950px 560px at 5% 10%, rgba(40, 240, 200, 0.18), transparent 55%),
+    linear-gradient(180deg, #f6fffc 0%, #eef9f6 60%, #e4f4ef 100%);
+}
+body.menu-abierto,
+body.acceso-abierto { overflow: hidden; }
+main { flex: 1 0 auto; }
+a { color: inherit; }
+img { max-width: 100%; }
+.contenedor { width: var(--ancho-contenido); margin-inline: auto; }
+.salto-accesible {
+  position: absolute;
+  left: -999px;
+  top: 8px;
+  padding: 8px 12px;
+  background: var(--turquesa);
+  color: #00110e;
+  border-radius: 999px;
+  z-index: 10000;
+}
+.salto-accesible:focus { left: 8px; }
+.boton-tema {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 80;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 1px solid var(--linea);
+  background: rgba(4, 23, 20, 0.85);
+  color: var(--turquesa);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--sombra);
+  backdrop-filter: blur(12px);
+  transition: transform .2s ease, border-color .2s ease, background .2s ease;
+}
+body.modo-claro .boton-tema { background: #ffffff; }
+.boton-tema:hover,
+.boton-tema:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(40, 240, 200, 0.62);
+}
+:focus-visible {
+  outline: 3px solid var(--rosa);
+  outline-offset: 3px;
+}

@@ -1,0 +1,142 @@
+@media (max-width: 1100px) {
+  :root { --ancho-contenido: 90vw; }
+  .cabecera-publica {
+    min-height: 84px;
+    grid-template-columns: 86px minmax(0, 1fr);
+  }
+  .zona-logo { min-height: 84px; justify-content: center; }
+  .enlace-logo { display: none; }
+  .zona-acceso { display: none !important; }
+  .zona-marca {
+    min-height: 84px;
+    grid-template-rows: 1fr;
+  }
+  .titulo-marca {
+    font-size: clamp(1.9rem, 6.8vw, 3.35rem);
+    letter-spacing: .1em;
+    line-height: .92;
+    padding: 0 10px 0 0;
+    white-space: nowrap;
+  }
+  .panel-navegacion { display: none; }
+  .boton-menu-movil {
+    display: inline-flex;
+    width: 54px;
+    height: 54px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    position: relative;
+  }
+  .boton-menu-movil span,
+  .boton-menu-movil::before,
+  .boton-menu-movil::after {
+    content: "";
+    display: block;
+    width: 30px;
+    height: 3px;
+    border-radius: 999px;
+    background: currentColor;
+    position: absolute;
+    box-shadow: 0 0 8px rgba(255,255,255,.22);
+  }
+  .boton-menu-movil::before { transform: translateY(-9px); }
+  .boton-menu-movil::after { transform: translateY(9px); }
+  .seccion-inicio { min-height: calc(100vh - 84px); }
+  .texto-bienvenida { font-size: clamp(3rem, 9vw, 5rem); }
+  .texto-somos { font-size: clamp(2.85rem, 8.5vw, 4.8rem); max-width: none; }
+  .texto-servicio { font-size: clamp(3rem, 9vw, 5.1rem); max-width: none; }
+  .rejilla-tarjetas { grid-template-columns: 1fr; }
+  .contacto-layout,
+  .faq-layout { grid-template-columns: 1fr; }
+  .faq-layout .bloque-duda { order: 2; }
+  .faq-layout .bloque-faq { order: 1; }
+  .contacto-layout .hero-pagina { order: 1; }
+  .ubicacion-contacto { order: 2; }
+  .contacto-layout .tarjeta-contacto { order: 3; }
+  .contenido-pie {
+    width: 90vw;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px 0 8px;
+  }
+  .marca-pie {
+    grid-template-columns: 64px 1fr;
+    gap: 10px;
+    margin-top: 0;
+    border-right: 0;
+    padding: 4px 2px;
+  }
+  .logo-pie { width: 64px; height: 64px; padding: 8px; }
+  .titulo-pie { font-size: 1.2rem; }
+  .texto-pie { margin-bottom: 8px; font-size: 1rem; }
+  .navegacion-pie { gap: 8px; }
+  .navegacion-pie a { padding: 7px 11px; }
+  .ubicacion-pie {
+    padding: 2px 0;
+    text-align: center;
+  }
+  .mapa-pie iframe {
+    height: 165px;
+    width: 100%;
+  }
+  .redes-pie {
+    grid-auto-flow: column;
+    justify-content: center;
+    justify-items: center;
+    width: 100%;
+    gap: 14px;
+    padding-top: 6px;
+  }
+  .legal-pie {
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    padding-top: 8px;
+  }
+  .copy-pie { padding: 4px 6px 10px; font-size: .88rem; }
+}
+@media (max-width: 560px) {
+  :root { --ancho-contenido: 90vw; }
+  .cabecera-publica { grid-template-columns: 76px minmax(0,1fr); min-height: 76px; }
+  .zona-logo, .zona-marca { min-height: 76px; }
+  .boton-menu-movil { width: 48px; height: 48px; }
+  .boton-menu-movil span,
+  .boton-menu-movil::before,
+  .boton-menu-movil::after { width: 26px; }
+  .titulo-marca { font-size: clamp(1.55rem, 8.8vw, 2.35rem); letter-spacing: .09em; }
+  .seccion-inicio { align-items: center; padding-top: 30px; }
+  .texto-bienvenida { font-size: clamp(2.75rem, 12vw, 3.7rem); }
+  .texto-somos { font-size: clamp(2.55rem, 12.2vw, 3.75rem); }
+  .texto-servicio { font-size: clamp(2.75rem, 12.5vw, 3.85rem); max-width: none; }
+  .marca-pie {
+    grid-template-columns: 56px 1fr;
+    gap: 8px;
+  }
+  .logo-pie { width: 56px; height: 56px; }
+  .navegacion-pie {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 7px;
+  }
+  .navegacion-pie a {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 7px 10px;
+    font-size: .95rem;
+  }
+  .mapa-pie iframe { height: 150px; }
+  .redes-pie {
+    justify-content: center;
+    gap: 12px;
+    padding-top: 4px;
+  }
+  .legal-pie { flex-direction: column; gap: 8px; align-items: center; }
+}
+
+body.menu-abierto, body.acceso-abierto { overflow: hidden; }

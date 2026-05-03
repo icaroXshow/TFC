@@ -4,8 +4,11 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { requireAuth, requireLavanderia, requireRole } from "../auth/middleware.js";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import nodemailer from "nodemailer";
 
 export const configuracionRouter = Router();
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type ConfigRow = RowDataPacket & {
   clave: string;
@@ -106,11 +109,19 @@ type PublicWebSettings = {
   about_subtitulo: string;
   about_parrafo_1: string;
   about_parrafo_2: string;
+  about_card_1_titulo: string;
+  about_card_1_texto: string;
+  about_card_2_titulo: string;
+  about_card_2_texto: string;
+  about_card_3_titulo: string;
+  about_card_3_texto: string;
   contacto_titulo: string;
   contacto_subtitulo: string;
   contacto_telefono: string;
   contacto_email: string;
   direccion_texto: string;
+  contacto_ubicacion_titulo: string;
+  contacto_ubicacion_texto: string;
   mapa_url: string;
   footer_titulo_horario: string;
   footer_titulo_mapa: string;
@@ -134,12 +145,17 @@ type PublicWebSettings = {
   faq_a5: string;
   faq_q6: string;
   faq_a6: string;
+  faqs_titulo: string;
+  faqs_subtitulo: string;
+  faqs_duda_titulo: string;
+  faqs_duda_texto: string;
+  faq_items: string;
 };
 
 const DEFAULT_PUBLIC_WEB_SETTINGS: PublicWebSettings = {
   brand_name: "KWL AQUA",
   nav_inicio: "Inicio",
-  nav_about: "About us",
+  nav_about: "Sobre nosotros",
   nav_contacto: "Contacto",
   nav_faqs: "FAQs",
   inicio_bienvenida: "¡Bienvenido!",
@@ -151,11 +167,19 @@ const DEFAULT_PUBLIC_WEB_SETTINGS: PublicWebSettings = {
     "Ahorra tiempo y dinero. Fideliza a tus clientes. Con KWL podrás controlar tu lavandería autoservicio en remoto, desde cualquier lugar, evitando desplazamientos innecesarios y resolviendo los contratiempos de tus clientes de forma más rápida. ¡Cientos de lavanderías utilizan nuestro sistema!",
   about_parrafo_2:
     "Además, con nuestra App podrás ofrecer a tus clientes la opción de pagar con tarjeta o bizum, hacer promociones, descuentos ¡y mucho más!",
+  about_card_1_titulo: "Horario amplio",
+  about_card_1_texto: "Abierto todos los días para adaptarnos a tu rutina.",
+  about_card_2_titulo: "Máquinas preparadas",
+  about_card_2_texto: "Equipos pensados para ropa diaria, toallas, mantas y cargas grandes.",
+  about_card_3_titulo: "Atención cercana",
+  about_card_3_texto: "Si tienes una duda o incidencia, puedes contactar con nosotros.",
   contacto_titulo: "CONTACTANOS",
   contacto_subtitulo: "Estamos a tu disposición las 24h",
   contacto_telefono: "+34 636 684 021",
   contacto_email: "asistenciakwl@gmail.com",
   direccion_texto: "Calle Dr. Fleming, 26, Bajo, 24402 Ponferrada, León",
+  contacto_ubicacion_titulo: "Ubicación",
+  contacto_ubicacion_texto: "Nos encontrarás en Calle Dr. Fleming, 26, Ponferrada.",
   mapa_url: "https://www.google.com/maps?q=Calle%20Dr.%20Fleming%2C%2026%2C%2024402%20Ponferrada&output=embed",
   footer_titulo_horario: "Horario",
   footer_titulo_mapa: "Donde encontrarnos",
@@ -179,6 +203,11 @@ const DEFAULT_PUBLIC_WEB_SETTINGS: PublicWebSettings = {
   faq_a5: "No exigimos permanencia. Puedes usar el servicio según tus necesidades sin compromisos.",
   faq_q6: "¿Existen descuentos en los precios o App móvil?",
   faq_a6: "Ofrecemos promociones puntuales y descuentos para usuarios registrados en nuestra aplicación.",
+  faqs_titulo: "Resuelve tus dudas rápidas",
+  faqs_subtitulo: "Estas son las preguntas más comunes antes de usar la lavandería.",
+  faqs_duda_titulo: "¿No encuentras tu duda?",
+  faqs_duda_texto: "Escríbenos o llámanos y te ayudaremos con tu consulta.",
+  faq_items: "",
 };
 
 async function getConfigLav<T>(idLav: number, clave: string, fallback: T): Promise<T> {
@@ -298,6 +327,63 @@ configuracionRouter.get("/web-public", async (req, res) => {
   res.json({ ok: true, contenido: { ...DEFAULT_PUBLIC_WEB_SETTINGS, ...publicWeb } });
 });
 
+configuracionRouter.post("/web-public/contacto", async (req, res) => {
+  const nombre = String(req.body?.nombre ?? "").trim();
+  const correo = String(req.body?.correo ?? "").trim();
+  const mensaje = String(req.body?.mensaje ?? "").trim();
+
+  if (!nombre || !correo || !mensaje) {
+    return res.status(400).json({ error: "Todos los campos son obligatorios." });
+  }
+  if (!EMAIL_REGEX.test(correo)) {
+    return res.status(400).json({ error: "El correo no tiene un formato válido." });
+  }
+  if (mensaje.length < 10) {
+    return res.status(400).json({ error: "El mensaje es demasiado corto." });
+  }
+
+  const host = String(process.env.SMTP_HOST ?? "smtp.gmail.com").trim();
+  const port = Number(process.env.SMTP_PORT ?? "587");
+  const secure = String(process.env.SMTP_SECURE ?? "false").toLowerCase() === "true";
+  const user = String(process.env.SMTP_USER ?? "").trim();
+  const pass = String(process.env.SMTP_PASS ?? "").trim();
+  const to = String(process.env.CONTACT_FORM_TO ?? user).trim();
+  const from = String(process.env.SMTP_FROM ?? user).trim();
+
+  if (!user || !pass || !to || !from) {
+    return res.status(500).json({ error: "Correo no configurado en servidor." });
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: { user, pass },
+    });
+
+    await transporter.sendMail({
+      from,
+      to,
+      replyTo: correo,
+      subject: `Nuevo mensaje web de ${nombre}`,
+      text: `Nombre: ${nombre}\nCorreo: ${correo}\n\nMensaje:\n${mensaje}`,
+      html: `
+        <h2>Nuevo mensaje desde el formulario web</h2>
+        <p><strong>Nombre:</strong> ${nombre}</p>
+        <p><strong>Correo:</strong> ${correo}</p>
+        <p><strong>Mensaje:</strong></p>
+        <p>${mensaje.replaceAll("\n", "<br/>")}</p>
+      `,
+    });
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Error enviando formulario de contacto:", error);
+    return res.status(502).json({ error: "No se pudo enviar el correo." });
+  }
+});
+
 configuracionRouter.get("/web-public/admin", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = req.auth?.id_lavanderia ?? 1;
   const publicWeb = await getConfigLav<PublicWebSettings>(idLav, "web_public_content", DEFAULT_PUBLIC_WEB_SETTINGS);
@@ -320,11 +406,19 @@ configuracionRouter.put("/web-public/admin", requireAuth, requireRole(["ADMIN"])
     about_subtitulo: String(body.about_subtitulo ?? DEFAULT_PUBLIC_WEB_SETTINGS.about_subtitulo).trim(),
     about_parrafo_1: String(body.about_parrafo_1 ?? DEFAULT_PUBLIC_WEB_SETTINGS.about_parrafo_1).trim(),
     about_parrafo_2: String(body.about_parrafo_2 ?? DEFAULT_PUBLIC_WEB_SETTINGS.about_parrafo_2).trim(),
+    about_card_1_titulo: String(body.about_card_1_titulo ?? DEFAULT_PUBLIC_WEB_SETTINGS.about_card_1_titulo).trim(),
+    about_card_1_texto: String(body.about_card_1_texto ?? DEFAULT_PUBLIC_WEB_SETTINGS.about_card_1_texto).trim(),
+    about_card_2_titulo: String(body.about_card_2_titulo ?? DEFAULT_PUBLIC_WEB_SETTINGS.about_card_2_titulo).trim(),
+    about_card_2_texto: String(body.about_card_2_texto ?? DEFAULT_PUBLIC_WEB_SETTINGS.about_card_2_texto).trim(),
+    about_card_3_titulo: String(body.about_card_3_titulo ?? DEFAULT_PUBLIC_WEB_SETTINGS.about_card_3_titulo).trim(),
+    about_card_3_texto: String(body.about_card_3_texto ?? DEFAULT_PUBLIC_WEB_SETTINGS.about_card_3_texto).trim(),
     contacto_titulo: String(body.contacto_titulo ?? DEFAULT_PUBLIC_WEB_SETTINGS.contacto_titulo).trim(),
     contacto_subtitulo: String(body.contacto_subtitulo ?? DEFAULT_PUBLIC_WEB_SETTINGS.contacto_subtitulo).trim(),
     contacto_telefono: String(body.contacto_telefono ?? DEFAULT_PUBLIC_WEB_SETTINGS.contacto_telefono).trim(),
     contacto_email: String(body.contacto_email ?? DEFAULT_PUBLIC_WEB_SETTINGS.contacto_email).trim(),
     direccion_texto: String(body.direccion_texto ?? DEFAULT_PUBLIC_WEB_SETTINGS.direccion_texto).trim(),
+    contacto_ubicacion_titulo: String(body.contacto_ubicacion_titulo ?? DEFAULT_PUBLIC_WEB_SETTINGS.contacto_ubicacion_titulo).trim(),
+    contacto_ubicacion_texto: String(body.contacto_ubicacion_texto ?? DEFAULT_PUBLIC_WEB_SETTINGS.contacto_ubicacion_texto).trim(),
     mapa_url: String(body.mapa_url ?? DEFAULT_PUBLIC_WEB_SETTINGS.mapa_url).trim(),
     footer_titulo_horario: String(body.footer_titulo_horario ?? DEFAULT_PUBLIC_WEB_SETTINGS.footer_titulo_horario).trim(),
     footer_titulo_mapa: String(body.footer_titulo_mapa ?? DEFAULT_PUBLIC_WEB_SETTINGS.footer_titulo_mapa).trim(),
@@ -348,6 +442,11 @@ configuracionRouter.put("/web-public/admin", requireAuth, requireRole(["ADMIN"])
     faq_a5: String(body.faq_a5 ?? DEFAULT_PUBLIC_WEB_SETTINGS.faq_a5).trim(),
     faq_q6: String(body.faq_q6 ?? DEFAULT_PUBLIC_WEB_SETTINGS.faq_q6).trim(),
     faq_a6: String(body.faq_a6 ?? DEFAULT_PUBLIC_WEB_SETTINGS.faq_a6).trim(),
+    faqs_titulo: String(body.faqs_titulo ?? DEFAULT_PUBLIC_WEB_SETTINGS.faqs_titulo).trim(),
+    faqs_subtitulo: String(body.faqs_subtitulo ?? DEFAULT_PUBLIC_WEB_SETTINGS.faqs_subtitulo).trim(),
+    faqs_duda_titulo: String(body.faqs_duda_titulo ?? DEFAULT_PUBLIC_WEB_SETTINGS.faqs_duda_titulo).trim(),
+    faqs_duda_texto: String(body.faqs_duda_texto ?? DEFAULT_PUBLIC_WEB_SETTINGS.faqs_duda_texto).trim(),
+    faq_items: String(body.faq_items ?? DEFAULT_PUBLIC_WEB_SETTINGS.faq_items).trim(),
   };
   await setConfigLav(idLav, "web_public_content", next, "Contenido editable web publica");
   res.json({ ok: true, contenido: next });

@@ -106,3 +106,4 @@ sudo docker compose down -v
 sudo docker compose up -d --build
 ```
 En Fedora 43 se puede usar el script de despliegue que esta dentro de deploy/demo
+

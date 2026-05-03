@@ -11,10 +11,12 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-
-    <link rel="stylesheet" href="/css/styles.css" />
-    <link rel="stylesheet" href="/css/componentes.css" />
-    <link rel="stylesheet" href="/css/admin.css?v=20260428e" />
+  <link rel="stylesheet" href="../css/admin/base.css?v=25" />
+  <link rel="stylesheet" href="../css/componentes/componentes-principales.css?v=25" />
+  <link rel="stylesheet" href="../css/componentes/componentes-responsive.css?v=25" />
+  <link rel="stylesheet" href="../css/admin/estructura-paneles.css?v=25" />
+  <link rel="stylesheet" href="../css/admin/vistas-admin.css?v=25" />
+  <link rel="stylesheet" href="../css/admin/responsive-admin.css?v=25" />
   </head>
 
   <body data-breadcrumb="Gestión|Editor Web">
@@ -70,7 +72,8 @@
         </section>
 
         <section class="admin-section">
-          <div class="admin-card" style="margin-bottom:14px;">
+          <details class="admin-card web-preview-panel" style="margin-bottom:14px;" open>
+            <summary style="cursor:pointer; font-weight:800; padding:10px 12px;">Vista previa web</summary>
             <div class="users-toolbar" style="margin-top:0;">
               <div class="users-filters" style="width:100%;">
                 <label class="field" style="min-width:220px;">
@@ -82,28 +85,16 @@
                     <option value="faqs.html">FAQs</option>
                   </select>
                 </label>
-                <button type="button" class="btn-secondary" id="webPreviewReload">Recargar vista</button>
+                <button type="button" class="btn-secondary" id="webPreviewReload" aria-label="Recargar vista" title="Recargar vista">Recargar vista</button>
               </div>
             </div>
-            <div class="admin-camera-frame" style="margin-top:10px; max-height:none; min-height:420px;">
-              <iframe id="webPreviewFrame" title="Vista previa web pública" style="width:100%;height:70vh;min-height:420px;border:0;background:#0b1220;"></iframe>
+            <div class="admin-camera-frame" style="margin-top:10px; max-height:none; min-height:320px;">
+              <iframe id="webPreviewFrame" title="Vista previa web pública" style="width:100%;height:58vh;min-height:320px;border:0;background:#0b1220;"></iframe>
             </div>
-          </div>
+          </details>
 
           <form id="webEditorForm" class="admin-card web-editor-form">
-            <section class="web-editor-visibility">
-              <p class="web-editor-visibility-title">Visibilidad de paneles</p>
-              <div class="web-editor-visibility-grid">
-                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelNav" checked /> Navegación y marca</label>
-                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelInicio" checked /> Página Inicio</label>
-                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelAbout" checked /> Página About</label>
-                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelContacto" checked /> Página Contacto</label>
-                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelFaqs" checked /> Página FAQs</label>
-                <label><input type="checkbox" class="js-web-panel-toggle" data-target="webPanelFooter" checked /> Footer y horarios</label>
-              </div>
-            </section>
-
-            <details class="web-editor-panel" id="webPanelNav" open>
+            <details class="web-editor-panel" id="webPanelNav">
               <summary>Navegación y marca</summary>
               <div class="form-grid">
                 <label class="field"><span>Marca</span><input class="input" id="web_brand_name" /></label>
@@ -114,7 +105,7 @@
               </div>
             </details>
 
-            <details class="web-editor-panel" id="webPanelInicio" open>
+            <details class="web-editor-panel" id="webPanelInicio">
               <summary>Página Inicio</summary>
               <div class="form-grid">
                 <label class="field"><span>Inicio Bienvenida</span><input class="input" id="web_inicio_bienvenida" /></label>
@@ -123,17 +114,23 @@
               </div>
             </details>
 
-            <details class="web-editor-panel" id="webPanelAbout" open>
+            <details class="web-editor-panel" id="webPanelAbout">
               <summary>Página About</summary>
               <div class="form-grid">
                 <label class="field"><span>About título</span><input class="input" id="web_about_titulo" /></label>
                 <label class="field"><span>About subtítulo</span><input class="input" id="web_about_subtitulo" /></label>
                 <label class="field"><span>About párrafo 1</span><input class="input" id="web_about_parrafo_1" /></label>
                 <label class="field"><span>About párrafo 2</span><input class="input" id="web_about_parrafo_2" /></label>
+                <label class="field"><span>Tarjeta 1 título</span><input class="input" id="web_about_card_1_titulo" /></label>
+                <label class="field"><span>Tarjeta 1 texto</span><input class="input" id="web_about_card_1_texto" /></label>
+                <label class="field"><span>Tarjeta 2 título</span><input class="input" id="web_about_card_2_titulo" /></label>
+                <label class="field"><span>Tarjeta 2 texto</span><input class="input" id="web_about_card_2_texto" /></label>
+                <label class="field"><span>Tarjeta 3 título</span><input class="input" id="web_about_card_3_titulo" /></label>
+                <label class="field"><span>Tarjeta 3 texto</span><input class="input" id="web_about_card_3_texto" /></label>
               </div>
             </details>
 
-            <details class="web-editor-panel" id="webPanelContacto" open>
+            <details class="web-editor-panel" id="webPanelContacto">
               <summary>Página Contacto</summary>
               <div class="form-grid">
                 <label class="field"><span>Contacto Título</span><input class="input" id="web_contacto_titulo" /></label>
@@ -141,41 +138,51 @@
                 <label class="field"><span>Teléfono</span><input class="input" id="web_contacto_telefono" /></label>
                 <label class="field"><span>Email</span><input class="input" id="web_contacto_email" /></label>
                 <label class="field"><span>Dirección</span><input class="input" id="web_direccion_texto" /></label>
+                <label class="field"><span>Ubicación título</span><input class="input" id="web_contacto_ubicacion_titulo" /></label>
+                <label class="field"><span>Ubicación texto</span><input class="input" id="web_contacto_ubicacion_texto" /></label>
                 <label class="field"><span>Mapa URL (iframe)</span><input class="input" id="web_mapa_url" /></label>
+                <label class="field"><span>Horario · Lunes</span><input class="input" id="web_horario_lunes" /></label>
+                <label class="field"><span>Horario · Martes</span><input class="input" id="web_horario_martes" /></label>
+                <label class="field"><span>Horario · Miércoles</span><input class="input" id="web_horario_miercoles" /></label>
+                <label class="field"><span>Horario · Jueves</span><input class="input" id="web_horario_jueves" /></label>
+                <label class="field"><span>Horario · Viernes</span><input class="input" id="web_horario_viernes" /></label>
+                <label class="field"><span>Horario · Sábado</span><input class="input" id="web_horario_sabado" /></label>
+                <label class="field"><span>Horario · Domingo</span><input class="input" id="web_horario_domingo" /></label>
               </div>
             </details>
 
-            <details class="web-editor-panel" id="webPanelFaqs" open>
+            <details class="web-editor-panel" id="webPanelFaqs">
               <summary>Página FAQs</summary>
-              <div class="form-grid">
-                <label class="field"><span>FAQ 1 pregunta</span><input class="input" id="web_faq_q1" /></label>
-                <label class="field"><span>FAQ 1 respuesta</span><input class="input" id="web_faq_a1" /></label>
-                <label class="field"><span>FAQ 2 pregunta</span><input class="input" id="web_faq_q2" /></label>
-                <label class="field"><span>FAQ 2 respuesta</span><input class="input" id="web_faq_a2" /></label>
-                <label class="field"><span>FAQ 3 pregunta</span><input class="input" id="web_faq_q3" /></label>
-                <label class="field"><span>FAQ 3 respuesta</span><input class="input" id="web_faq_a3" /></label>
-                <label class="field"><span>FAQ 4 pregunta</span><input class="input" id="web_faq_q4" /></label>
-                <label class="field"><span>FAQ 4 respuesta</span><input class="input" id="web_faq_a4" /></label>
-                <label class="field"><span>FAQ 5 pregunta</span><input class="input" id="web_faq_q5" /></label>
-                <label class="field"><span>FAQ 5 respuesta</span><input class="input" id="web_faq_a5" /></label>
-                <label class="field"><span>FAQ 6 pregunta</span><input class="input" id="web_faq_q6" /></label>
-                <label class="field"><span>FAQ 6 respuesta</span><input class="input" id="web_faq_a6" /></label>
+              <div class="form-grid" style="padding:12px 12px 0;">
+                <label class="field"><span>Título FAQs</span><input class="input" id="web_faqs_titulo" /></label>
+                <label class="field"><span>Subtítulo FAQs</span><input class="input" id="web_faqs_subtitulo" /></label>
+                <label class="field"><span>Bloque duda título</span><input class="input" id="web_faqs_duda_titulo" /></label>
+                <label class="field"><span>Bloque duda texto</span><input class="input" id="web_faqs_duda_texto" /></label>
               </div>
+              <div style="display:flex; justify-content:flex-end; padding:10px 12px 0;">
+                <button type="button" class="btn-secondary" id="webFaqAdd">Añadir FAQ</button>
+              </div>
+              <div id="webFaqList" class="form-grid" style="padding:12px;"></div>
+              <input type="hidden" id="web_faq_q1" />
+              <input type="hidden" id="web_faq_a1" />
+              <input type="hidden" id="web_faq_q2" />
+              <input type="hidden" id="web_faq_a2" />
+              <input type="hidden" id="web_faq_q3" />
+              <input type="hidden" id="web_faq_a3" />
+              <input type="hidden" id="web_faq_q4" />
+              <input type="hidden" id="web_faq_a4" />
+              <input type="hidden" id="web_faq_q5" />
+              <input type="hidden" id="web_faq_a5" />
+              <input type="hidden" id="web_faq_q6" />
+              <input type="hidden" id="web_faq_a6" />
+              <input type="hidden" id="web_faq_items" />
             </details>
 
-            <details class="web-editor-panel" id="webPanelFooter" open>
-              <summary>Footer y horarios</summary>
+            <details class="web-editor-panel" id="webPanelFooter">
+              <summary>Footer</summary>
               <div class="form-grid">
-                <label class="field"><span>Footer título horario</span><input class="input" id="web_footer_titulo_horario" /></label>
                 <label class="field"><span>Footer título mapa</span><input class="input" id="web_footer_titulo_mapa" /></label>
                 <label class="field"><span>Footer copy</span><input class="input" id="web_footer_copy" /></label>
-                <label class="field"><span>Lunes</span><input class="input" id="web_horario_lunes" /></label>
-                <label class="field"><span>Martes</span><input class="input" id="web_horario_martes" /></label>
-                <label class="field"><span>Miércoles</span><input class="input" id="web_horario_miercoles" /></label>
-                <label class="field"><span>Jueves</span><input class="input" id="web_horario_jueves" /></label>
-                <label class="field"><span>Viernes</span><input class="input" id="web_horario_viernes" /></label>
-                <label class="field"><span>Sábado</span><input class="input" id="web_horario_sabado" /></label>
-                <label class="field"><span>Domingo</span><input class="input" id="web_horario_domingo" /></label>
               </div>
             </details>
 
@@ -186,8 +193,6 @@
         </section>
       </main>
     </div>
-
-    <script src="/js/app.js?v=20260428e"></script>
-    <script src="/js/admin.js?v=20260428e"></script>
+    <script src="../js/admin.js?v=39"></script>
   </body>
 </html>

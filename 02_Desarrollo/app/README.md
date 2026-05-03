@@ -9,13 +9,6 @@ Código funcional del sistema (backend + frontend).
 
 ## Reglas actuales importantes
 
-- Ampliación de tiempo: solo en secadoras.
-- No hay límite de ampliaciones por ciclo.
+- Ampliación de tiempo: solo en secadoras. No hay límite de ampliaciones por ciclo.
 - En web admin, si el importe enviado supera lo aplicable, el sobrante no se contabiliza.
 - La lógica de puerta de secadora con retardo es de simulación física y vive en `simulation/`.
-
-## Alcance
-
-- Aquí está la lógica real del panel y API.
-- El despliegue está en `deploy/`.
-- La simulación hardware está en `simulation/`.
