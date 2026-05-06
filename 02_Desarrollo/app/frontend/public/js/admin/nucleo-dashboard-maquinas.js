@@ -402,6 +402,23 @@
     return code === "SIM-01" || name.includes("SIMULADOR");
   }
 
+  function shouldPreferSimulatorLav() {
+    const path = location.pathname.toLowerCase();
+    return (
+      path.endsWith("/admin/maquinas.html") ||
+      path.endsWith("/admin/iot.html") ||
+      path.endsWith("/admin/camara.html") ||
+      path.endsWith("/admin/inicio.html")
+    );
+  }
+
+  function hasStoredActiveLavanderiaId() {
+    const raw = localStorage.getItem(ACTIVE_LAV_KEY);
+    if (!raw) return false;
+    const id = Number(raw);
+    return Number.isFinite(id) && id > 0;
+  }
+
   function stateClass(estado) {
     if (estado === "STOP") return "state-stop";
     if (estado === "EN_MARCHA") return "state-running";
@@ -451,6 +468,9 @@
       const mm = Math.floor(restSec / 60);
       const ss = restSec % 60;
       const timerLabel = restSec > 0 ? `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}` : (restMin > 0 ? `~${restMin} min` : "—");
+      const creditoVisible = Number(
+        m.credito_actual ?? m.credito_pendiente ?? m.saldo_credito ?? 0,
+      );
       el.innerHTML = `
         <div class="meta-maquina">
           <strong>${m.codigo_visible}</strong>
@@ -470,6 +490,7 @@
             data-rest-sec="${restSec}"
           >${timerLabel}</span>
         </div>
+        <div class="meta-credito-maquina">Crédito: ${creditoVisible.toFixed(2)} €</div>
         <div class="acciones-maquina">
           <button type="button" class="boton-primario js-start" data-id="${id}" ${canStart ? "" : "disabled"}>Encender</button>
           <button type="button" class="boton-secundario js-stop" data-id="${id}" ${canStop ? "" : "disabled"}>Apagar</button>
@@ -545,6 +566,83 @@
     machineTimerInterval = window.setInterval(update, 1000);
   }
 
+  function applyLiveSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== "object") return;
+    const maquinas = Array.isArray(snapshot.maquinas) ? snapshot.maquinas : [];
+    const iot = snapshot.iot || {};
+
+    if (machinesGrid && maquinas.length) {
+      renderMaquinas(maquinas, Boolean(iot.puerta_abierta));
+    }
+
+    if (doorState) {
+      doorState.className = `estado-iot ${iot.puerta_abierta ? "on" : "off"}`;
+      doorState.textContent = iot.puerta_abierta ? "ON" : "OFF";
+    }
+    if (lightsState) {
+      lightsState.className = `estado-iot ${iot.luces_encendidas ? "on" : "off"}`;
+      lightsState.textContent = iot.luces_encendidas ? "ON" : "OFF";
+    }
+    if (fanState && "ventilacion_encendida" in iot) {
+      fanState.className = `estado-iot ${iot.ventilacion_encendida ? "on" : "off"}`;
+      fanState.textContent = iot.ventilacion_encendida ? "ON" : "OFF";
+    }
+
+    if (document.querySelector("#cardActivas")) {
+      const activas = maquinas.filter((m) => String(m?.estado_actual || "").toUpperCase() === "EN_MARCHA").length;
+      const cardActivas = document.querySelector("#cardActivas");
+      if (cardActivas) cardActivas.textContent = String(activas);
+    }
+  }
+
+  function connectAdminLiveWs(activeLavId) {
+    const path = location.pathname.toLowerCase();
+    const enabled =
+      path.endsWith("/admin/inicio.html") ||
+      path.endsWith("/admin/maquinas.html") ||
+      path.endsWith("/admin/iot.html");
+    if (!enabled) return;
+
+    const proto = window.location.protocol === "https:" ? "wss" : "ws";
+    const wsUrl = `${proto}://${window.location.hostname}:8080/ws/admin-live?lav=${encodeURIComponent(String(activeLavId))}`;
+    let ws = null;
+    let reconnectTimer = null;
+
+    const connect = () => {
+      try {
+        ws = new WebSocket(wsUrl);
+      } catch {
+        return;
+      }
+      ws.onopen = () => {
+        if (machinesPollInterval) {
+          clearInterval(machinesPollInterval);
+          machinesPollInterval = null;
+        }
+        if (iotPollInterval) {
+          clearInterval(iotPollInterval);
+          iotPollInterval = null;
+        }
+      };
+      ws.onmessage = (ev) => {
+        try {
+          const snapshot = JSON.parse(ev.data);
+          applyLiveSnapshot(snapshot);
+        } catch {}
+      };
+      ws.onclose = () => {
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connect, 2000);
+      };
+      ws.onerror = () => {
+        try {
+          ws?.close();
+        } catch {}
+      };
+    };
+    connect();
+  }
+
   async function init() {
     const existing = loadAuth();
     const token = existing?.token;
@@ -568,6 +666,10 @@
       const l = await fetchLavanderias(token);
       const list = l?.lavanderias || [];
       if (list.length) {
+        if (shouldPreferSimulatorLav() && !hasStoredActiveLavanderiaId()) {
+          const lavSimulador = list.find(isSimulatorLav);
+          if (lavSimulador) activeLavId = lavSimulador.id_lavanderia;
+        }
         // Si el active no está permitido, cae al primero.
         if (!list.some((x) => x.id_lavanderia === activeLavId)) activeLavId = list[0].id_lavanderia;
         setLavUI(list, activeLavId);
@@ -588,6 +690,7 @@
       if (locationEl) locationEl.textContent = "—";
       if (lavSelect) lavSelect.hidden = true;
     }
+    connectAdminLiveWs(activeLavId);
     const renderServerClock = (isoValue) => {
       if (!serverClockEl) return;
       const dt = new Date(String(isoValue || ""));

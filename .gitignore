@@ -101,7 +101,6 @@ Acceso.md
 node_modules/
 dist/
 .env
-.env.*.local
 npm-debug.log*
 02_Desarrollo/Versiones
 Privado_KWL

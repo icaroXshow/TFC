@@ -52,7 +52,7 @@ function ensureMachine(codigo) {
     return null;
   if (!stateByCode.has(codigo)) {
     stateByCode.set(codigo, {
-      estado: "PAUSADA",
+      estado: "STOP",
       idCiclo: null,
       timer: null,
       relayOn: false,
@@ -537,8 +537,11 @@ client.on("connect", () => {
   client.subscribe("kwl/maquinas/+/+/comando");
   client.subscribe("kwl/iot/+/comando");
   for (const idLav of SIM_LAV_IDS) {
-    for (const c of SIM_MACHINE_CODES)
-      publishEstado(idLav, c, "STOP", { segundos_restantes_estimados: 0 });
+    for (const c of SIM_MACHINE_CODES) {
+      const st = ensureMachine(c);
+      const estadoInicial = String(st?.estado || "PAUSADA").toUpperCase();
+      publishEstado(idLav, c, estadoInicial, { segundos_restantes_estimados: 0 });
+    }
   }
   for (const idLav of SIM_LAV_IDS) publishIotEstado(idLav);
 });

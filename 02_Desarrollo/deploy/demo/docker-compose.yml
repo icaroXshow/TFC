@@ -79,7 +79,7 @@ services:
       TZ: Europe/Madrid
       HOST: 0.0.0.0
       PORT: 8080
-      CORS_ORIGIN: http://127.0.0.1:8081,http://localhost:8081,http://127.0.0.1:8080,null
+      CORS_ORIGIN: http://127.0.0.1:8081,http://localhost:8081,http://127.0.0.1:8080,http://127.0.0.1:8083,http://localhost:8083,null
       DB_HOST: mariadb
       DB_PORT: 3306
       DB_USER: root

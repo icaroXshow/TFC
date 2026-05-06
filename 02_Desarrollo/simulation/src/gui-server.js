@@ -2,6 +2,8 @@ import express from "express";
 import mqtt from "mqtt";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import http from "node:http";
+import { WebSocketServer } from "ws";
 
 const MQTT_URL = process.env.MQTT_URL || "mqtt://mqtt:1883";
 const PORT = Number(process.env.SIM_GUI_PORT || "8090");
@@ -20,10 +22,12 @@ const SIM_START_MIN_CREDIT = Number(process.env.SIM_START_MIN_CREDIT || "4");
 
 const app = express();
 app.use(express.json({ limit: "256kb" }));
+const sseClients = new Set();
+const wsClients = new Set();
 
 let mqttConnected = false;
 const machineState = Object.fromEntries(
-  SIM_MACHINE_CODES.map((c) => [c, "PAUSADA"]),
+  SIM_MACHINE_CODES.map((c) => [c, "STOP"]),
 );
 const fanState = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, false]));
 const iotState = {
@@ -33,6 +37,7 @@ const iotState = {
 };
 const machineCredit = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, 0]));
 const machineTimer = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, 0]));
+const dryerDoorState = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, false]));
 const localIso = () => {
   const parts = new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Europe/Madrid",
@@ -48,6 +53,39 @@ const localIso = () => {
   return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`;
 };
 let lastUpdate = localIso();
+
+function buildSnapshot() {
+  return {
+    ok: true,
+    mqtt_connected: mqttConnected,
+    machines: machineState,
+    fan: fanState,
+    dryer_door: dryerDoorState,
+    iot: iotState,
+    credit: machineCredit,
+    timer_sec: machineTimer,
+    last_update: lastUpdate,
+  };
+}
+
+function broadcastSnapshot() {
+  const json = JSON.stringify(buildSnapshot());
+  const payload = `data: ${JSON.stringify(buildSnapshot())}\n\n`;
+  for (const res of sseClients) {
+    try {
+      res.write(payload);
+    } catch {
+      sseClients.delete(res);
+    }
+  }
+  for (const ws of wsClients) {
+    try {
+      ws.send(json);
+    } catch {
+      wsClients.delete(ws);
+    }
+  }
+}
 
 const mqttClient = mqtt.connect(MQTT_URL, {
   reconnectPeriod: 3000,
@@ -87,6 +125,7 @@ mqttClient.on("message", (topic, payloadBuf) => {
       machineTimer[code] = Math.floor(secs);
     if (machineState[code] !== "EN_MARCHA") machineTimer[code] = 0;
     lastUpdate = localIso();
+    broadcastSnapshot();
     return;
   }
   if (
@@ -100,6 +139,8 @@ mqttClient.on("message", (topic, payloadBuf) => {
     const tipo = String(data?.tipo_evento || "").toUpperCase();
     if (tipo === "VENTILADOR_ON") fanState[code] = true;
     if (tipo === "VENTILADOR_OFF") fanState[code] = false;
+    if (tipo === "SECADORA_PUERTA_ABIERTA") dryerDoorState[code] = true;
+    if (tipo === "SECADORA_PUERTA_CERRADA") dryerDoorState[code] = false;
     if (tipo === "CREDITO_ACUMULADO") {
       const saldo = Number(data?.payload?.saldo ?? Number.NaN);
       if (Number.isFinite(saldo) && saldo >= 0)
@@ -124,6 +165,7 @@ mqttClient.on("message", (topic, payloadBuf) => {
       // no cambia saldo ni estado, solo feedback por evento
     }
     lastUpdate = localIso();
+    broadcastSnapshot();
     return;
   }
   if (
@@ -136,6 +178,7 @@ mqttClient.on("message", (topic, payloadBuf) => {
     iotState.luces_encendidas = Boolean(data?.luces_encendidas);
     iotState.ventilacion_encendida = Boolean(data?.ventilacion_encendida);
     lastUpdate = localIso();
+    broadcastSnapshot();
   }
 });
 
@@ -176,15 +219,24 @@ app.get("/api/config", (_req, res) => {
 });
 
 app.get("/api/state", (_req, res) => {
-  res.json({
-    ok: true,
-    mqtt_connected: mqttConnected,
-    machines: machineState,
-    fan: fanState,
-    iot: iotState,
-    credit: machineCredit,
-    timer_sec: machineTimer,
-    last_update: lastUpdate,
+  res.json(buildSnapshot());
+});
+
+app.get("/api/stream", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders?.();
+  sseClients.add(res);
+  res.write(`data: ${JSON.stringify(buildSnapshot())}\n\n`);
+  const keepAlive = setInterval(() => {
+    try {
+      res.write(": keepalive\n\n");
+    } catch {}
+  }, 15000);
+  req.on("close", () => {
+    clearInterval(keepAlive);
+    sseClients.delete(res);
   });
 });
 
@@ -263,6 +315,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, "../public")));
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server, path: "/ws" });
+wss.on("connection", (ws) => {
+  wsClients.add(ws);
+  try {
+    ws.send(JSON.stringify(buildSnapshot()));
+  } catch {}
+  ws.on("close", () => wsClients.delete(ws));
+  ws.on("error", () => wsClients.delete(ws));
+});
+
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`sim-gui listening on http://0.0.0.0:${PORT}`);
 });

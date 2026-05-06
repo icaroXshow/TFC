@@ -2,6 +2,7 @@ const seleccionar = (selector) => document.querySelector(selector);
 
 const panelCuadricula = seleccionar("#panelGrid");
 const indicadorMqtt = seleccionar("#indicadorMqtt");
+const indicadorRedis = seleccionar("#indicadorRedis");
 const estadoPuerta = seleccionar("#doorState");
 const estadoLuces = seleccionar("#lightsState");
 const pistaSimulacion = seleccionar("#pistaSimulacion");
@@ -16,6 +17,9 @@ let minutosAmpliacion = 9;
 let codigosMaquina = [];
 let estadoAnterior = null;
 let ultimaAlarmaId = 0;
+let redisConectadoCache = false;
+let sseActiva = false;
+let wsActiva = false;
 
 function horaActual() {
   return new Date().toLocaleTimeString("es-ES", {
@@ -40,6 +44,11 @@ function formatearHoraLectura(iso) {
 
 function textoEstado(estado) {
   return String(estado || "STOP").toUpperCase();
+}
+
+function etiquetaEstado(estadoNormalizado) {
+  if (estadoNormalizado === "PAUSADA") return "ENCENDIDA";
+  return estadoNormalizado;
 }
 
 function tipoAlarma(clave) {
@@ -99,7 +108,7 @@ function actualizarEstadoMaquina(codigo, estado) {
   el.classList.toggle("estado-marcha", enMarcha);
   el.classList.toggle("estado-pausada", pausada);
   el.classList.toggle("estado-parada", !enMarcha && !pausada);
-  el.querySelector("span:last-child").textContent = estadoNormalizado;
+  el.querySelector("span:last-child").textContent = etiquetaEstado(estadoNormalizado);
 
   const btn = seleccionar(`[data-confirm="${codigo}"]`);
   if (btn) {
@@ -145,6 +154,7 @@ function renderizarPanelesMaquina() {
             <div><span>Temporizador</span><strong data-timer="${codigo}">00:00</strong></div>
             <div><span>Refrigerar</span><strong data-fan="${codigo}">OFF</strong></div>
             <div><span>Saldo sin aplicar</span><strong data-saldo="${codigo}">0.00 €</strong></div>
+            ${esSecadora ? `<div><span>Puerta secadora</span><strong data-dryer-door="${codigo}">CERRADA</strong></div>` : ""}
           </div>
           <div class="acciones-maquina">
             <label class="campo-credito">
@@ -232,51 +242,109 @@ function comprobarAlarmas(datos) {
 
 async function refrescarEstado() {
   try {
+    let redisConectado = false;
+    try {
+      const backendHealth = await fetch(`${window.location.protocol}//${window.location.hostname}:8080/health`);
+      if (backendHealth.ok) {
+        const h = await backendHealth.json();
+        redisConectado = Boolean(
+          h?.redis?.ok ??
+            h?.redis?.connected ??
+            h?.cache?.redis?.ok ??
+            h?.cache?.redis?.connected,
+        );
+      }
+    } catch {}
+
+    redisConectadoCache = redisConectado;
     const respuesta = await fetch("/api/state");
     const datos = await respuesta.json();
-    const conectado = Boolean(datos?.mqtt_connected);
-    indicadorMqtt.textContent = `MQTT: ${conectado ? "ON" : "OFF"}`;
-    indicadorMqtt.classList.toggle("estado-bueno", conectado);
-    indicadorMqtt.classList.toggle("estado-malo", !conectado);
-    ultimaLectura.textContent = formatearHoraLectura(datos?.last_update);
-
-    const maquinas = datos?.machines || {};
-    const ventiladores = datos?.fan || {};
-    const creditos = datos?.credit || {};
-    const temporizadores = datos?.timer_sec || {};
-
-    codigosMaquina.forEach((codigo) => actualizarEstadoMaquina(codigo, maquinas[codigo] || "STOP"));
-    codigosMaquina.forEach((codigo) => {
-      const fanEl = seleccionar(`[data-fan="${codigo}"]`);
-      if (fanEl) fanEl.textContent = ventiladores[codigo] ? "ON" : "OFF";
-
-      const saldoEl = seleccionar(`[data-saldo="${codigo}"]`);
-      if (saldoEl) saldoEl.textContent = `${Number(creditos[codigo] || 0).toFixed(2)} €`;
-
-      const startBtn = seleccionar(`[data-start="${codigo}"]`);
-      if (startBtn) {
-        const estado = textoEstado(maquinas[codigo]);
-        const saldo = Number(creditos[codigo] || 0);
-        startBtn.disabled = !(estado === "PAUSADA" && saldo >= minimoCreditoArranque);
-      }
-
-      const timerEl = seleccionar(`[data-timer="${codigo}"]`);
-      if (timerEl) {
-        const segundos = Math.max(0, Number(temporizadores[codigo] || 0));
-        const minutos = Math.floor(segundos / 60);
-        const restoSegundos = segundos % 60;
-        timerEl.textContent = `${String(minutos).padStart(2, "0")}:${String(restoSegundos).padStart(2, "0")}`;
-      }
-    });
-
-    actualizarIndicador(estadoPuerta, Boolean(datos?.iot?.puerta_abierta));
-    actualizarIndicador(estadoLuces, Boolean(datos?.iot?.luces_encendidas));
-    comprobarAlarmas(datos);
+    aplicarEstado(datos, redisConectadoCache);
   } catch {
     indicadorMqtt.textContent = "MQTT: OFF";
     indicadorMqtt.classList.remove("estado-bueno");
     indicadorMqtt.classList.add("estado-malo");
+    if (indicadorRedis) {
+      indicadorRedis.textContent = "Redis: OFF";
+      indicadorRedis.classList.remove("estado-bueno");
+      indicadorRedis.classList.add("estado-malo");
+    }
     agregarAlarma("No se pudo refrescar el estado del simulador.", "error");
+  }
+}
+
+function aplicarEstado(datos, redisConectado = redisConectadoCache) {
+  const conectado = Boolean(datos?.mqtt_connected);
+  indicadorMqtt.textContent = `MQTT: ${conectado ? "ON" : "OFF"}`;
+  indicadorMqtt.classList.toggle("estado-bueno", conectado);
+  indicadorMqtt.classList.toggle("estado-malo", !conectado);
+  if (indicadorRedis) {
+    indicadorRedis.textContent = `Redis: ${redisConectado ? "ON" : "OFF"}`;
+    indicadorRedis.classList.toggle("estado-bueno", redisConectado);
+    indicadorRedis.classList.toggle("estado-malo", !redisConectado);
+  }
+  ultimaLectura.textContent = formatearHoraLectura(datos?.last_update);
+
+  const maquinas = datos?.machines || {};
+  const ventiladores = datos?.fan || {};
+  const estadoPuertaSecadora = datos?.dryer_door || {};
+  const creditos = datos?.credit || {};
+  const temporizadores = datos?.timer_sec || {};
+
+  codigosMaquina.forEach((codigo) => actualizarEstadoMaquina(codigo, maquinas[codigo] || "STOP"));
+  codigosMaquina.forEach((codigo) => {
+    const fanEl = seleccionar(`[data-fan="${codigo}"]`);
+    if (fanEl) fanEl.textContent = ventiladores[codigo] ? "ON" : "OFF";
+    const saldoEl = seleccionar(`[data-saldo="${codigo}"]`);
+    if (saldoEl) saldoEl.textContent = `${Number(creditos[codigo] || 0).toFixed(2)} €`;
+    const puertaSecadoraEl = seleccionar(`[data-dryer-door="${codigo}"]`);
+    if (puertaSecadoraEl) puertaSecadoraEl.textContent = estadoPuertaSecadora[codigo] ? "ABIERTA" : "CERRADA";
+    const startBtn = seleccionar(`[data-start="${codigo}"]`);
+    if (startBtn) {
+      const estado = textoEstado(maquinas[codigo]);
+      const saldo = Number(creditos[codigo] || 0);
+      startBtn.disabled = !(estado === "PAUSADA" && saldo >= minimoCreditoArranque);
+    }
+    const timerEl = seleccionar(`[data-timer="${codigo}"]`);
+    if (timerEl) {
+      const segundos = Math.max(0, Number(temporizadores[codigo] || 0));
+      const minutos = Math.floor(segundos / 60);
+      const restoSegundos = segundos % 60;
+      timerEl.textContent = `${String(minutos).padStart(2, "0")}:${String(restoSegundos).padStart(2, "0")}`;
+    }
+  });
+  actualizarIndicador(estadoPuerta, Boolean(datos?.iot?.puerta_abierta));
+  actualizarIndicador(estadoLuces, Boolean(datos?.iot?.luces_encendidas));
+  comprobarAlarmas(datos);
+}
+
+function iniciarStreamTiempoReal() {
+  const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const url = `${wsProtocol}://${window.location.host}/ws`;
+  try {
+    const ws = new WebSocket(url);
+    ws.onopen = () => {
+      wsActiva = true;
+      sseActiva = true;
+    };
+    ws.onmessage = (ev) => {
+      try {
+        const datos = JSON.parse(ev.data);
+        aplicarEstado(datos, redisConectadoCache);
+      } catch {}
+    };
+    ws.onerror = () => {
+      wsActiva = false;
+      sseActiva = false;
+    };
+    ws.onclose = () => {
+      wsActiva = false;
+      sseActiva = false;
+      window.setTimeout(iniciarStreamTiempoReal, 2000);
+    };
+  } catch {
+    wsActiva = false;
+    sseActiva = false;
   }
 }
 
@@ -356,4 +424,7 @@ cargarConfiguracion()
   .then(refrescarEstado)
   .catch(() => agregarAlarma("No se pudo cargar la configuración del simulador.", "error"));
 
-setInterval(refrescarEstado, 1200);
+iniciarStreamTiempoReal();
+setInterval(() => {
+  if (!sseActiva) refrescarEstado();
+}, 1200);

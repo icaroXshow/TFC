@@ -1,78 +1,187 @@
-# TODO - Auditoría rápida de errores e incongruencias (TFC)
+# TODO - Auditoría profunda de fallos, incongruencias y mejoras (TFC)
 
-Fecha de revisión: 2026-05-06
-Alcance revisado: `02_Desarrollo/FLUJOS_SIMULADOR_APP.md`, `02_Desarrollo/app/*`, `02_Desarrollo/deploy/demo/*` y variables de entorno asociadas.
+Fecha de revisión: 2026-05-07  
+Alcance revisado: `02_Desarrollo/app/*`, `02_Desarrollo/simulation/*`, `02_Desarrollo/deploy/demo/*`, documentación y configuración runtime.
 
-## 1) Crítico
+---
 
-- [ ] **Exposición de credenciales reales en archivo versionable**
-  - Evidencia: `02_Desarrollo/deploy/demo/.env` contiene `CAMERA_USER=api` y `CAMERA_PASS=...` con valor real.
-  - Riesgo: fuga de credenciales en repositorio, backups o compartición del proyecto.
+## 1) Crítico (resolver primero)
+
+- [ ] **WS admin-live sin autenticación ni control de acceso por tienda**
+  - Evidencia:
+    - `app/backend/src/server.ts:90` crea WS en `/ws/admin-live`.
+    - `app/backend/src/server.ts:119-128` acepta conexiones y emite snapshot sin validar token/rol.
+  - Riesgo:
+    - Exposición de datos operativos por lavandería a cualquier cliente de red que conozca endpoint.
   - Acción:
-    - Reemplazar de inmediato por placeholders.
-    - Rotar credenciales reales de la cámara.
-    - Mantener solo `.env.example` con valores ficticios.
+    - Exigir JWT en handshake WS.
+    - Validar rol y pertenencia a `usuario_lavanderia` para `lav` solicitada.
+    - Rechazar conexión con close code + motivo cuando no cumpla permisos.
+
+- [ ] **Incongruencia rol OPERADOR en Cámara (UI permite, backend bloquea stream)**
+  - Evidencia:
+    - UI: `app/frontend/public/js/admin/nucleo-dashboard-maquinas.js:282-309` permite `camara` a OPERADOR.
+    - Backend stream: `app/backend/src/web/routes/camera.ts:76` exige `payload.rol === "ADMIN"`.
+  - Riesgo:
+    - Operador ve pantalla de cámara pero el stream falla (blanco/fallback), comportamiento inconsistente.
+  - Acción:
+    - Decidir política única:
+      - O permitir stream para OPERADOR con control por lavandería.
+      - O ocultar vista Cámara a OPERADOR en frontend y rutas.
+
+- [ ] **Dependencia frágil de IDs fijos de lavandería (sim/cámara)**
+  - Evidencia:
+    - `simulation/src/gui-server.js:16` usa `SIM_LAV_ID` por defecto `3`.
+    - `app/backend/src/web/routes/camera.ts:52-54` mapea cámara por `idLav === 2`.
+    - `deploy/demo/db/init/seed.sql` borra datos (`DELETE`) pero no resetea autoincrement.
+  - Riesgo:
+    - Tras resiembras/redeploy, IDs pueden variar y romper sincronización simulador/web/cámara.
+  - Acción:
+    - Dejar de usar IDs mágicos; resolver por `codigo` (`SIM-01`, `FLEM-01`, `PUEB-01`) o config explícita por tienda.
+    - Si se necesita ID estable en demo, usar `TRUNCATE` controlado + reseed de autoincrement.
+
+---
 
 ## 2) Alto
 
-- [ ] **Incongruencia funcional entre flujos y nota de deploy sobre puerta**
-  - Evidencia A: `02_Desarrollo/FLUJOS_SIMULADOR_APP.md` sección 5 pide visualizar estado de puerta en Admin.
-  - Evidencia B: `02_Desarrollo/deploy/demo/README.md` indica que en demo "no se usa botón de puerta en app/".
-  - Interpretación: puede confundirse "botón de control" con "visualización de estado".
+- [ ] **Coexistencia WS + SSE + polling (deuda técnica y potencial desalineación)**
+  - Evidencia:
+    - SSE sigue activo en `simulation/src/gui-server.js:225-241` (`/api/stream`).
+    - Polling de respaldo en `simulation/public/simulador.js:428-430`.
+    - WS activo en `simulation/src/gui-server.js:319` y `simulation/public/simulador.js:321-349`.
+  - Riesgo:
+    - Complejidad innecesaria, más superficie de fallo, estados duplicados.
   - Acción:
-    - Aclarar explícitamente en docs:
-      - `app/` **no controla** puerta.
-      - `app/` **sí puede mostrar** estado de puerta si llega por IoT.
+    - Consolidar a WS como transporte principal.
+    - Retirar SSE legado si no hay dependencia real.
+    - Dejar polling solo como fallback controlado y con backoff.
 
-- [ ] **Ruta de arranque posiblemente incorrecta en README de deploy (Windows)**
-  - Evidencia: `02_Desarrollo/deploy/demo/README.md` sugiere ejecutar `.
-Launcher.bat` dentro de `deploy/demo`, pero el archivo listado está en `02_Desarrollo/Launcher.bat`.
-  - Riesgo: primer arranque falla por ruta equivocada.
+- [ ] **Timeout Redis demasiado agresivo para entornos reales**
+  - Evidencia:
+    - `REDIS_TIMEOUT_MS` default 500 ms en `app/backend/src/system/env.ts:75`.
+  - Riesgo:
+    - Falsos `Redis OFF` por latencia puntual de red/container.
   - Acción:
-    - Corregir instrucción de ruta en README, o
-    - mover/copiar launcher a `deploy/demo` si ese era el diseño.
+    - Subir a 1500-3000 ms en demo/producción.
+    - Añadir estrategia de reintento corto para health.
+
+- [ ] **`API_BASE` hardcodeado a `:8080` en admin**
+  - Evidencia:
+    - `app/frontend/public/js/admin/nucleo-dashboard-maquinas.js:4`.
+  - Riesgo:
+    - Despliegues detrás de proxy/TLS/puerto distinto fallan.
+  - Acción:
+    - Resolver por origen relativo (`/api`) o variable inyectada por nginx/build.
+
+- [ ] **Riesgo de exposición de secretos por edición de `.env` desde UI**
+  - Evidencia:
+    - Escritura directa en `.env`: `app/backend/src/web/routes/configuracion.ts:61-86`.
+  - Riesgo:
+    - Operación sensible en runtime, posibilidad de fuga/errores humanos.
+  - Acción:
+    - Mantener solo para demo y documentarlo como no recomendado en prod.
+    - En prod: secrets manager / variables de entorno externas.
+
+---
 
 ## 3) Medio
 
-- [ ] **Variable duplicada/confusa en entorno del simulador**
-  - Evidencia: en `deploy/demo/.env` y `.env.example` coexisten `SIM_LAV_IDS` y `SIM_LAV_ID`.
-  - Contexto técnico: `docker-compose.yml` usa `SIM_LAV_IDS` para `mqtt-sim` y `SIM_LAV_ID` para `mqtt-sim-gui`.
-  - Riesgo: confusión de configuración (plural vs singular) y errores de mantenimiento.
+- [ ] **Código residual de zoom fijo 1x/2x/4x/8x en admin**
+  - Evidencia:
+    - Referencias a `camZoom1x/2x/4x/8x` en `nucleo-dashboard-maquinas.js:62-65`.
+  - Riesgo:
+    - Confusión y mantenimiento innecesario.
   - Acción:
-    - Documentar mejor la diferencia en README, o
-    - normalizar nomenclatura (`SIM_LAV_IDS` / `SIM_GUI_LAV_ID`).
+    - Eliminar referencias y handlers no usados.
 
-- [ ] **Campos SMTP definidos en `.env.example` pero no visibles en `env.ts` (backend)**
-  - Evidencia: `deploy/demo/.env.example` incluye `SMTP_*` y `CONTACT_FORM_TO`; `app/backend/src/system/env.ts` no los expone.
-  - Riesgo: deuda técnica/documental (parece soportado, pero no está integrado en runtime).
+- [ ] **Estado nombrado “sseActiva” pero usado con WS**
+  - Evidencia:
+    - `simulation/public/simulador.js:21`, `:328-349`, `:429`.
+  - Riesgo:
+    - Semántica confusa para futuras modificaciones.
   - Acción:
-    - O implementar lectura/uso real en backend,
-    - o eliminar esos campos del `.env.example` de demo hasta que exista funcionalidad.
+    - Renombrar a `streamActivo` o `wsActivo` y separar flags correctamente.
 
-- [ ] **Flujos funcionales aún en modo "borrador" sin estado de validación real**
-  - Evidencia: `FLUJOS_SIMULADOR_APP.md` dice "Documento de trabajo" y contiene checklist completo sin marcar.
-  - Riesgo: no se distingue qué está implementado vs pendiente.
+- [ ] **Uso amplio de `any` en backend crítico**
+  - Evidencia:
+    - `app/backend/src/server.ts:92`, `camera.ts` varias funciones, `usuarios.ts` auditoría.
+  - Riesgo:
+    - Menor robustez de tipos, más errores silenciosos.
   - Acción:
-    - Añadir columna/etiqueta por caso: `Implementado`, `Validado`, `Pendiente`, `No aplica`.
+    - Tipar requests/payloads/WS clients progresivamente en rutas críticas.
+
+- [ ] **Redacción/consistencia de textos UI**
+  - Evidencia:
+    - Claves y literales con variantes (“CONTACTANOS”, “Donde encontrarnos”).
+  - Riesgo:
+    - Calidad visual/UX de entrega final.
+  - Acción:
+    - Pasada final de copy y ortografía en público/admin/docs.
+
+---
 
 ## 4) Bajo
 
-- [ ] **Erratas de redacción en petición/documentación operativa**
-  - Evidencia: pequeños errores tipográficos (ejemplo externo a docs: "lo qque").
-  - Riesgo: menor, pero reduce calidad de entrega TFC.
+- [ ] **Limpieza de estilos y componentes duplicados frontend**
+  - Evidencia:
+    - Iteraciones múltiples en CSS público/admin dejan selectores que ya no aplican.
+  - Riesgo:
+    - Peso extra y dificultad de mantenimiento.
   - Acción:
-    - Pasada final de corrección ortográfica en archivos Markdown principales.
+    - Auditoría de selectores no usados + depuración de CSS por vistas.
 
-## 5) Coherencia confirmada (sin incidencia)
+- [ ] **Checklist funcional incompleto en documentación de flujos**
+  - Evidencia:
+    - Documentos de flujo con estados no cerrados.
+  - Acción:
+    - Marcar por caso: `Implementado`, `Validado`, `Pendiente`, `No aplica`.
 
-- [x] `docker-compose.yml` monta correctamente `../../context/db/BD_modelo_fisico.sql` (ruta existe).
-- [x] `AUTH_TOKEN_SECRET` tiene validación anti-secreto débil en producción (`env.ts`).
-- [x] La regla "ampliación solo secadoras" está alineada entre `app/README.md` y `FLUJOS_SIMULADOR_APP.md`.
+---
 
-## Propuesta de siguientes pasos (orden recomendado)
+## 5) Mejoras recomendadas (producción)
 
-1. Sanitizar secretos (`.env`) y rotar credenciales.
-2. Corregir README de deploy (ruta Launcher + aclaración puerta).
-3. Unificar/documentar variables del simulador (`SIM_LAV_ID(S)`).
-4. Decidir si SMTP entra ya en alcance o se retira de plantilla.
-5. Convertir `FLUJOS_SIMULADOR_APP.md` en matriz de validación real (con estado por caso).
+- [ ] **Seguridad WS completa**
+  - JWT en handshake, validación por tienda, cierre por inactividad, límites por IP.
+
+- [ ] **Observabilidad mínima**
+  - Métricas de conexión WS (activos, reconnects, errores).
+  - Logs estructurados para eventos MQTT/Redis/Camera.
+
+- [ ] **Sincronización de estado unificada**
+  - Definir fuente de verdad por dominio:
+    - Máquina: DB + eventos MQTT.
+    - IoT tienda: config + eventos MQTT.
+    - UI: snapshots WS con versión/ts monotónico.
+
+- [ ] **Política de despliegue**
+  - Validación pre-arranque (env required, servicios reachability).
+  - Healthchecks compuestos y ready/liveness claros.
+
+---
+
+## 6) Plan de ejecución propuesto (orden)
+
+1. **Fase A (bloqueante)**
+   - Cerrar seguridad de `admin-live` WS.
+   - Resolver incongruencia rol OPERADOR en Cámara.
+   - Quitar lógica por IDs fijos (lav/cámara/sim).
+
+2. **Fase B (estabilidad)**
+   - Consolidar transporte realtime (WS principal, retirar SSE legado).
+   - Ajustar timeout/reintentos Redis.
+   - Parametrizar `API_BASE` para proxy/producción.
+
+3. **Fase C (acabado)**
+   - Limpieza de residuos JS/CSS.
+   - Tipado progresivo en backend.
+   - Cierre de documentación y checklist final.
+
+---
+
+## 7) Observaciones de validación
+
+- En este entorno de revisión no se pudo ejecutar `npm build/typecheck` por falta de `npm` en shell.
+- Recomendación de cierre técnico local:
+  - Backend: `npm run typecheck && npm run build`
+  - Simulation: verificación de arranque + WS en `:8083`
+  - End-to-end con `docker compose up -d --build` y pruebas por rol/tienda.
