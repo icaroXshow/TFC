@@ -173,7 +173,7 @@
 
 body.menu-abierto, body.acceso-abierto { overflow: hidden; }
 
-@media (max-width: 380px) {
+@media (max-width: 400px) {
   :root { --ancho-contenido: 92vw; }
 
   .cabecera-publica {
@@ -188,7 +188,7 @@ body.menu-abierto, body.acceso-abierto { overflow: hidden; }
   .boton-menu-movil::before { transform: translateY(-7px); }
   .boton-menu-movil::after { transform: translateY(7px); }
   .titulo-marca {
-    font-size: clamp(1.15rem, 9vw, 1.5rem);
+    font-size: clamp(1.10rem, 9vw, 1.4rem);
     letter-spacing: .06em;
     line-height: .96;
     padding-right: 6px;

@@ -3,249 +3,89 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Simulador Panel · KWL Simulador</title>
+    <title>KWL · Simulador IoT</title>
     <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/simulador.js"></script>
   </head>
   <body>
-    <div class="wrap">
-      <div class="top">
-        <div>
-          <h1>TIENDA SIMULACION</h1>
-          <p class="sub">Entorno aislado para pruebas IoT</p>
-        </div>
-        <div id="indicadorMqtt" class="badge bad">MQTT: OFF</div>
-      </div>
-      <p id="pistaSimulacion" class="sub" style="margin-top: -6px"></p>
-
-      <div class="grid" id="panelGrid"></div>
-
-      <div class="card" style="margin-top: 12px">
-        <p class="title">Interruptores</p>
-        <div class="row">
+    <main class="contenedor" aria-label="Panel del simulador IoT">
+      <header class="cabecera">
+        <section class="marca" aria-labelledby="tituloSimulador">
+          <div class="marca-icono" aria-hidden="true">KWL</div>
           <div>
-            <div class="mut">Puerta</div>
-            <div id="doorState" class="state st-off">
-              <span class="dot"></span><span>OFF</span>
+            <p class="etiqueta">Simulador técnico</p>
+            <h1 id="tituloSimulador">Tienda simulación</h1>
+            <p class="subtitulo">Entorno aislado para pruebas MQTT e IoT</p>
+          </div>
+        </section>
+        <section class="estado-global" aria-label="Estado de conexión">
+          <div id="indicadorMqtt" class="insignia estado-malo" role="status" aria-live="polite">
+            MQTT: OFF
+          </div>
+          <div class="ultima-lectura">
+            Última lectura<br />
+            <strong id="ultimaLectura">--:--:--</strong>
+          </div>
+        </section>
+      </header>
+
+      <section class="panel-alertas" aria-labelledby="tituloAlarmas">
+        <div class="panel-alertas-cabecera">
+          <div>
+            <p class="etiqueta">Monitorización</p>
+            <h2 id="tituloAlarmas">Alarmas y eventos recientes</h2>
+          </div>
+          <button id="limpiarAlarmas" class="boton boton-secundario" type="button">
+            Limpiar
+          </button>
+        </div>
+        <ol id="listaAlarmas" class="lista-alarmas" aria-live="polite">
+          <li class="alarma-vacia">Sin alarmas recientes.</li>
+        </ol>
+      </section>
+
+      <p id="pistaSimulacion" class="mensaje-operacion" role="status" aria-live="polite"></p>
+
+      <section class="seccion-maquinas" aria-labelledby="tituloMaquinas">
+        <div class="seccion-titulo">
+          <div>
+            <p class="etiqueta">Máquinas</p>
+            <h2 id="tituloMaquinas">Panel de máquinas</h2>
+          </div>
+          <p class="ayuda">Crédito, arranque, estado y temporizador de cada equipo.</p>
+        </div>
+        <div class="cuadricula-maquinas" id="panelGrid"></div>
+      </section>
+
+      <section class="tarjeta controles-iot" aria-labelledby="tituloInterruptores">
+        <div class="seccion-titulo seccion-titulo-compacta">
+          <div>
+            <p class="etiqueta">IoT tienda</p>
+            <h2 id="tituloInterruptores">Interruptores</h2>
+          </div>
+          <p class="ayuda">Simula relés de puerta y luces de la tienda.</p>
+        </div>
+        <div class="fila-control">
+          <div>
+            <div class="texto-suave">Puerta</div>
+            <div id="doorState" class="estado estado-off">
+              <span class="punto"></span><span>OFF</span>
             </div>
           </div>
-          <button id="doorToggle" class="primary">Interruptor puerta</button>
+          <button id="doorToggle" class="boton boton-principal" type="button">Interruptor puerta</button>
         </div>
-        <div class="row">
+        <div class="fila-control">
           <div>
-            <div class="mut">Luces</div>
-            <div id="lightsState" class="state st-off">
-              <span class="dot"></span><span>OFF</span>
+            <div class="texto-suave">Luces</div>
+            <div id="lightsState" class="estado estado-off">
+              <span class="punto"></span><span>OFF</span>
             </div>
           </div>
-          <button id="lightsToggle" class="primary">Interruptor luces</button>
+          <button id="lightsToggle" class="boton boton-principal" type="button">Interruptor luces</button>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
 
-    <script>
-      const seleccionar = (selector) => document.querySelector(selector);
-      const panelCuadricula = seleccionar("#panelGrid");
-      const indicadorMqtt = seleccionar("#indicadorMqtt");
-      const estadoPuerta = seleccionar("#doorState");
-      const estadoLuces = seleccionar("#lightsState");
-      const pistaSimulacion = seleccionar("#pistaSimulacion");
-      let minimoCreditoArranque = 4;
-      let minutosCiclo = 37;
-      let minutosAmpliacion = 9;
-      let codigosMaquina = [];
-
-      const actualizarIndicador = (el, on, onText = "ON", offText = "OFF") => {
-        el.classList.toggle("st-on", !!on);
-        el.classList.toggle("st-off", !on);
-        el.querySelector("span:last-child").textContent = on ? onText : offText;
-      };
-      const actualizarEstadoMaquina = (code, st) => {
-        const el = seleccionar(`[data-machine-state="${code}"]`);
-        if (!el) return;
-        const running = String(st || "STOP").toUpperCase() === "EN_MARCHA";
-        el.classList.toggle("st-run", running);
-        el.classList.toggle("st-stop", !running);
-        el.querySelector("span:last-child").textContent = String(
-          st || "STOP",
-        ).toUpperCase();
-        const btn = seleccionar(`[data-confirm="${code}"]`);
-        if (btn) {
-          const stop = String(st || "STOP").toUpperCase() === "STOP";
-          btn.disabled = stop;
-          btn.title = stop
-            ? "Primero enciende relé de máquina (estado PAUSADA)"
-            : "";
-        }
-      };
-
-      async function api(path, body) {
-        const r = await fetch(path, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body || {}),
-        });
-        if (!r.ok) {
-          let msg = "REQ_FAIL";
-          try {
-            const d = await r.json();
-            msg = d?.error || msg;
-          } catch {}
-          throw new Error(msg);
-        }
-      }
-
-      function renderizarPanelesMaquina() {
-        panelCuadricula.innerHTML = codigosMaquina
-          .map(
-            (codigo) => `
-          <article class="card">
-            <p class="title">${codigo}</p>
-            <div class="mut">Estado</div>
-            <div class="state st-stop" data-machine-state="${codigo}"><span class="dot"></span><span>STOP</span></div>
-            <div class="mut">Temporizador: <strong data-timer="${codigo}">00:00</strong></div>
-            <div class="mut" style="margin-top:8px">Refrigerar: <strong data-fan="${codigo}">OFF</strong></div>
-            <div class="mut">Saldo sin aplicar: <strong data-saldo="${codigo}">0.00 €</strong></div>
-            <div class="row">
-              <input type="number" min="0.1" step="0.1" value="1.0" data-credit="${codigo}" />
-              <button class="primary" data-confirm="${codigo}">Introducir monedas</button>
-              <button class="btn-secondary" data-start="${codigo}">START</button>
-              ${
-                String(codigo).toUpperCase().startsWith("S")
-                  ? `<button class="btn-secondary" data-toggle-door="${codigo}">Abrir/Cerrar puerta</button>`
-                  : ""
-              }
-            </div>
-            <div class="mut">Ciclo: ${minutosCiclo} min   Ampliación: ${minutosAmpliacion} min.</div>
-            <div class="mut">Al llegar a ${minimoCreditoArranque.toFixed(2)} € pulsar START.</div>
-          </article>
-        `,
-          )
-          .join("");
-      }
-
-      async function cargarConfiguracion() {
-        const r = await fetch("/api/config");
-        const d = await r.json();
-        codigosMaquina = Array.isArray(d?.machine_codes)
-          ? d.machine_codes
-          : ["L1", "L2", "L3", "S1", "S2"];
-        minimoCreditoArranque = Number(d?.start_min_credit || 4);
-        minutosCiclo = Math.max(
-          1,
-          Math.floor(Number(d?.cycle_seconds || 2220) / 60),
-        );
-        minutosAmpliacion = Math.max(
-          1,
-          Math.floor(Number(d?.plus_seconds_per_euro || 540) / 60),
-        );
-        renderizarPanelesMaquina();
-      }
-
-      async function refrescarEstado() {
-        try {
-          const r = await fetch("/api/state");
-          const d = await r.json();
-          const on = Boolean(d?.mqtt_connected);
-          indicadorMqtt.textContent = `MQTT: ${on ? "ON" : "OFF"}`;
-          indicadorMqtt.classList.toggle("ok", on);
-          indicadorMqtt.classList.toggle("bad", !on);
-          const machines = d?.machines || {};
-          const fans = d?.fan || {};
-          const credit = d?.credit || {};
-          const timer = d?.timer_sec || {};
-          codigosMaquina.forEach((c) =>
-            actualizarEstadoMaquina(c, machines[c] || "STOP"),
-          );
-          codigosMaquina.forEach((c) => {
-            const fanEl = seleccionar(`[data-fan="${c}"]`);
-            if (fanEl) fanEl.textContent = fans[c] ? "ON" : "OFF";
-            const saldoEl = seleccionar(`[data-saldo="${c}"]`);
-            if (saldoEl)
-              saldoEl.textContent = `${Number(credit[c] || 0).toFixed(2)} €`;
-            const startBtn = seleccionar(`[data-start="${c}"]`);
-            if (startBtn) {
-              const estado = String(machines[c] || "STOP").toUpperCase();
-              const saldo = Number(credit[c] || 0);
-              startBtn.disabled = !(
-                estado === "PAUSADA" && saldo >= minimoCreditoArranque
-              );
-            }
-            const timerEl = seleccionar(`[data-timer="${c}"]`);
-            if (timerEl) {
-              const sec = Math.max(0, Number(timer[c] || 0));
-              const mm = Math.floor(sec / 60);
-              const ss = sec % 60;
-              timerEl.textContent = `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
-            }
-          });
-          actualizarIndicador(estadoPuerta, Boolean(d?.iot?.puerta_abierta));
-          actualizarIndicador(estadoLuces, Boolean(d?.iot?.luces_encendidas));
-        } catch {
-          indicadorMqtt.textContent = "MQTT: OFF";
-          indicadorMqtt.classList.remove("ok");
-          indicadorMqtt.classList.add("bad");
-        }
-      }
-
-      document.addEventListener("click", async (e) => {
-        const confirmBtn = e.target.closest("[data-confirm]");
-        if (confirmBtn) {
-          const code = confirmBtn.getAttribute("data-confirm");
-          const input = seleccionar(`[data-credit="${code}"]`);
-          const importe = Number(String(input?.value || "").replace(",", "."));
-          if (!Number.isFinite(importe) || importe <= 0) return;
-          confirmBtn.disabled = true;
-          try {
-            await api("/api/machine/credit", { codigo: code, importe });
-            pistaSimulacion.textContent = "";
-          } catch (err) {
-            pistaSimulacion.textContent = `Error crédito (${code}): ${err.message}`;
-          } finally {
-            confirmBtn.disabled = false;
-          }
-          return;
-        }
-        const startBtn = e.target.closest("[data-start]");
-        if (startBtn) {
-          const code = startBtn.getAttribute("data-start");
-          startBtn.disabled = true;
-          try {
-            await api("/api/machine/confirm-start", { codigo: code });
-            pistaSimulacion.textContent = "";
-          } catch (err) {
-            pistaSimulacion.textContent = `Error inicio (${code}): ${err.message}`;
-          } finally {
-            startBtn.disabled = false;
-          }
-          return;
-        }
-        const botonPuertaSecadora = e.target.closest("[data-toggle-door]");
-        if (botonPuertaSecadora) {
-          const code = botonPuertaSecadora.getAttribute("data-toggle-door");
-          botonPuertaSecadora.disabled = true;
-          try {
-            await api("/api/machine/toggle-dryer-door", { codigo: code });
-            pistaSimulacion.textContent = `Acción puerta enviada (${code}). Si se abre, la señal al backend llega en 30s.`;
-          } catch (err) {
-            pistaSimulacion.textContent = `Error puerta (${code}): ${err.message}`;
-          } finally {
-            botonPuertaSecadora.disabled = false;
-          }
-          return;
-        }
-      });
-
-      seleccionar("#doorToggle").addEventListener("click", () =>
-        api("/api/iot/toggle", { dispositivo: "puerta" }).catch(() => {}),
-      );
-      seleccionar("#lightsToggle").addEventListener("click", () =>
-        api("/api/iot/toggle", { dispositivo: "luces" }).catch(() => {}),
-      );
-
-      cargarConfiguracion()
-        .then(refrescarEstado)
-        .catch(() => {});
-      setInterval(refrescarEstado, 1200);
-    </script>
+    <div id="contenedorTostadas" class="contenedor-tostadas" aria-live="polite" aria-label="Notificaciones"></div>
   </body>
 </html>

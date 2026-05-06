@@ -65,7 +65,7 @@
 
       <main class="principal-admin">
         <section class="seccion-admin">
-          <div class="cabecera-seccion-admin">
+          <div class="cabecera-seccion-admin cabecera-caja-resumen">
             <h3>Informes</h3>
             <p>Consulta de ciclos, evolución y estadísticas.</p>
           </div>
@@ -77,7 +77,22 @@
           </div>
 
           <div class="reports-view" data-view="ciclos">
-            <div class="filtros-informes">
+            <div class="meta-informes resumen-caja resumen-caja-hero">
+              <div class="cash-card">
+                <span>Total ciclos</span>
+                <strong id="repTotal">—</strong>
+              </div>
+              <div class="cash-card">
+                <span>Página</span>
+                <strong id="repPage">—</strong>
+              </div>
+              <div class="cash-card">
+                <span>Rango</span>
+                <strong id="repRange">—</strong>
+              </div>
+            </div>
+
+            <div class="filtros-informes filtros-informes-compactos">
               <label>Desde
                 <input type="date" class="entrada" id="repFrom" />
               </label>
@@ -97,21 +112,6 @@
                 </select>
               </label>
               <button type="button" class="boton-primario" id="repLoad">Ver</button>
-            </div>
-
-            <div class="meta-informes">
-              <div class="cash-card">
-                <span>Total ciclos</span>
-                <strong id="repTotal">—</strong>
-              </div>
-              <div class="cash-card">
-                <span>Página</span>
-                <strong id="repPage">—</strong>
-              </div>
-              <div class="cash-card">
-                <span>Rango</span>
-                <strong id="repRange">—</strong>
-              </div>
             </div>
 
             <div class="pestana-informesle-wrap">
@@ -144,23 +144,23 @@
               <button type="button" class="pestana-informes" data-evtab="mensual" aria-selected="false">Mensual</button>
               <button type="button" class="pestana-informes" data-evtab="anual" aria-selected="false">Anual</button>
             </div>
-            <div class="filtros-informes">
-              <label>Semana (día referencia)
-                <input type="date" class="entrada" id="evWeekDate" />
-              </label>
-              <label>Mes
-                <input type="month" class="entrada" id="evMonth" />
-              </label>
-              <label>Año
-                <input type="number" class="entrada" id="evYear" min="2020" max="2100" />
-              </label>
-              <button type="button" class="boton-primario" id="evLoad">Comparar</button>
-            </div>
-            <div class="meta-informes">
+            <div class="meta-informes resumen-caja resumen-caja-hero">
               <div class="cash-card"><span>Actual</span><strong id="evCurrentLabel">—</strong></div>
               <div class="cash-card"><span>Anterior</span><strong id="evPrevLabel">—</strong></div>
               <div class="cash-card"><span>Δ total</span><strong id="evDeltaTotal">—</strong></div>
               <div class="cash-card"><span>Δ ciclos</span><strong id="evDeltaCycles">—</strong></div>
+            </div>
+            <div class="filtros-informes filtros-informes-compactos">
+              <label data-ev-filter="semanal">Semana (día referencia)
+                <input type="date" class="entrada" id="evWeekDate" />
+              </label>
+              <label data-ev-filter="mensual">Mes
+                <input type="month" class="entrada" id="evMonth" />
+              </label>
+              <label data-ev-filter="anual">Año
+                <input type="number" class="entrada" id="evYear" min="2020" max="2100" />
+              </label>
+              <button type="button" class="boton-primario" id="evLoad">Comparar</button>
             </div>
             <div class="pestana-informesle-wrap">
               <table class="pestana-informesle" aria-label="Tabla de evolución">
@@ -178,8 +178,8 @@
                 <tbody id="evTbody"></tbody>
               </table>
             </div>
-            <div class="pestana-informesle-wrap">
-              <table class="pestana-informesle" aria-label="Gráfico evolución" id="evChartTable"></table>
+            <div class="pestana-informesle-wrap chart-wrap">
+              <canvas id="evLineChart" class="line-chart" aria-label="Gráfico de evolución"></canvas>
             </div>
             <div class="paginador-informes"><span class="pista-informes" id="evHint" aria-live="polite"></span></div>
           </div>
@@ -190,28 +190,28 @@
               <button type="button" class="pestana-informes" data-sttab="mensual" aria-selected="false">Mensual</button>
               <button type="button" class="pestana-informes" data-sttab="anual" aria-selected="false">Anual</button>
             </div>
-            <div class="filtros-informes">
-              <label>Día
-                <input type="date" class="entrada" id="stDate" />
-              </label>
-              <label>Mes
-                <input type="month" class="entrada" id="stMonth" />
-              </label>
-              <label>Año
-                <input type="number" class="entrada" id="stYear" min="2020" max="2100" />
-              </label>
-              <button type="button" class="boton-primario" id="stLoad">Ver tramos</button>
-            </div>
-            <div class="meta-informes">
+            <div class="meta-informes resumen-caja resumen-caja-hero">
               <div class="cash-card"><span>Periodo</span><strong id="stPeriod">—</strong></div>
               <div class="cash-card"><span>Total</span><strong id="stTotal">—</strong></div>
               <div class="cash-card"><span>Ciclos</span><strong id="stCycles">—</strong></div>
             </div>
+            <div class="filtros-informes filtros-informes-compactos">
+              <label data-st-filter="diario">Día
+                <input type="date" class="entrada" id="stDate" />
+              </label>
+              <label data-st-filter="mensual">Mes
+                <input type="month" class="entrada" id="stMonth" />
+              </label>
+              <label data-st-filter="anual">Año
+                <input type="number" class="entrada" id="stYear" min="2020" max="2100" />
+              </label>
+              <button type="button" class="boton-primario" id="stLoad">Ver tramos</button>
+            </div>
             <div class="pestana-informesle-wrap" style="overflow:auto">
               <table class="pestana-informesle" aria-label="Tabla tramos" id="stTable"></table>
             </div>
-            <div class="pestana-informesle-wrap">
-              <table class="pestana-informesle" aria-label="Gráfico tramos" id="stChartTable"></table>
+            <div class="pestana-informesle-wrap chart-wrap">
+              <canvas id="stLineChart" class="line-chart" aria-label="Gráfico de tramos"></canvas>
             </div>
             <div class="paginador-informes"><span class="pista-informes" id="stHint" aria-live="polite"></span></div>
           </div>

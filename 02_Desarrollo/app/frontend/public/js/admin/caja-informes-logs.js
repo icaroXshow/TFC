@@ -107,10 +107,33 @@
 
     // Caja
     const isCashView = Boolean(cashTbody);
+    const cashSearch = document.getElementById("cashSearch");
+    const cashFilterBar = document.getElementById("cashFilterBar");
+    const cashControlsRow = document.getElementById("cashControlsRow");
+    const cashSummaryTitle = document.getElementById("cashSummaryTitle");
+    const cashWeekDate = document.getElementById("cashWeekDate");
+    const cashFilterType = document.getElementById("cashFilterType");
+    const cashFilterMoves = document.getElementById("cashFilterMoves");
+    const cashAmountMax = document.getElementById("cashAmountMax");
+    const cashAmountLabel = document.getElementById("cashAmountLabel");
+    const cashTopMachine = document.getElementById("cashTopMachine");
+    const cashMonth = document.getElementById("cashMonth");
+    const cashYear = document.getElementById("cashYear");
+    const cashLoadMonth = document.getElementById("cashLoadMonth");
+    const cashLoadYear = document.getElementById("cashLoadYear");
+    const cashApplyFilters = document.getElementById("cashApplyFilters");
+    const cashClearFilters = document.getElementById("cashClearFilters");
+    const cashFilterHint = document.getElementById("cashFilterHint");
+    let cashRawItems = [];
     const setCashHint = (text) => {
       if (!cashHint) return;
       cashHint.hidden = !text;
       cashHint.textContent = text || "";
+    };
+    const setCashFilterHint = (text) => {
+      if (!cashFilterHint) return;
+      cashFilterHint.hidden = !text;
+      cashFilterHint.textContent = text || "";
     };
     const eur = (n) => {
       const v = Number(n);
@@ -124,11 +147,61 @@
       const dd = String(d.getDate()).padStart(2, "0");
       return `${yyyy}-${mm}-${dd}`;
     };
-    const renderCash = (data) => {
+    const isoWeekValueFromDate = (dateStr) => {
+      const d = new Date(`${dateStr}T00:00:00`);
+      const utc = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = utc.getUTCDay() || 7;
+      utc.setUTCDate(utc.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil((((utc.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+      return `${utc.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+    };
+    const isoWeekToMonday = (weekVal) => {
+      const m = /^(\d{4})-W(\d{2})$/.exec(String(weekVal || ""));
+      if (!m) return "";
+      const year = Number(m[1]);
+      const week = Number(m[2]);
+      const jan4 = new Date(Date.UTC(year, 0, 4));
+      const jan4Day = jan4.getUTCDay() || 7;
+      const mondayWeek1 = new Date(jan4);
+      mondayWeek1.setUTCDate(jan4.getUTCDate() - jan4Day + 1);
+      const monday = new Date(mondayWeek1);
+      monday.setUTCDate(mondayWeek1.getUTCDate() + (week - 1) * 7);
+      return `${monday.getUTCFullYear()}-${String(monday.getUTCMonth() + 1).padStart(2, "0")}-${String(monday.getUTCDate()).padStart(2, "0")}`;
+    };
+    const populateWeekOptions = (anchorDate) => {
+      if (!cashWeekDate) return;
+      const d = new Date(`${anchorDate}T00:00:00`);
+      const options = [];
+      for (let i = 0; i < 60; i += 1) {
+        const base = new Date(d);
+        base.setDate(base.getDate() - i * 7);
+        const iso = isoWeekValueFromDate(base.toISOString().slice(0, 10));
+        const monday = isoWeekToMonday(iso);
+        const monDate = new Date(`${monday}T00:00:00`);
+        const sunday = new Date(monDate);
+        sunday.setDate(monDate.getDate() + 6);
+        const ddm = `${String(monDate.getDate()).padStart(2, "0")}/${String(monDate.getMonth() + 1).padStart(2, "0")}`;
+        const dds = `${String(sunday.getDate()).padStart(2, "0")}/${String(sunday.getMonth() + 1).padStart(2, "0")}`;
+        const year = iso.slice(0, 4);
+        const wNum = Number(iso.slice(6));
+        const month = String(monDate.getMonth() + 1).padStart(2, "0");
+        options.push({ iso, label: `${year}-${month} · Semana ${wNum} (${ddm}-${dds})` });
+      }
+      const uniq = [];
+      const seen = new Set();
+      options.forEach((o) => {
+        if (seen.has(o.iso)) return;
+        seen.add(o.iso);
+        uniq.push(o);
+      });
+      cashWeekDate.innerHTML = uniq.map((o) => `<option value="${o.iso}">${o.label}</option>`).join("");
+    };
+    const renderCashRows = (items) => {
       if (!cashTbody) return;
       setCashHint("");
+      setCashFilterHint("");
       cashTbody.innerHTML = "";
-      const items = data?.items || [];
       if (!items.length) {
         cashTbody.innerHTML = `<tr><td colspan="4" class="table-empty">Sin actividad en el periodo seleccionado</td></tr>`;
       } else {
@@ -143,9 +216,50 @@
           cashTbody.appendChild(tr);
         });
       }
-      if (cashPeriod) cashPeriod.textContent = `${data?.from || "—"} → ${data?.to || "—"}`;
+    };
+    const applyCashFilters = () => {
+      const q = String(cashSearch?.value ?? "").trim().toLowerCase();
+      const type = String(cashFilterType?.value ?? "").trim();
+      const moves = String(cashFilterMoves?.value ?? "").trim();
+      const maxAmount = Number(cashAmountMax?.value ?? 2000);
+
+      const filtered = cashRawItems.filter((it) => {
+        if (type && String(it.tipo_maquina) !== type) return false;
+        if (moves) {
+          const m = Number(it.movimientos ?? 0);
+          if (moves === "0" && m !== 0) return false;
+          if (moves === "1-5" && (m < 1 || m > 5)) return false;
+          if (moves === "6-15" && (m < 6 || m > 15)) return false;
+          if (moves === "16+" && m < 16) return false;
+        }
+        const a = Number(it.importe_total ?? 0);
+        if (!(a <= maxAmount)) return false;
+        if (!q) return true;
+        const rowText = `${it.codigo_visible} ${it.tipo_maquina} ${it.movimientos} ${eur(it.importe_total)}`.toLowerCase();
+        return rowText.includes(q);
+      });
+
+      renderCashRows(filtered);
+      if (!filtered.length && cashRawItems.length) {
+        setCashFilterHint("No hay resultados con los filtros actuales.");
+      }
+    };
+    const renderCash = (data) => {
+      cashRawItems = Array.isArray(data?.items) ? data.items : [];
+      applyCashFilters();
       if (cashMoves) cashMoves.textContent = String(data?.movimientos ?? "0");
       if (cashTotal) cashTotal.textContent = eur(data?.total ?? 0);
+      const top = [...cashRawItems].sort((a, b) => Number(b.importe_total || 0) - Number(a.importe_total || 0))[0];
+      if (cashTopMachine) {
+        cashTopMachine.textContent = top
+          ? `${top.codigo_visible} · ${eur(top.importe_total)} · ${top.movimientos} mov.`
+          : "Sin actividad";
+      }
+    };
+    const updateAmountLabel = () => {
+      if (!cashAmountLabel) return;
+      const maxAmount = Number(cashAmountMax?.value ?? 2000);
+      cashAmountLabel.textContent = `${maxAmount}€`;
     };
     const loadCash = async (path) => {
       setCashHint("");
@@ -170,13 +284,28 @@
       document.querySelectorAll(".filtro-caja").forEach((f) => {
         const show = f.getAttribute("data-view") === view;
         f.hidden = !show;
+        f.style.display = show ? "" : "none";
       });
+      if (cashFilterBar) cashFilterBar.hidden = view !== "dia";
+      if (cashControlsRow) {
+        cashControlsRow.classList.toggle("is-range-view", view === "rango");
+      }
+      if (cashSummaryTitle) {
+        if (view === "dia") cashSummaryTitle.textContent = "Resumen Diario";
+        else if (view === "semana") cashSummaryTitle.textContent = "Resumen Semanal";
+        else if (view === "mensual") cashSummaryTitle.textContent = "Resumen Mensual";
+        else if (view === "anual") cashSummaryTitle.textContent = "Resumen Anual";
+        else cashSummaryTitle.textContent = "Resumen Acumulado";
+      }
     };
 
     if (isCashView) {
       const t = today();
       if (cashDay && !cashDay.value) cashDay.value = t;
-      if (cashWeekDate && !cashWeekDate.value) cashWeekDate.value = t;
+      populateWeekOptions(t);
+      if (cashWeekDate && !cashWeekDate.value) cashWeekDate.value = isoWeekValueFromDate(t);
+      if (cashMonth && !cashMonth.value) cashMonth.value = t.slice(0, 7);
+      if (cashYear && !cashYear.value) cashYear.value = String(new Date().getFullYear());
       if (cashFrom && !cashFrom.value) cashFrom.value = t.slice(0, 8) + "01";
       if (cashTo && !cashTo.value) cashTo.value = t;
 
@@ -190,8 +319,19 @@
             return;
           }
           if (view === "semana") {
-            const d = String(cashWeekDate?.value ?? "").trim() || t;
-            await loadCash(`semana?date=${encodeURIComponent(d)}`);
+            const w = String(cashWeekDate?.value ?? "").trim();
+            const monday = w ? isoWeekToMonday(w) : t;
+            await loadCash(`semana?date=${encodeURIComponent(monday)}`);
+            return;
+          }
+          if (view === "mensual") {
+            const m = String(cashMonth?.value ?? "").trim() || t.slice(0, 7);
+            await loadCash(`mensual?month=${encodeURIComponent(m)}`);
+            return;
+          }
+          if (view === "anual") {
+            const y = String(cashYear?.value ?? "").trim() || String(new Date().getFullYear());
+            await loadCash(`anual?year=${encodeURIComponent(y)}`);
             return;
           }
           const f = String(cashFrom?.value ?? "").trim() || t.slice(0, 8) + "01";
@@ -206,9 +346,21 @@
         loadCash(`dia?date=${encodeURIComponent(d)}`);
       });
       cashLoadWeek?.addEventListener("click", () => {
-        const d = String(cashWeekDate?.value ?? "").trim();
-        if (!d) return;
-        loadCash(`semana?date=${encodeURIComponent(d)}`);
+        const w = String(cashWeekDate?.value ?? "").trim();
+        if (!w) return;
+        const monday = isoWeekToMonday(w);
+        if (!monday) return;
+        loadCash(`semana?date=${encodeURIComponent(monday)}`);
+      });
+      cashLoadMonth?.addEventListener("click", () => {
+        const m = String(cashMonth?.value ?? "").trim();
+        if (!m) return;
+        loadCash(`mensual?month=${encodeURIComponent(m)}`);
+      });
+      cashLoadYear?.addEventListener("click", () => {
+        const y = String(cashYear?.value ?? "").trim();
+        if (!y) return;
+        loadCash(`anual?year=${encodeURIComponent(y)}`);
       });
       cashLoadRange?.addEventListener("click", () => {
         const f = String(cashFrom?.value ?? "").trim();
@@ -216,7 +368,20 @@
         if (!f || !to) return;
         loadCash(`rango?from=${encodeURIComponent(f)}&to=${encodeURIComponent(to)}`);
       });
+      cashApplyFilters?.addEventListener("click", applyCashFilters);
+      cashAmountMax?.addEventListener("input", () => {
+        updateAmountLabel();
+      });
+      cashClearFilters?.addEventListener("click", () => {
+        if (cashSearch) cashSearch.value = "";
+        if (cashFilterType) cashFilterType.value = "";
+        if (cashFilterMoves) cashFilterMoves.value = "";
+        if (cashAmountMax) cashAmountMax.value = "2000";
+        updateAmountLabel();
+        applyCashFilters();
+      });
 
+      updateAmountLabel();
       setCashView("dia");
       await loadCash(`dia?date=${encodeURIComponent(String(cashDay?.value ?? t))}`);
     }
@@ -234,7 +399,7 @@
       const evPrevLabel = document.getElementById("evPrevLabel");
       const evDeltaTotal = document.getElementById("evDeltaTotal");
       const evDeltaCycles = document.getElementById("evDeltaCycles");
-      const evChartTable = document.getElementById("evChartTable");
+      const evLineChart = document.getElementById("evLineChart");
 
       const stDate = document.getElementById("stDate");
       const stMonth = document.getElementById("stMonth");
@@ -245,7 +410,7 @@
       const stCycles = document.getElementById("stCycles");
       const stTable = document.getElementById("stTable");
       const stHint = document.getElementById("stHint");
-      const stChartTable = document.getElementById("stChartTable");
+      const stLineChart = document.getElementById("stLineChart");
 
       const today = () => {
         const d = new Date();
@@ -302,8 +467,191 @@
         }
       };
 
-      const barCell = (pct, txt) =>
-        `<div style="display:flex;align-items:center;gap:8px"><div style="height:8px;flex:1;background:rgba(255,255,255,.1);border-radius:999px"><div style="height:8px;width:${pct}%;background:#40c2a8;border-radius:999px"></div></div><span>${txt}</span></div>`;
+      const drawLineChart = (canvas, labels, series = []) => {
+        if (!canvas) return;
+        const c = canvas;
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        const w = c.clientWidth || 900;
+        const h = c.clientHeight || 280;
+        c.width = w * window.devicePixelRatio;
+        c.height = h * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        ctx.clearRect(0, 0, w, h);
+        if (!series.length || !series.some((s) => Array.isArray(s.values) && s.values.length)) return;
+        const pad = { l: 44, r: 16, t: 20, b: 36 };
+        const allVals = series.flatMap((s) => s.values || []).map((v) => Number(v || 0));
+        const max = Math.max(1, ...allVals);
+        const min = 0;
+        const pw = w - pad.l - pad.r;
+        const ph = h - pad.t - pad.b;
+        ctx.strokeStyle = "rgba(255,255,255,.14)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i += 1) {
+          const y = pad.t + (ph * i) / 4;
+          ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+        }
+        const drawn = [];
+        series.forEach((s) => {
+          const vals = s.values || [];
+          const pts = vals.map((v, i) => {
+            const x = pad.l + (vals.length === 1 ? pw / 2 : (pw * i) / (vals.length - 1));
+            const y = pad.t + ph - ((Number(v || 0) - min) / (max - min || 1)) * ph;
+            return { x, y };
+          });
+          ctx.strokeStyle = s.color || "#40c2a8";
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+          ctx.stroke();
+          ctx.fillStyle = s.color || "#40c2a8";
+          pts.forEach((p) => { ctx.beginPath(); ctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2); ctx.fill(); });
+          drawn.push({ name: s.name || "Serie", color: s.color || "#40c2a8", values: vals, pts });
+        });
+
+        // X labels
+        ctx.fillStyle = "rgba(255,255,255,.78)";
+        ctx.font = "12px Poppins, sans-serif";
+        const tickCount = Math.min(labels.length, 8);
+        for (let i = 0; i < tickCount; i += 1) {
+          const idx = Math.round((i * (labels.length - 1)) / Math.max(1, tickCount - 1));
+          const x = pad.l + (labels.length === 1 ? pw / 2 : (pw * idx) / (labels.length - 1));
+          const txt = String(labels[idx] ?? "");
+          ctx.fillText(txt, x - Math.min(22, txt.length * 2), h - 10);
+        }
+
+        // Hover tooltip
+        c.onmousemove = (ev) => {
+          const r = c.getBoundingClientRect();
+          const mx = ev.clientX - r.left;
+          const my = ev.clientY - r.top;
+          let best = null;
+          drawn.forEach((s) =>
+            s.pts.forEach((p, i) => {
+              const d = Math.hypot(mx - p.x, my - p.y);
+              if (!best || d < best.d) best = { d, x: p.x, y: p.y, i, s };
+            }),
+          );
+          let tip = document.getElementById("lineChartTooltip");
+          if (!tip) {
+            tip = document.createElement("div");
+            tip.id = "lineChartTooltip";
+            tip.style.position = "fixed";
+            tip.style.zIndex = "9999";
+            tip.style.pointerEvents = "none";
+            tip.style.padding = "8px 10px";
+            tip.style.borderRadius = "10px";
+            tip.style.background = "rgba(8,15,28,.95)";
+            tip.style.border = "1px solid rgba(255,255,255,.18)";
+            tip.style.color = "#fff";
+            tip.style.font = "12px Poppins, sans-serif";
+            document.body.appendChild(tip);
+          }
+          if (!best || best.d > 20) {
+            tip.style.display = "none";
+            return;
+          }
+          const label = labels[best.i] ?? "";
+          const val = Number(best.s.values[best.i] || 0).toLocaleString("es-ES", { style: "currency", currency: "EUR" });
+          tip.innerHTML = `<strong>${best.s.name}</strong><br>${label}<br>${val}`;
+          tip.style.display = "block";
+          tip.style.left = `${ev.clientX + 12}px`;
+          tip.style.top = `${ev.clientY + 12}px`;
+        };
+        c.onmouseleave = () => {
+          const tip = document.getElementById("lineChartTooltip");
+          if (tip) tip.style.display = "none";
+        };
+      };
+      const drawGroupedBarChart = (canvas, labels, currentVals, prevVals) => {
+        if (!canvas) return;
+        const c = canvas;
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        const w = c.clientWidth || 900;
+        const h = c.clientHeight || 300;
+        c.width = w * window.devicePixelRatio;
+        c.height = h * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        ctx.clearRect(0, 0, w, h);
+        const n = Math.max(labels.length, currentVals.length, prevVals.length);
+        if (!n) return;
+        const pad = { l: 44, r: 16, t: 20, b: 44 };
+        const pw = w - pad.l - pad.r;
+        const ph = h - pad.t - pad.b;
+        const max = Math.max(1, ...currentVals.map((v) => Number(v || 0)), ...prevVals.map((v) => Number(v || 0)));
+
+        ctx.strokeStyle = "rgba(255,255,255,.14)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i += 1) {
+          const y = pad.t + (ph * i) / 4;
+          ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+        }
+
+        const groupW = pw / n;
+        const barW = Math.max(6, Math.min(20, groupW * 0.28));
+        const gap = Math.max(4, barW * 0.45);
+        const bars = [];
+        for (let i = 0; i < n; i += 1) {
+          const xCenter = pad.l + groupW * i + groupW / 2;
+          const vCur = Number(currentVals[i] || 0);
+          const vPrev = Number(prevVals[i] || 0);
+          const hCur = (vCur / max) * ph;
+          const hPrev = (vPrev / max) * ph;
+          const xCur = xCenter - gap / 2 - barW;
+          const xPrev = xCenter + gap / 2;
+          const yCur = pad.t + ph - hCur;
+          const yPrev = pad.t + ph - hPrev;
+
+          ctx.fillStyle = "#40c2a8";
+          ctx.fillRect(xCur, yCur, barW, hCur);
+          ctx.fillStyle = "#ff9fcd";
+          ctx.fillRect(xPrev, yPrev, barW, hPrev);
+
+          bars.push({ x: xCur, y: yCur, w: barW, h: hCur, label: labels[i], series: "Actual", value: vCur });
+          bars.push({ x: xPrev, y: yPrev, w: barW, h: hPrev, label: labels[i], series: "Anterior", value: vPrev });
+
+          ctx.fillStyle = "rgba(255,255,255,.78)";
+          ctx.font = "12px Poppins, sans-serif";
+          const txt = String(labels[i] ?? "");
+          ctx.fillText(txt, xCenter - Math.min(16, txt.length * 2), h - 10);
+        }
+
+        c.onmousemove = (ev) => {
+          const r = c.getBoundingClientRect();
+          const mx = ev.clientX - r.left;
+          const my = ev.clientY - r.top;
+          const hit = bars.find((b) => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h);
+          let tip = document.getElementById("lineChartTooltip");
+          if (!tip) {
+            tip = document.createElement("div");
+            tip.id = "lineChartTooltip";
+            tip.style.position = "fixed";
+            tip.style.zIndex = "9999";
+            tip.style.pointerEvents = "none";
+            tip.style.padding = "8px 10px";
+            tip.style.borderRadius = "10px";
+            tip.style.background = "rgba(8,15,28,.95)";
+            tip.style.border = "1px solid rgba(255,255,255,.18)";
+            tip.style.color = "#fff";
+            tip.style.font = "12px Poppins, sans-serif";
+            document.body.appendChild(tip);
+          }
+          if (!hit) {
+            tip.style.display = "none";
+            return;
+          }
+          const val = Number(hit.value || 0).toLocaleString("es-ES", { style: "currency", currency: "EUR" });
+          tip.innerHTML = `<strong>${hit.series}</strong><br>${hit.label}<br>${val}`;
+          tip.style.display = "block";
+          tip.style.left = `${ev.clientX + 12}px`;
+          tip.style.top = `${ev.clientY + 12}px`;
+        };
+        c.onmouseleave = () => {
+          const tip = document.getElementById("lineChartTooltip");
+          if (tip) tip.style.display = "none";
+        };
+      };
 
       const setReportsTab = (tab) => {
         document.querySelectorAll(".pestana-informes[data-tab]").forEach((b) => {
@@ -323,6 +671,11 @@
           b.classList.toggle("is-active", active);
           b.setAttribute("aria-selected", active ? "true" : "false");
         });
+        document.querySelectorAll("[data-ev-filter]").forEach((el) => {
+          const show = el.getAttribute("data-ev-filter") === tab;
+          el.hidden = !show;
+          el.style.display = show ? "grid" : "none";
+        });
       };
       const setStTab = (tab) => {
         stTab = tab;
@@ -330,6 +683,11 @@
           const active = b.getAttribute("data-sttab") === tab;
           b.classList.toggle("is-active", active);
           b.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        document.querySelectorAll("[data-st-filter]").forEach((el) => {
+          const show = el.getAttribute("data-st-filter") === tab;
+          el.hidden = !show;
+          el.style.display = show ? "grid" : "none";
         });
       };
 
@@ -420,7 +778,7 @@
         if (!res.ok) {
           setEvHint(`Error: ${data?.error || "NO_OK"}`);
           evTbody.innerHTML = `<tr><td colspan="7">Error</td></tr>`;
-          if (evChartTable) evChartTable.innerHTML = "";
+          if (evLineChart) drawLineChart(evLineChart, [], []);
           return;
         }
         if (evCurrentLabel) evCurrentLabel.textContent = data?.periodo_actual || "—";
@@ -448,21 +806,12 @@
           });
         }
 
-        if (evChartTable) {
-          const max = Math.max(1, ...items.map((m) => Number(m.total_actual || 0)));
-          evChartTable.innerHTML = `
-            <thead><tr><th>Máquina</th><th>Total actual (gráfico)</th></tr></thead>
-            <tbody>
-              ${items
-                .map((m) => {
-                  const total = Number(m.total_actual || 0);
-                  const pct = Math.min(100, Math.round((total / max) * 100));
-                  return `<tr><td>${escapeHtml(m.codigo_visible)}</td><td>${barCell(pct, eur(total))}</td></tr>`;
-                })
-                .join("")}
-            </tbody>
-          `;
-        }
+        drawGroupedBarChart(
+          evLineChart,
+          items.map((m) => m.codigo_visible),
+          items.map((m) => Number(m.total_actual || 0)),
+          items.map((m) => Number(m.total_anterior || 0)),
+        );
       };
 
       const loadEstadisticas = async () => {
@@ -482,14 +831,85 @@
         if (!res.ok) {
           setStHint(`Error: ${data?.error || "NO_OK"}`);
           stTable.innerHTML = "";
-          if (stChartTable) stChartTable.innerHTML = "";
+          if (stLineChart) drawLineChart(stLineChart, [], []);
           return;
         }
-        const rows = Array.isArray(data?.data) ? data.data : [];
-        const totals = Array.isArray(data?.totals_by_machine) ? data.totals_by_machine : [];
+        const rowsRaw = Array.isArray(data?.data) ? data.data : [];
+        const monthShortEs = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        const formatSlot = (slot) => {
+          const s = String(slot ?? "").trim();
+          if (!s) return "—";
+
+          if (stTab === "diario") {
+            const hMatch = /^(\d{1,2})/.exec(s);
+            if (hMatch) {
+              const hNum = Number(hMatch[1]);
+              if (Number.isFinite(hNum) && hNum >= 0 && hNum <= 23) {
+                const h = String(hNum).padStart(2, "0");
+                return `${h}:00-${h}:59`;
+              }
+            }
+            return s;
+          }
+
+          if (stTab === "mensual") {
+            // Acepta "1", "01", "2026-05-01"
+            if (/^\d{1,2}$/.test(s)) return `Día ${s.padStart(2, "0")}`;
+            const dayFromIso = /^\d{4}-\d{2}-(\d{1,2})$/.exec(s);
+            if (dayFromIso) return `Día ${String(dayFromIso[1]).padStart(2, "0")}`;
+            return s;
+          }
+
+          if (stTab === "anual") {
+            // Acepta "1", "01", "2026-01", "2026-01-01"
+            if (/^\d{1,2}$/.test(s)) {
+              const m = Number(s);
+              if (m >= 1 && m <= 12) return monthShortEs[m - 1];
+            }
+            const monthFromIsoYm = /^\d{4}-(\d{1,2})$/.exec(s);
+            if (monthFromIsoYm) {
+              const m = Number(monthFromIsoYm[1]);
+              if (m >= 1 && m <= 12) return monthShortEs[m - 1];
+            }
+            const monthFromIsoYmd = /^\d{4}-(\d{1,2})-\d{1,2}$/.exec(s);
+            if (monthFromIsoYmd) {
+              const m = Number(monthFromIsoYmd[1]);
+              if (m >= 1 && m <= 12) return monthShortEs[m - 1];
+            }
+            return s;
+          }
+
+          return s;
+        };
+        const rows = rowsRaw
+          .filter((r) => {
+            if (stTab !== "diario") return true;
+            const h = Number(String(r?.slot ?? "").slice(0, 2));
+            return Number.isFinite(h) && h >= 7 && h <= 23;
+          })
+          .map((r) => ({ ...r, slot: formatSlot(r.slot) }));
+        const totalsRaw = Array.isArray(data?.totals_by_machine) ? data.totals_by_machine : [];
+        const totalsByCode = new Map(
+          totalsRaw.map((m) => [
+            String(m.codigo_visible),
+            { codigo_visible: String(m.codigo_visible), total: 0, ciclos: 0 },
+          ]),
+        );
+        rows.forEach((r) => {
+          (r.maquinas || []).forEach((m) => {
+            const code = String(m.codigo_visible);
+            const acc = totalsByCode.get(code) || { codigo_visible: code, total: 0, ciclos: 0 };
+            acc.total += Number(m.total || 0);
+            acc.ciclos += Number(m.ciclos || 0);
+            totalsByCode.set(code, acc);
+          });
+        });
+        const totals = Array.from(totalsByCode.values());
+        const shownTotalGeneral = rows.reduce((a, r) => a + Number(r.total_slot || 0), 0);
+        const shownCyclesGeneral = rows.reduce((a, r) => a + Number(r.ciclos_slot || 0), 0);
         if (stPeriod) stPeriod.textContent = String(data?.periodo || "—");
-        if (stTotal) stTotal.textContent = eur(data?.total_general || 0);
-        if (stCycles) stCycles.textContent = String(data?.ciclos_general ?? 0);
+        if (stTotal) stTotal.textContent = eur(shownTotalGeneral);
+        if (stCycles) stCycles.textContent = String(shownCyclesGeneral);
 
         const machineCols = totals.map((m) => m.codigo_visible);
         stTable.innerHTML = `
@@ -511,27 +931,15 @@
             <tr>
               <td><strong>Total</strong></td>
               ${totals.map((m) => `<td><strong>${eur(m.total)}</strong><br/><small>${m.ciclos} ciclos</small></td>`).join("")}
-              <td><strong>${eur(data?.total_general || 0)}</strong></td>
-              <td><strong>${data?.ciclos_general || 0}</strong></td>
+              <td><strong>${eur(shownTotalGeneral)}</strong></td>
+              <td><strong>${shownCyclesGeneral}</strong></td>
             </tr>
           </tbody>
         `;
 
-        if (stChartTable) {
-          const max = Math.max(1, ...rows.map((r) => Number(r.total_slot || 0)));
-          stChartTable.innerHTML = `
-            <thead><tr><th>Tramo</th><th>Total (gráfico)</th></tr></thead>
-            <tbody>
-              ${rows
-                .map((r) => {
-                  const total = Number(r.total_slot || 0);
-                  const pct = Math.min(100, Math.round((total / max) * 100));
-                  return `<tr><td>${escapeHtml(r.slot)}</td><td>${barCell(pct, eur(total))}</td></tr>`;
-                })
-                .join("")}
-            </tbody>
-          `;
-        }
+        drawLineChart(stLineChart, rows.map((r) => String(r.slot)), [
+          { name: "Total tramo", color: "#ff9fcd", values: rows.map((r) => Number(r.total_slot || 0)) },
+        ]);
       };
 
       repLoad?.addEventListener("click", async () => {

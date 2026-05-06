@@ -16,6 +16,12 @@ type CajaRow = RowDataPacket & {
 function isDateYYYYMMDD(s: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
+function isMonthYYYYMM(s: string) {
+  return /^\d{4}-\d{2}$/.test(s);
+}
+function isYearYYYY(s: string) {
+  return /^\d{4}$/.test(s);
+}
 
 function todayYYYYMMDD() {
   const d = new Date();
@@ -44,6 +50,14 @@ function addDays(dateStr: string, days: number) {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
+}
+function monthBounds(month: string) {
+  const from = `${month}-01`;
+  const d = new Date(`${from}T00:00:00`);
+  d.setMonth(d.getMonth() + 1);
+  d.setDate(0);
+  const to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return { from, to };
 }
 
 async function computeCaja(idLav: number, from: string, to: string) {
@@ -109,4 +123,23 @@ cajaRouter.get("/rango", requireAuth, requireLavanderia, async (req, res) => {
 
   const { items, total, movimientos } = await computeCaja(idLav, from, to);
   res.json({ ok: true, mode: "rango", from, to, total, movimientos, items });
+});
+
+cajaRouter.get("/mensual", requireAuth, requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const month = String(req.query?.month ?? "").trim();
+  if (!isMonthYYYYMM(month)) return res.status(400).json({ ok: false, error: "BAD_MONTH" });
+  const { from, to } = monthBounds(month);
+  const { items, total, movimientos } = await computeCaja(idLav, from, to);
+  res.json({ ok: true, mode: "mensual", month, from, to, total, movimientos, items });
+});
+
+cajaRouter.get("/anual", requireAuth, requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const year = String(req.query?.year ?? "").trim();
+  if (!isYearYYYY(year)) return res.status(400).json({ ok: false, error: "BAD_YEAR" });
+  const from = `${year}-01-01`;
+  const to = `${year}-12-31`;
+  const { items, total, movimientos } = await computeCaja(idLav, from, to);
+  res.json({ ok: true, mode: "anual", year, from, to, total, movimientos, items });
 });

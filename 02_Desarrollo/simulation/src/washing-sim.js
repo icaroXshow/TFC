@@ -33,7 +33,18 @@ const stateByCode = new Map();
 const iotByLav = new Map();
 
 function nowIso() {
-  return new Date().toISOString();
+  const parts = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Madrid",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (type) => parts.find((p) => p.type === type)?.value || "00";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`;
 }
 
 function ensureMachine(codigo) {
@@ -41,7 +52,7 @@ function ensureMachine(codigo) {
     return null;
   if (!stateByCode.has(codigo)) {
     stateByCode.set(codigo, {
-      estado: "STOP",
+      estado: "PAUSADA",
       idCiclo: null,
       timer: null,
       relayOn: false,

@@ -23,7 +23,7 @@ app.use(express.json({ limit: "256kb" }));
 
 let mqttConnected = false;
 const machineState = Object.fromEntries(
-  SIM_MACHINE_CODES.map((c) => [c, "STOP"]),
+  SIM_MACHINE_CODES.map((c) => [c, "PAUSADA"]),
 );
 const fanState = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, false]));
 const iotState = {
@@ -33,7 +33,21 @@ const iotState = {
 };
 const machineCredit = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, 0]));
 const machineTimer = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, 0]));
-let lastUpdate = new Date().toISOString();
+const localIso = () => {
+  const parts = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Madrid",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (type) => parts.find((p) => p.type === type)?.value || "00";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`;
+};
+let lastUpdate = localIso();
 
 const mqttClient = mqtt.connect(MQTT_URL, {
   reconnectPeriod: 3000,
@@ -72,7 +86,7 @@ mqttClient.on("message", (topic, payloadBuf) => {
     if (Number.isFinite(secs) && secs >= 0)
       machineTimer[code] = Math.floor(secs);
     if (machineState[code] !== "EN_MARCHA") machineTimer[code] = 0;
-    lastUpdate = new Date().toISOString();
+    lastUpdate = localIso();
     return;
   }
   if (
@@ -109,7 +123,7 @@ mqttClient.on("message", (topic, payloadBuf) => {
     if (tipo === "CREDITO_RECHAZADO_APAGADA") {
       // no cambia saldo ni estado, solo feedback por evento
     }
-    lastUpdate = new Date().toISOString();
+    lastUpdate = localIso();
     return;
   }
   if (
@@ -121,11 +135,11 @@ mqttClient.on("message", (topic, payloadBuf) => {
     iotState.puerta_abierta = Boolean(data?.puerta_abierta);
     iotState.luces_encendidas = Boolean(data?.luces_encendidas);
     iotState.ventilacion_encendida = Boolean(data?.ventilacion_encendida);
-    lastUpdate = new Date().toISOString();
+    lastUpdate = localIso();
   }
 });
 
-const nowIso = () => new Date().toISOString();
+const nowIso = () => localIso();
 
 setInterval(() => {
   for (const c of SIM_MACHINE_CODES) {

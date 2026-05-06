@@ -65,47 +65,15 @@
 
       <main class="principal-admin">
         <section class="seccion-admin">
-          <div class="cabecera-seccion-admin">
-            <h3>Caja</h3>
+          <div class="cabecera-seccion-admin cabecera-caja-resumen">
+            <h3 id="cashSummaryTitle">Resumen Diario</h3>
             <p></p>
           </div>
 
-          <div class="pestanas-caja" role="tablist" aria-label="Vistas de caja">
-            <button type="button" class="pestana-caja is-active" data-tab="dia" aria-selected="true">Diaria</button>
-            <button type="button" class="pestana-caja" data-tab="semana" aria-selected="false">Semanal</button>
-            <button type="button" class="pestana-caja" data-tab="rango" aria-selected="false">Acumulada</button>
-          </div>
-
-          <div class="filtros-caja fila-filtros-caja">
-            <div class="filtro-caja" data-view="dia">
-              <label>Fecha
-                <input type="date" class="entrada" id="cashDay" />
-              </label>
-              <button type="button" class="boton-primario" id="cashLoadDay">Ver</button>
-            </div>
-
-            <div class="filtro-caja" data-view="semana" hidden>
-              <label>Semana
-                <input type="date" class="entrada" id="cashWeekDate" />
-              </label>
-              <button type="button" class="boton-primario" id="cashLoadWeek">Ver</button>
-            </div>
-
-            <div class="filtro-caja filtro-caja-range" data-view="rango" hidden>
-              <label>Desde
-                <input type="date" class="entrada" id="cashFrom" />
-              </label>
-              <label>Hasta
-                <input type="date" class="entrada" id="cashTo" />
-              </label>
-              <button type="button" class="boton-primario" id="cashLoadRange">Ver</button>
-            </div>
-          </div>
-
-          <div class="resumen-caja">
+          <div class="resumen-caja resumen-caja-hero">
             <div class="cash-card">
-              <span>Periodo</span>
-              <strong id="cashPeriod">—</strong>
+              <span>Máquina top</span>
+              <strong id="cashTopMachine">—</strong>
             </div>
             <div class="cash-card">
               <span>Movimientos</span>
@@ -114,6 +82,88 @@
             <div class="cash-card">
               <span>Total</span>
               <strong id="cashTotal">—</strong>
+            </div>
+          </div>
+
+          <div class="filtros-caja-superior">
+            <div class="pestanas-caja" role="tablist" aria-label="Vistas de caja">
+              <button type="button" class="pestana-caja is-active" data-tab="dia" aria-selected="true">Diaria</button>
+              <button type="button" class="pestana-caja" data-tab="semana" aria-selected="false">Semanal</button>
+              <button type="button" class="pestana-caja" data-tab="mensual" aria-selected="false">Mensual</button>
+              <button type="button" class="pestana-caja" data-tab="anual" aria-selected="false">Anual</button>
+              <button type="button" class="pestana-caja" data-tab="rango" aria-selected="false">Acumulada</button>
+            </div>
+            <div class="cash-controls-row" id="cashControlsRow">
+              <div class="filtros-caja fila-filtros-caja">
+                <div class="filtro-caja" data-view="dia">
+                  <label>Día
+                    <input type="date" class="entrada" id="cashDay" />
+                  </label>
+                  <button type="button" class="boton-primario" id="cashLoadDay">Ver</button>
+                </div>
+
+                <div class="filtro-caja" data-view="semana" hidden>
+                  <label>Semana
+                    <select class="entrada" id="cashWeekDate"></select>
+                  </label>
+                  <button type="button" class="boton-primario" id="cashLoadWeek">Ver</button>
+                </div>
+                <div class="filtro-caja" data-view="mensual" hidden>
+                  <label>Mes
+                    <input type="month" class="entrada" id="cashMonth" />
+                  </label>
+                  <button type="button" class="boton-primario" id="cashLoadMonth">Ver</button>
+                </div>
+                <div class="filtro-caja" data-view="anual" hidden>
+                  <label>Año
+                    <input type="number" min="2000" max="2100" step="1" class="entrada" id="cashYear" />
+                  </label>
+                  <button type="button" class="boton-primario" id="cashLoadYear">Ver</button>
+                </div>
+
+                <div class="filtro-caja filtro-caja-range" data-view="rango" hidden>
+                  <label>Desde
+                    <input type="date" class="entrada" id="cashFrom" />
+                  </label>
+                  <label>Hasta
+                    <input type="date" class="entrada" id="cashTo" />
+                  </label>
+                  <button type="button" class="boton-primario" id="cashLoadRange">Ver</button>
+                </div>
+              </div>
+
+              <div class="barra-filtros-tabla-caja" id="cashFilterBar">
+                <label class="campo-busqueda-caja">
+                  <span class="cash-filter-tag">Buscar</span>
+                  <input type="search" class="entrada" id="cashSearch" placeholder="Máquina, tipo o importe..." />
+                </label>
+                <label>
+                  <span class="cash-filter-tag">Tipo</span>
+                  <select class="entrada" id="cashFilterType">
+                    <option value="">Todos</option>
+                    <option value="LAVADORA">Lavadora</option>
+                    <option value="SECADORA">Secadora</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="cash-filter-tag">Movimientos</span>
+                  <select class="entrada" id="cashFilterMoves">
+                    <option value="">Todos</option>
+                    <option value="0">0</option>
+                    <option value="1-5">1-5</option>
+                    <option value="6-15">6-15</option>
+                    <option value="16+">16+</option>
+                  </select>
+                </label>
+                <div class="cash-amount-range" id="cashAmountRange">
+                  <div class="cash-amount-value">
+                    <span id="cashAmountLabel">2000€</span>
+                  </div>
+                  <input type="range" id="cashAmountMax" min="0" max="2000" step="1" value="2000" />
+                </div>
+                <button type="button" class="boton-primario" id="cashApplyFilters">Aplicar</button>
+                <button type="button" class="boton-secundario" id="cashClearFilters">Limpiar</button>
+              </div>
             </div>
           </div>
 
@@ -132,6 +182,7 @@
           </div>
 
           <div class="nota-caja" id="cashHint" hidden></div>
+          <div class="nota-caja" id="cashFilterHint" hidden></div>
         </section>
       </main>
     </div>
