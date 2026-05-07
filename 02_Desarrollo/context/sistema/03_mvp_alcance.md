@@ -11,6 +11,7 @@ Construir una versión funcional mínima que permita validar la arquitectura com
 - panel web responsive
 - autenticación de usuarios
 - gestión básica de usuarios y roles
+- alta de lavanderías desde panel para superadmin
 - control de al menos una máquina real o simulada
 - gestión de créditos aplicada a máquina
 - apertura y cierre de tienda

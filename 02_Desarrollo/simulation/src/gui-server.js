@@ -19,6 +19,14 @@ const SIM_PLUS_SECONDS_PER_EURO = Number(
   process.env.SIM_PLUS_SECONDS_PER_EURO || "540",
 );
 const SIM_START_MIN_CREDIT = Number(process.env.SIM_START_MIN_CREDIT || "4");
+const tarifaActual = {
+  cycle_seconds: Number.isFinite(SIM_CYCLE_SECONDS) && SIM_CYCLE_SECONDS > 0 ? SIM_CYCLE_SECONDS : 2220,
+  plus_seconds_per_euro:
+    Number.isFinite(SIM_PLUS_SECONDS_PER_EURO) && SIM_PLUS_SECONDS_PER_EURO > 0
+      ? SIM_PLUS_SECONDS_PER_EURO
+      : 540,
+  start_min_credit: Number.isFinite(SIM_START_MIN_CREDIT) && SIM_START_MIN_CREDIT > 0 ? SIM_START_MIN_CREDIT : 4,
+};
 
 const app = express();
 app.use(express.json({ limit: "256kb" }));
@@ -89,6 +97,7 @@ mqttClient.on("connect", () => {
   mqttClient.subscribe(`kwl/maquinas/${SIM_LAV_ID}/+/estado`);
   mqttClient.subscribe(`kwl/maquinas/${SIM_LAV_ID}/+/evento`);
   mqttClient.subscribe(`kwl/iot/${SIM_LAV_ID}/estado`);
+  mqttClient.subscribe(`kwl/config/${SIM_LAV_ID}/tarifa`);
 });
 mqttClient.on("close", () => {
   mqttConnected = false;
@@ -104,6 +113,28 @@ mqttClient.on("message", (topic, payloadBuf) => {
     return;
   }
   const parts = topic.split("/");
+  if (
+    parts[0] === "kwl" &&
+    parts[1] === "config" &&
+    Number(parts[2]) === SIM_LAV_ID &&
+    parts[3] === "tarifa"
+  ) {
+    const cycleSeconds = Number(data?.cycle_seconds ?? Number.NaN);
+    const plusSeconds = Number(data?.plus_seconds_per_euro ?? Number.NaN);
+    const startMinCredit = Number(data?.start_min_credit ?? Number.NaN);
+    if (Number.isFinite(cycleSeconds) && cycleSeconds > 0) {
+      tarifaActual.cycle_seconds = Math.floor(cycleSeconds);
+    }
+    if (Number.isFinite(plusSeconds) && plusSeconds > 0) {
+      tarifaActual.plus_seconds_per_euro = Math.floor(plusSeconds);
+    }
+    if (Number.isFinite(startMinCredit) && startMinCredit > 0) {
+      tarifaActual.start_min_credit = Number(startMinCredit.toFixed(2));
+    }
+    lastUpdate = localIso();
+    broadcastSnapshot();
+    return;
+  }
   if (
     parts[0] === "kwl" &&
     parts[1] === "maquinas" &&
@@ -205,9 +236,9 @@ app.get("/api/config", (_req, res) => {
     ok: true,
     machine_codes: SIM_MACHINE_CODES,
     lav_id: SIM_LAV_ID,
-    cycle_seconds: SIM_CYCLE_SECONDS,
-    plus_seconds_per_euro: SIM_PLUS_SECONDS_PER_EURO,
-    start_min_credit: SIM_START_MIN_CREDIT,
+    cycle_seconds: tarifaActual.cycle_seconds,
+    plus_seconds_per_euro: tarifaActual.plus_seconds_per_euro,
+    start_min_credit: tarifaActual.start_min_credit,
   });
 });
 

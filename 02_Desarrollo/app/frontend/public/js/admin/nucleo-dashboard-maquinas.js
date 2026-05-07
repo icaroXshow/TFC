@@ -55,6 +55,7 @@
   const burgerBtn = $("#adminBurger");
   const breadcrumbsEl = $("#adminBreadcrumbs");
   const lavSelect = $("#adminLavSelect");
+  const adminAddLavBtn = $("#adminAddLavBtn");
   const locationEl = $("#adminLocation");
   const camCenter = $("#camCenter");
   const camZoomIn = $("#camZoomIn");
@@ -110,10 +111,6 @@
   const lightsOffTime = $("#lightsOffTime");
   const fanOnTime = $("#fanOnTime");
   const fanOffTime = $("#fanOffTime");
-  const iotOpenMachines = $("#iotOpenMachines");
-  const iotCloseMachines = $("#iotCloseMachines");
-  const iotMachineOnTime = $("#iotMachineOnTime");
-  const iotMachineOffTime = $("#iotMachineOffTime");
   const cashTbody = $("#cashTbody");
   const cashHint = $("#cashHint");
   const cashPeriod = $("#cashPeriod");
@@ -276,19 +273,20 @@
 
   function applyRoleUI(rol) {
     const isAdmin = rol === "ADMIN";
+    const isSuperAdmin = rol === "SUPERADMIN";
     const isOperador = rol === "OPERADOR";
 
     const navVisibilidad = {
-      inicio: isAdmin || isOperador,
-      maquinas: isAdmin || isOperador,
-      iot: isAdmin || isOperador,
-      camara: isAdmin || isOperador,
-      caja: isAdmin,
-      informes: isAdmin,
-      usuarios: isAdmin,
-      logs: isAdmin || isOperador,
-      "editor-web": isAdmin,
-      ajustes: isAdmin,
+      inicio: isAdmin || isSuperAdmin || isOperador,
+      maquinas: isAdmin || isSuperAdmin || isOperador,
+      iot: isAdmin || isSuperAdmin || isOperador,
+      camara: isAdmin || isSuperAdmin || isOperador,
+      caja: isAdmin || isSuperAdmin,
+      informes: isAdmin || isSuperAdmin,
+      usuarios: isAdmin || isSuperAdmin,
+      logs: isAdmin || isSuperAdmin || isOperador,
+      "editor-web": isAdmin || isSuperAdmin,
+      ajustes: isAdmin || isSuperAdmin,
     };
 
     Object.entries(navVisibilidad).forEach(([key, visible]) => {
@@ -297,7 +295,7 @@
       });
     });
 
-    if (storeEnvBtn) storeEnvBtn.style.display = isAdmin ? "" : "none";
+    if (storeEnvBtn) storeEnvBtn.style.display = isAdmin || isSuperAdmin ? "" : "none";
 
     const rutaActual = location.pathname.toLowerCase();
     const rutasPermitidasOperador = new Set([
@@ -313,7 +311,7 @@
     }
 
     // Si rol desconocido o sin permisos en admin, lo devolvemos al inicio público.
-    if (!isAdmin && !isOperador) {
+    if (!isAdmin && !isSuperAdmin && !isOperador) {
       window.location.href = "/index.html";
     }
   }
@@ -703,6 +701,7 @@
     const existing = loadAuth();
     const token = existing?.token;
     const rol = existing?.user?.rol ?? "OPERADOR";
+    const esSuperadmin = Boolean(existing?.user?.es_superadmin) || rol === "SUPERADMIN";
 
     if (!token) {
       // Un solo login: se hace desde el modal público.
@@ -715,6 +714,7 @@
     setActiveNav();
     setBreadcrumbs();
     applyRoleUI(rol);
+    if (adminAddLavBtn) adminAddLavBtn.hidden = !esSuperadmin;
 
     let activeLavId = getActiveLavanderiaId();
     let activeLavInfo = null;
@@ -736,6 +736,32 @@
           if (!Number.isFinite(next) || next <= 0) return;
           setActiveLavanderiaId(next);
           // recarga para que todo se refresque con nueva lavandería
+          location.reload();
+        });
+        adminAddLavBtn?.addEventListener("click", async () => {
+          const nombre = window.prompt("Nombre de la nueva lavandería:");
+          if (!nombre) return;
+          const codigo = window.prompt("Código único (ej: NUEVA-01):");
+          if (!codigo) return;
+          const direccion = window.prompt("Dirección (opcional):") || "";
+          const ciudad = window.prompt("Ciudad (opcional):") || "";
+          const provincia = window.prompt("Provincia (opcional):") || "";
+          const r = await fetch(`${API_BASE}/api/lavanderias`, {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${token}`,
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({ nombre, codigo, direccion, ciudad, provincia, activo: 1 }),
+          });
+          if (!r.ok) {
+            const e = await r.json().catch(() => ({}));
+            notifyNice(`No se pudo crear la lavandería (${e?.error || r.status}).`);
+            return;
+          }
+          const d = await r.json().catch(() => ({}));
+          const newId = Number(d?.lavanderia?.id_lavanderia || 0);
+          if (newId > 0) setActiveLavanderiaId(newId);
           location.reload();
         });
       } else {
@@ -824,8 +850,8 @@
         },
       };
       const schedulePayload = {
-        puerta: { on: openDoor?.checked ? (storeOpenTime?.value || null) : null, off: closeDoor?.checked ? (storeCloseTime?.value || null) : null },
-        luces: { on: openLights?.checked ? (storeOpenTime?.value || null) : null, off: closeLights?.checked ? (storeCloseTime?.value || null) : null },
+        open: storeOpenTime?.value || null,
+        close: storeCloseTime?.value || null,
       };
       const selectedOpenMachines = storeOpenMachines
         ? [...storeOpenMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
@@ -847,7 +873,7 @@
           },
           body: JSON.stringify(actionsPayload),
         }),
-        fetch(`${API_BASE}/api/iot/schedule`, {
+        fetch(`${API_BASE}/api/iot/store-schedule`, {
           method: "PUT",
           headers: {
             authorization: `Bearer ${token}`,
@@ -894,7 +920,7 @@
         fetch(`${API_BASE}/api/iot/store-actions`, {
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
         }),
-        fetch(`${API_BASE}/api/iot/schedule`, {
+        fetch(`${API_BASE}/api/iot/store-schedule`, {
           headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
         }),
         fetch(`${API_BASE}/api/maquinas`, {
@@ -916,8 +942,8 @@
       }
       if (s.ok) {
         const d = await s.json();
-        if (storeOpenTime) storeOpenTime.value = d?.schedule?.puerta?.on || d?.schedule?.luces?.on || "";
-        if (storeCloseTime) storeCloseTime.value = d?.schedule?.puerta?.off || d?.schedule?.luces?.off || "";
+        if (storeOpenTime) storeOpenTime.value = d?.schedule?.open || "";
+        if (storeCloseTime) storeCloseTime.value = d?.schedule?.close || "";
       }
       if (storeOpenMachines || storeCloseMachines) {
         const allMachines = machinesRes.ok ? (await machinesRes.json())?.maquinas || [] : [];

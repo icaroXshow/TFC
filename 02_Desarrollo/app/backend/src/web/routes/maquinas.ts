@@ -465,6 +465,17 @@ maquinasRouter.post(
       );
 
       await conn.commit();
+      const runtimeMap = await getConfigLav<Record<string, any>>(idLavanderia, "machine_runtime_state", {});
+      const runtimeKey = String(idMaquina);
+      runtimeMap[runtimeKey] = {
+        ...(runtimeMap[runtimeKey] || {}),
+        saldo_credito: 0,
+        segundos_restantes: 0,
+        estado_operativo: "STOP",
+        puerta_estado: "CERRADA",
+        updated_at: new Date().toISOString(),
+      };
+      await setConfigLav(idLavanderia, "machine_runtime_state", runtimeMap, "Estado runtime por máquina (sync STOP web)");
       await setManualPriorityUntil(idLavanderia, idMaquina, 20);
       publishMachineCommand(maquina.codigo_visible, {
         accion: "apagar_rele",

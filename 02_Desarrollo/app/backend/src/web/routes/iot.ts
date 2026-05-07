@@ -39,6 +39,11 @@ type StoreActions = {
   cerrar_tienda: { puerta_abierta: boolean; luces_encendidas: boolean };
 };
 
+type StoreSchedule = {
+  open: string | null;
+  close: string | null;
+};
+
 function safeJsonParse<T>(raw: string, fallback: T): T {
   try {
     const v = JSON.parse(raw);
@@ -286,6 +291,26 @@ iotRouter.put("/schedule", requireAuth, requireRole(["ADMIN"]), requireLavanderi
   const schedule = normalizeSchedule(req.body ?? {});
   await setConfigLavCached(idLav, "iot_schedule", schedule, "Programación IoT (MVP)");
   await audit(req, "IOT_SET_SCHEDULE", `Horario actualizado: ${JSON.stringify(schedule)}`);
+  res.json({ ok: true, schedule });
+});
+
+iotRouter.get("/store-schedule", requireAuth, requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const schedule = await getConfigLavCached<StoreSchedule>(idLav, "iot_store_schedule", {
+    open: null,
+    close: null,
+  });
+  res.json({ ok: true, schedule });
+});
+
+iotRouter.put("/store-schedule", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const schedule: StoreSchedule = {
+    open: normalizeTime(req.body?.open ?? null),
+    close: normalizeTime(req.body?.close ?? null),
+  };
+  await setConfigLavCached(idLav, "iot_store_schedule", schedule, "Programación general de tienda");
+  await audit(req, "IOT_SET_STORE_SCHEDULE", `Horario tienda: ${JSON.stringify(schedule)}`);
   res.json({ ok: true, schedule });
 });
 

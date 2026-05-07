@@ -4,6 +4,7 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { requireAuth, requireLavanderia, requireRole } from "../auth/middleware.js";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { syncTarifaActivaLav } from "../../iot/mqtt.js";
 
 export const configuracionRouter = Router();
 
@@ -12,6 +13,13 @@ type ConfigRow = RowDataPacket & {
   valor: string;
   descripcion: string | null;
   fecha_actualizacion: Date;
+};
+type TarifaRow = RowDataPacket & {
+  id_tarifa: number;
+  precio_arranque: number;
+  tiempo_base_minutos: number;
+  importe_incremento: number;
+  minutos_por_incremento: number;
 };
 
 type EnvSettings = {
@@ -412,6 +420,77 @@ configuracionRouter.put("/env", requireAuth, requireRole(["ADMIN"]), requireLava
   await setConfigLav(idLav, "env_settings", envCfg, "Ajustes ENV por tienda (demo/admin)");
   await persistEditableEnv(Object.fromEntries(EDITABLE_ENV_KEYS.map((k) => [k, envCfg[k]])));
   res.json({ ok: true, env: envCfg, note: "Cambios guardados en BD y .env del backend. Reinicia servicios para aplicar completamente." });
+});
+
+configuracionRouter.get("/tarifa-actual", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const [rows] = await db.query<TarifaRow[]>(
+    `SELECT id_tarifa, precio_arranque, tiempo_base_minutos, importe_incremento, minutos_por_incremento
+     FROM tarifa_maquina
+     WHERE id_lavanderia = :idLav AND activa = 1
+       AND (fecha_inicio_vigencia <= NOW())
+       AND (fecha_fin_vigencia IS NULL OR fecha_fin_vigencia > NOW())
+     ORDER BY fecha_inicio_vigencia DESC, id_tarifa DESC
+     LIMIT 1`,
+    { idLav },
+  );
+  const t = rows[0] ?? null;
+  if (!t) return res.json({ ok: true, tarifa: null });
+  return res.json({
+    ok: true,
+    tarifa: {
+      id_tarifa: Number(t.id_tarifa),
+      precio_ciclo: Number(t.precio_arranque),
+      tiempo_ciclo_min: Number(t.tiempo_base_minutos),
+      precio_ampliacion: Number(t.importe_incremento),
+      minutos_ampliacion: Number(t.minutos_por_incremento),
+    },
+  });
+});
+
+configuracionRouter.put("/tarifa-actual", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
+  const idLav = req.auth?.id_lavanderia ?? 1;
+  const precioCiclo = Number(req.body?.precio_ciclo);
+  const tiempoCicloMin = Number(req.body?.tiempo_ciclo_min);
+  const precioAmpliacion = Number(req.body?.precio_ampliacion);
+  const minutosAmpliacion = Number(req.body?.minutos_ampliacion);
+  if (!Number.isFinite(precioCiclo) || precioCiclo < 0) return res.status(400).json({ ok: false, error: "BAD_PRECIO_CICLO" });
+  if (!Number.isFinite(tiempoCicloMin) || tiempoCicloMin <= 0) return res.status(400).json({ ok: false, error: "BAD_TIEMPO_CICLO" });
+  if (!Number.isFinite(precioAmpliacion) || precioAmpliacion <= 0) return res.status(400).json({ ok: false, error: "BAD_PRECIO_AMPLIACION" });
+  if (!Number.isFinite(minutosAmpliacion) || minutosAmpliacion <= 0) return res.status(400).json({ ok: false, error: "BAD_MINUTOS_AMPLIACION" });
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query<ResultSetHeader>(
+      "UPDATE tarifa_maquina SET activa = 0, fecha_fin_vigencia = NOW() WHERE id_lavanderia = :idLav AND activa = 1 AND fecha_fin_vigencia IS NULL",
+      { idLav },
+    );
+    await conn.query<ResultSetHeader>(
+      `INSERT INTO tarifa_maquina (
+        id_lavanderia, nombre, precio_arranque, tiempo_base_minutos,
+        importe_incremento, minutos_por_incremento, fecha_inicio_vigencia, fecha_fin_vigencia, activa
+      ) VALUES (
+        :idLav, :nombre, :precio, :tiempo, :incPrecio, :incMin, NOW(), NULL, 1
+      )`,
+      {
+        idLav,
+        nombre: `Tarifa ${new Date().toISOString().slice(0, 16).replace("T", " ")}`,
+        precio: precioCiclo,
+        tiempo: Math.trunc(tiempoCicloMin),
+        incPrecio: precioAmpliacion,
+        incMin: Math.trunc(minutosAmpliacion),
+      },
+    );
+    await conn.commit();
+    await syncTarifaActivaLav(idLav);
+    return res.json({ ok: true });
+  } catch {
+    await conn.rollback();
+    return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+  } finally {
+    conn.release();
+  }
 });
 
 configuracionRouter.get("/:clave", requireAuth, requireLavanderia, async (req, res) => {

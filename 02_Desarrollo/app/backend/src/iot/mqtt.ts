@@ -26,7 +26,13 @@ type MaquinaRef = RowDataPacket & {
 };
 
 type ConfigRow = RowDataPacket & { valor: string };
-type TarifaRow = RowDataPacket & { id_tarifa: number; tiempo_base_minutos: number };
+type TarifaRow = RowDataPacket & {
+  id_tarifa: number;
+  precio_arranque: number;
+  tiempo_base_minutos: number;
+  importe_incremento: number;
+  minutos_por_incremento: number;
+};
 type CicloOpenRow = RowDataPacket & { id_ciclo: number };
 type MachineRuntimeState = {
   segundos_restantes?: number;
@@ -43,6 +49,7 @@ type CreditOriginPending = {
 
 let client: MqttClient | null = null;
 let mqttConnected = false;
+let tarifaSyncTimer: NodeJS.Timeout | null = null;
 
 function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
   if (!raw) return fallback;
@@ -434,9 +441,29 @@ async function processEvento(idLav: number | undefined, codigo: string, data: Ev
     const origen = String(payload?.origen ?? "").toLowerCase();
     const minutosPayload = Number(payload?.minutos ?? Number.NaN);
     const importePayload = Number(payload?.importe ?? 0);
-    const minutosCalculados = Number.isFinite(minutosPayload)
-      ? Math.max(0, Math.floor(minutosPayload))
-      : Math.max(0, Math.floor(importePayload * 15));
+    let minutosCalculados = Number.isFinite(minutosPayload) ? Math.max(0, Math.floor(minutosPayload)) : 0;
+    if (minutosCalculados <= 0 && Number.isFinite(importePayload) && importePayload > 0) {
+      const [tarifaRows] = await db.query<TarifaRow[]>(
+        `
+        SELECT id_tarifa, precio_arranque, tiempo_base_minutos, importe_incremento, minutos_por_incremento
+        FROM tarifa_maquina
+        WHERE id_lavanderia = :idLav
+          AND activa = 1
+          AND fecha_inicio_vigencia <= NOW()
+          AND (fecha_fin_vigencia IS NULL OR fecha_fin_vigencia > NOW())
+        ORDER BY fecha_inicio_vigencia DESC, id_tarifa DESC
+        LIMIT 1
+        `,
+        { idLav: machine.id_lavanderia },
+      );
+      const tarifa = tarifaRows[0];
+      const precioInc = Number(tarifa?.importe_incremento ?? 0);
+      const minutosInc = Number(tarifa?.minutos_por_incremento ?? 0);
+      if (precioInc > 0 && minutosInc > 0) {
+        const incrementos = Math.floor(importePayload / precioInc);
+        minutosCalculados = Math.max(0, incrementos * minutosInc);
+      }
+    }
     if (minutosCalculados <= 0) return;
 
     // Si la ampliación vino de web (/maquinas/:id/ampliar), ya está persistida en BD.
@@ -505,6 +532,75 @@ async function processEvento(idLav: number | undefined, codigo: string, data: Ev
   }
 }
 
+type TarifaActivaPayload = {
+  id_tarifa: number;
+  precio_ciclo: number;
+  tiempo_ciclo_min: number;
+  precio_ampliacion: number;
+  minutos_ampliacion: number;
+  cycle_seconds: number;
+  plus_seconds_per_euro: number;
+  start_min_credit: number;
+  ts: string;
+};
+
+async function getTarifaActivaPayload(idLav: number): Promise<TarifaActivaPayload | null> {
+  const [rows] = await db.query<TarifaRow[]>(
+    `
+    SELECT id_tarifa, precio_arranque, tiempo_base_minutos, importe_incremento, minutos_por_incremento
+    FROM tarifa_maquina
+    WHERE id_lavanderia = :idLav
+      AND activa = 1
+      AND fecha_inicio_vigencia <= NOW()
+      AND (fecha_fin_vigencia IS NULL OR fecha_fin_vigencia > NOW())
+    ORDER BY fecha_inicio_vigencia DESC, id_tarifa DESC
+    LIMIT 1
+    `,
+    { idLav },
+  );
+  const tarifa = rows[0];
+  if (!tarifa) return null;
+  const precioAmpliacion = Number(tarifa.importe_incremento || 0);
+  const minutosAmpliacion = Number(tarifa.minutos_por_incremento || 0);
+  const plusSecondsPerEuro =
+    precioAmpliacion > 0 && minutosAmpliacion > 0
+      ? (minutosAmpliacion * 60) / precioAmpliacion
+      : 0;
+  return {
+    id_tarifa: Number(tarifa.id_tarifa),
+    precio_ciclo: Number(tarifa.precio_arranque || 0),
+    tiempo_ciclo_min: Number(tarifa.tiempo_base_minutos || 0),
+    precio_ampliacion: precioAmpliacion,
+    minutos_ampliacion: minutosAmpliacion,
+    cycle_seconds: Math.max(0, Math.round(Number(tarifa.tiempo_base_minutos || 0) * 60)),
+    plus_seconds_per_euro: Math.max(0, Math.round(plusSecondsPerEuro)),
+    start_min_credit: Number(tarifa.precio_arranque || 0),
+    ts: new Date().toISOString(),
+  };
+}
+
+function publishTarifaActiva(idLav: number, payload: TarifaActivaPayload) {
+  if (!env.mqtt.enabled || !client || !client.connected) return false;
+  if (!Number.isFinite(idLav) || idLav <= 0) return false;
+  client.publish(`kwl/config/${Math.trunc(idLav)}/tarifa`, JSON.stringify(payload), {
+    qos: 0,
+    retain: true,
+  });
+  return true;
+}
+
+async function syncTarifasActivasTodas() {
+  const [rows] = await db.query<(RowDataPacket & { id_lavanderia: number })[]>(
+    "SELECT id_lavanderia FROM lavanderia WHERE activa = 1",
+  );
+  for (const row of rows) {
+    const idLav = Number(row.id_lavanderia);
+    if (!Number.isFinite(idLav) || idLav <= 0) continue;
+    const payload = await getTarifaActivaPayload(idLav);
+    if (payload) publishTarifaActiva(idLav, payload);
+  }
+}
+
 async function onMessage(topic: string, payload: Buffer) {
   let data: any;
   try {
@@ -563,6 +659,10 @@ export function startMqttBridge() {
     client?.subscribe("kwl/maquinas/+/+/evento");
     client?.subscribe("kwl/iot/+/estado");
     client?.subscribe("kwl/iot/+/evento");
+    syncTarifasActivasTodas().catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error("MQTT tarifa sync failed", err);
+    });
   });
   client.on("close", () => {
     mqttConnected = false;
@@ -579,6 +679,16 @@ export function startMqttBridge() {
       console.error("MQTT message processing failed", { topic, err });
     });
   });
+
+  if (!tarifaSyncTimer) {
+    tarifaSyncTimer = setInterval(() => {
+      if (!mqttConnected) return;
+      syncTarifasActivasTodas().catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error("MQTT periodic tarifa sync failed", err);
+      });
+    }, 60_000);
+  }
 }
 
 export function getMqttHealth() {
@@ -635,6 +745,13 @@ export function publishIotState(
   const topic = `kwl/iot/${Math.trunc(idLav)}/estado`;
   client.publish(topic, JSON.stringify({ ...state, timestamp: new Date().toISOString(), origen: "gui_sim" }), { qos: 0 });
   return true;
+}
+
+export async function syncTarifaActivaLav(idLav: number) {
+  if (!Number.isFinite(idLav) || idLav <= 0) return false;
+  const payload = await getTarifaActivaPayload(Math.trunc(idLav));
+  if (!payload) return false;
+  return publishTarifaActiva(Math.trunc(idLav), payload);
 }
 
 export async function getRuntimeMachineStateByLav(idLav: number): Promise<Record<string, MachineRuntimeState>> {

@@ -34,3 +34,9 @@ export type TarifaRow = RowDataPacket & {
 export type CicloInsertResult = {
   id_ciclo: number;
 };
+
+// Alias en español para uso progresivo en backend sin romper compatibilidad.
+export type FilaUsuario = UsuarioRow;
+export type FilaMaquina = MaquinaRow;
+export type FilaTarifa = TarifaRow;
+export type ResultadoInsercionCiclo = CicloInsertResult;

@@ -40,3 +40,5 @@ Servir como apoyo para:
 - Redis activo como caché operativa en backend IoT
 - Instaladores demo robustecidos (`auto_deploy_fedora.sh` / `auto_deploy.ps1`)
 - Validación runtime de regresión de máquinas y deriva de temporizador (scripts demo en PASS)
+- Separación estable de programadores IoT (`Inicio` general vs `Programador` individual)
+- Alta de lavanderías desde panel para superadmin + ajustes de tarifa operativa desde `Ajustes`

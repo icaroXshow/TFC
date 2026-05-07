@@ -521,3 +521,63 @@ Verificación:
 - Menos roturas por IDs variables tras reseed/redeploy.
 - Mejor tolerancia a latencia de Redis en demo.
 - Conectividad web/simulador más estable por alineación de `lav_id`.
+
+## 2026-05-07 — Separación de programadores IoT (Inicio vs Programador)
+
+### Qué
+
+- Se separa la programación IoT global de tienda (vista `Inicio`) de la programación IoT individual (vista `Programador`).
+- Se evita que una vista sobrescriba la configuración de la otra.
+
+### Cómo
+
+- Backend:
+  - `app/backend/src/web/routes/iot.ts`
+  - Nuevos endpoints:
+    - `GET /api/iot/store-schedule`
+    - `PUT /api/iot/store-schedule`
+  - `iot_schedule` queda reservado para programación individual.
+  - `iot_store_schedule` gestiona apertura/cierre global de tienda.
+
+- Scheduler:
+  - `app/backend/src/iot/scheduler.ts`
+  - Ejecuta de forma independiente:
+    - `iot_schedule` (individual: puerta/luces/ventilación)
+    - `iot_store_schedule` + `iot_store_actions` + listas de máquinas (global tienda)
+  - Mantiene marcadores separados en `iot_last` para no duplicar ejecuciones por minuto.
+
+- Frontend:
+  - `app/frontend/public/js/admin/nucleo-dashboard-maquinas.js`
+    - `Inicio` guarda/carga horario de tienda con `/api/iot/store-schedule`.
+  - `app/frontend/public/js/admin/editor-camara-iot-usuarios.js`
+    - `Programador` guarda únicamente `/api/iot/schedule`.
+    - Deja de modificar listas de máquinas de apertura/cierre de tienda.
+
+### Resultado
+
+- `Inicio` funciona como escena global configurable de tienda.
+- `Programador` conserva automatizaciones IoT individuales.
+
+## 2026-05-07 — Alta de lavanderías (superadmin) + tarifas desde Ajustes
+
+### Qué
+
+- Se añade alta de lavanderías desde panel para superadmin.
+- Se añade formulario de tarifas operativas en `Ajustes` (precio ciclo, tiempo ciclo, precio/minutos de ampliación).
+
+### Cómo
+
+- Backend:
+  - `POST /api/lavanderias` (solo superadmin) crea tienda y configuración mínima IoT/entorno.
+  - `GET /api/configuracion/tarifa-actual` y `PUT /api/configuracion/tarifa-actual`.
+  - El guardado de tarifa cierra la vigente e inserta una nueva con vigencia desde `NOW()`.
+- Frontend:
+  - Botón `+ Lavandería` junto al selector de tienda (solo superadmin).
+  - Formulario de tarifa en `admin/ajustes.html` conectado a los endpoints nuevos.
+
+### Resultado
+
+- El dueño puede dar de alta nuevas tiendas sin Adminer.
+- Puede ajustar precios y tiempos sin tocar código.
+- Se mantiene consistencia histórica: cambios solo para ciclos nuevos.
+- Ambas configuraciones coexisten sin pisarse.

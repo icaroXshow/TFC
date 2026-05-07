@@ -22,7 +22,8 @@ Lista de máquinas visibles para la lavandería activa.
 Detalle de una máquina.
 
 ### POST /api/maquinas/{id}/iniciar
-Enciende relé y deja la máquina en `PAUSADA`.
+Si está en `STOP`, enciende relé y deja la máquina en `PAUSADA`.
+Si está en `PAUSADA`, confirma inicio de ciclo (`EN_MARCHA`).
 
 ### POST /api/maquinas/{id}/detener
 Solicita parada manual y deja la máquina en `STOP`.
@@ -93,10 +94,16 @@ Histórico corto de acciones de relés.
 Registra acción manual de relé (admin).
 
 ### GET /api/iot/schedule
-Obtiene programación de puerta/luces/ventilación.
+Obtiene programación IoT **individual** (sección `Programador`) para puerta/luces/ventilación.
 
 ### PUT /api/iot/schedule
-Guarda programación (admin).
+Guarda programación IoT **individual** (admin).
+
+### GET /api/iot/store-schedule
+Obtiene programación **general de tienda** (sección `Inicio`): hora de apertura y cierre.
+
+### PUT /api/iot/store-schedule
+Guarda programación **general de tienda** (admin).
 
 ### GET /api/iot/store-actions
 Obtiene acciones de abrir/cerrar tienda.
@@ -134,9 +141,6 @@ Zoom relativo/absoluto.
 
 ### POST /api/camera/display-mode
 Cambia modo de visualización.
-
-### POST /api/camera/audio/play
-Reproduce audio preconfigurado.
 
 ### POST /api/camera/relay/pulse
 Pulso de relé (puerta/luces).
@@ -176,6 +180,9 @@ Actualiza lavanderías asignadas.
 ### GET /api/lavanderias
 Lista lavanderías permitidas para el usuario autenticado.
 
+### POST /api/lavanderias
+Alta de nueva lavandería (solo superadmin).
+
 ### GET /api/auditoria
 Lista acciones administrativas (logs de auditoría).
 
@@ -193,6 +200,12 @@ Lee ajustes de entorno por lavandería (admin).
 
 ### PUT /api/configuracion/env
 Guarda ajustes de entorno por lavandería (admin).
+
+### GET /api/configuracion/tarifa-actual
+Lee tarifa operativa vigente de la lavandería activa (admin).
+
+### PUT /api/configuracion/tarifa-actual
+Crea nueva tarifa vigente desde ahora para nuevos ciclos (admin).
 
 ### GET /api/configuracion/web-public
 Lee contenido público web (sin login).

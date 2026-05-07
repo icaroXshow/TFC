@@ -1,7 +1,7 @@
 import mysql from "mysql2/promise";
 import { env } from "../system/env.js";
 
-export const db = mysql.createPool({
+const configuracionPool = {
   host: env.db.host,
   port: env.db.port,
   user: env.db.user,
@@ -10,5 +10,6 @@ export const db = mysql.createPool({
   connectionLimit: 10,
   enableKeepAlive: true,
   namedPlaceholders: true,
-});
+};
 
+export const db = mysql.createPool(configuracionPool);

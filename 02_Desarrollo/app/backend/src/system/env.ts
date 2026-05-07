@@ -1,42 +1,42 @@
-function required(name: string, value: string | undefined): string {
-  if (!value) throw new Error(`Missing env var: ${name}`);
-  return value;
+function requerido(nombre: string, valor: string | undefined): string {
+  if (!valor) throw new Error(`Missing env var: ${nombre}`);
+  return valor;
 }
 
-function parseCsv(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
+function parsearCsv(valor: string | undefined): string[] {
+  if (!valor) return [];
+  return valor
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
 }
 
-const nodeEnv = process.env.NODE_ENV ?? "development";
-const corsOriginsRaw = parseCsv(process.env.CORS_ORIGIN);
-const tokenSecret = required("AUTH_TOKEN_SECRET", process.env.AUTH_TOKEN_SECRET);
-const weakDemoSecrets = new Set([
+const entornoNode = process.env.NODE_ENV ?? "development";
+const origenesCorsCrudos = parsearCsv(process.env.CORS_ORIGIN);
+const secretoToken = requerido("AUTH_TOKEN_SECRET", process.env.AUTH_TOKEN_SECRET);
+const secretosDemoDebiles = new Set([
   "change-this-secret",
   "kwl-demo-cambiar-esta-clave-en-produccion-32chars",
   "kwl-backend-super-secret-2024",
 ]);
 
 if (
-  nodeEnv === "production" &&
-  (tokenSecret.length < 32 ||
-    tokenSecret.includes("cambiar-esta-clave") ||
-    weakDemoSecrets.has(tokenSecret.toLowerCase()))
+  entornoNode === "production" &&
+  (secretoToken.length < 32 ||
+    secretoToken.includes("cambiar-esta-clave") ||
+    secretosDemoDebiles.has(secretoToken.toLowerCase()))
 ) {
   throw new Error("AUTH_TOKEN_SECRET must be a strong secret in production (>=32 chars, non-demo value)");
 }
 
 export const env = {
-  nodeEnv,
+  nodeEnv: entornoNode,
   host: process.env.HOST ?? "0.0.0.0",
   port: Number(process.env.PORT ?? "8080"),
 
-  corsOrigins: corsOriginsRaw.filter((origin) => origin !== "*" && origin !== "null"),
-  corsAllowAllOrigins: corsOriginsRaw.includes("*") && nodeEnv !== "production",
-  corsAllowNullOrigin: corsOriginsRaw.includes("null") && nodeEnv !== "production",
+  corsOrigins: origenesCorsCrudos.filter((origin) => origin !== "*" && origin !== "null"),
+  corsAllowAllOrigins: origenesCorsCrudos.includes("*") && entornoNode !== "production",
+  corsAllowNullOrigin: origenesCorsCrudos.includes("null") && entornoNode !== "production",
 
   db: {
     host: process.env.DB_HOST ?? "127.0.0.1",
@@ -47,7 +47,7 @@ export const env = {
   },
 
   auth: {
-    tokenSecret,
+    tokenSecret: secretoToken,
   },
 
   camera: {

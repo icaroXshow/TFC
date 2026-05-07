@@ -14,6 +14,7 @@
 10. Redis se usa para caché operativa y soporte de tiempo real.
 11. MariaDB se usa para persistencia, histórico, auditoría y contabilidad.
 12. El estado rápido del sistema no sustituye al histórico persistente.
+13. El programador general de tienda (`Inicio`) y los programadores individuales (`Programador`) son independientes y no deben sobrescribirse entre sí.
 
 ---
 
@@ -44,8 +45,10 @@
 3. Un ciclo representa una ejecución real de máquina.
 4. El dinero introducido antes del arranque se guarda acumulado, no moneda a moneda.
 5. Durante un ciclo, cada incremento económico puede traducirse en tiempo extra.
-6. Lo añadido desde web se registra contablemente como bonificación, aunque la máquina lo reciba como saldo normal.
-7. Debe distinguirse siempre entre dinero real del cliente y bonificación manual.
+6. Cada ciclo conserva `importe` (precio real), `abonado` (parte cubierta por web/admin) y `total` (`importe - abonado`).
+7. Los ingresos de caja se calculan sobre `total` (ingreso neto real), no sobre bonificaciones negativas.
+8. Debe distinguirse siempre entre dinero real del cliente y abono manual.
+9. Los cambios de tarifa solo aplican a ciclos nuevos; nunca modifican importes históricos ya registrados.
 
 ---
 

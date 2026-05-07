@@ -68,7 +68,7 @@
           )
           .join("");
         faqList.querySelectorAll(".js-faq-question, .js-faq-answer").forEach((el) => {
-          el.addEventListener("entrada", syncFaqItemsToHidden);
+          el.addEventListener("input", syncFaqItemsToHidden);
         });
         faqList.querySelectorAll(".js-faq-remove").forEach((btn) => {
           btn.addEventListener("click", () => {
@@ -124,7 +124,7 @@
 
       let previewDebounce = null;
       webEditorForm.querySelectorAll("input, textarea, select").forEach((el) => {
-        el.addEventListener("entrada", () => {
+        el.addEventListener("input", () => {
           if (previewDebounce) clearTimeout(previewDebounce);
           previewDebounce = setTimeout(() => {
             applyPreviewToFrame();
@@ -239,6 +239,66 @@
         const d = await r.json().catch(() => ({}));
         setEnvSettingsHint(String(d?.note || "Ajustes guardados."));
         notifyNice("Ajustes guardados correctamente.", "Ajustes");
+      });
+    }
+
+    const tarifaSettingsForm = document.getElementById("tarifaSettingsForm");
+    const tarifaPrecioCiclo = document.getElementById("tarifaPrecioCiclo");
+    const tarifaTiempoCiclo = document.getElementById("tarifaTiempoCiclo");
+    const tarifaPrecioAmpliacion = document.getElementById("tarifaPrecioAmpliacion");
+    const tarifaMinutosAmpliacion = document.getElementById("tarifaMinutosAmpliacion");
+    const tarifaSettingsSave = document.getElementById("tarifaSettingsSave");
+    const tarifaSettingsHint = document.getElementById("tarifaSettingsHint");
+    const setTarifaHint = (text) => {
+      if (!tarifaSettingsHint) return;
+      tarifaSettingsHint.hidden = !text;
+      tarifaSettingsHint.textContent = text || "";
+    };
+    const loadTarifa = async () => {
+      const r = await fetch(`${API_BASE}/api/configuracion/tarifa-actual`, {
+        headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
+      });
+      if (!r.ok) throw new Error("TARIFA_LOAD_FAILED");
+      const d = await r.json();
+      const t = d?.tarifa;
+      if (!t) return;
+      if (tarifaPrecioCiclo) tarifaPrecioCiclo.value = String(Number(t.precio_ciclo || 0));
+      if (tarifaTiempoCiclo) tarifaTiempoCiclo.value = String(Number(t.tiempo_ciclo_min || 0));
+      if (tarifaPrecioAmpliacion) tarifaPrecioAmpliacion.value = String(Number(t.precio_ampliacion || 0));
+      if (tarifaMinutosAmpliacion) tarifaMinutosAmpliacion.value = String(Number(t.minutos_ampliacion || 0));
+    };
+    if (tarifaSettingsForm) {
+      try {
+        await loadTarifa();
+      } catch {
+        setTarifaHint("No se pudo cargar la tarifa actual.");
+      }
+      tarifaSettingsForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        setTarifaHint("");
+        if (tarifaSettingsSave) tarifaSettingsSave.disabled = true;
+        const payload = {
+          precio_ciclo: Number(tarifaPrecioCiclo?.value ?? 0),
+          tiempo_ciclo_min: Number(tarifaTiempoCiclo?.value ?? 0),
+          precio_ampliacion: Number(tarifaPrecioAmpliacion?.value ?? 0),
+          minutos_ampliacion: Number(tarifaMinutosAmpliacion?.value ?? 0),
+        };
+        const r = await fetch(`${API_BASE}/api/configuracion/tarifa-actual`, {
+          method: "PUT",
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        if (tarifaSettingsSave) tarifaSettingsSave.disabled = false;
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          setTarifaHint(`No se pudo guardar (${d?.error || r.status}).`);
+          return;
+        }
+        setTarifaHint("Tarifa guardada. Vigencia desde ahora para nuevos ciclos.");
       });
     }
     let storeActionCooldownUntil = 0;
@@ -490,7 +550,7 @@ refresh();
       loadIot._busy = true;
       try {
         setIotHint("");
-        const [stateRes, schRes, approxRes, machinesRes, openMachinesRes, closeMachinesRes] = await Promise.all([
+        const [stateRes, schRes, approxRes] = await Promise.all([
           fetch(`${API_BASE}/api/iot/state`, {
             headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
           }),
@@ -498,15 +558,6 @@ refresh();
             headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
           }),
           fetch(`${API_BASE}/api/iot/approx-state`, {
-            headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
-          }),
-          fetch(`${API_BASE}/api/maquinas`, {
-            headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
-          }),
-          fetch(`${API_BASE}/api/iot/store-open-machines`, {
-            headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
-          }),
-          fetch(`${API_BASE}/api/iot/store-close-machines`, {
             headers: { authorization: `Bearer ${token}`, "x-lavanderia-id": String(activeLavId) },
           }),
         ]);
@@ -538,23 +589,8 @@ refresh();
           if (doorOff) doorOff.value = sc?.puerta?.off || "";
           if (lightsOnTime) lightsOnTime.value = sc?.luces?.on || "";
           if (lightsOffTime) lightsOffTime.value = sc?.luces?.off || "";
-          if (iotMachineOnTime) iotMachineOnTime.value = sc?.puerta?.on || sc?.luces?.on || "";
-          if (iotMachineOffTime) iotMachineOffTime.value = sc?.puerta?.off || sc?.luces?.off || "";
           if (fanOnTime) fanOnTime.value = sc?.ventilacion?.on || "";
           if (fanOffTime) fanOffTime.value = sc?.ventilacion?.off || "";
-          if (iotOpenMachines && iotCloseMachines && machinesRes.ok && openMachinesRes.ok && closeMachinesRes.ok) {
-            const allMachines = (await machinesRes.json())?.maquinas || [];
-            const selectedOpen = new Set((((await openMachinesRes.json())?.maquinas) || []).map((x) => Number(x)));
-            const selectedClose = new Set((((await closeMachinesRes.json())?.maquinas) || []).map((x) => Number(x)));
-            const htmlOpen = allMachines
-              .map((m) => `<label><input type="checkbox" data-role="open" value="${Number(m.id_maquina)}" ${selectedOpen.has(Number(m.id_maquina)) ? "checked" : ""} /> ${escapeHtml(m.codigo_visible)}</label>`)
-              .join("");
-            const htmlClose = allMachines
-              .map((m) => `<label><input type="checkbox" data-role="close" value="${Number(m.id_maquina)}" ${selectedClose.has(Number(m.id_maquina)) ? "checked" : ""} /> ${escapeHtml(m.codigo_visible)}</label>`)
-              .join("");
-            iotOpenMachines.innerHTML = htmlOpen;
-            iotCloseMachines.innerHTML = htmlClose;
-          }
         }
         await loadIotLog();
       } finally {
@@ -685,10 +721,10 @@ refresh();
       await saveState({ ventilacion_encendida: false });
     });
 
-    [doorScheduleEnabled, lightsScheduleEnabled, doorOn, doorOff, lightsOnTime, lightsOffTime, iotMachineOnTime, iotMachineOffTime, fanOnTime, fanOffTime, iotOpenMachines, iotCloseMachines]
+    [doorScheduleEnabled, lightsScheduleEnabled, doorOn, doorOff, lightsOnTime, lightsOffTime, fanOnTime, fanOffTime]
       .filter(Boolean)
       .forEach((el) => {
-        el.addEventListener("entrada", () => {
+        el.addEventListener("input", () => {
           iotScheduleDirty = true;
         });
         el.addEventListener("change", () => {
@@ -699,12 +735,10 @@ refresh();
     iotSaveSchedule?.addEventListener("click", async () => {
       setIotHint("");
       iotSaveSchedule.disabled = true;
-      const machineOn = String(iotMachineOnTime?.value ?? "").trim() || null;
-      const machineOff = String(iotMachineOffTime?.value ?? "").trim() || null;
-      const doorOnValue = String(doorOn?.value ?? "").trim() || machineOn;
-      const doorOffValue = String(doorOff?.value ?? "").trim() || machineOff;
-      const lightsOnValue = String(lightsOnTime?.value ?? "").trim() || machineOn;
-      const lightsOffValue = String(lightsOffTime?.value ?? "").trim() || machineOff;
+      const doorOnValue = String(doorOn?.value ?? "").trim() || null;
+      const doorOffValue = String(doorOff?.value ?? "").trim() || null;
+      const lightsOnValue = String(lightsOnTime?.value ?? "").trim() || null;
+      const lightsOffValue = String(lightsOffTime?.value ?? "").trim() || null;
       const payload = {
         puerta: doorScheduleEnabled?.checked
           ? { on: doorOnValue, off: doorOffValue }
@@ -714,44 +748,18 @@ refresh();
           : { on: null, off: null },
         ventilacion: { on: String(fanOnTime?.value ?? "").trim() || null, off: String(fanOffTime?.value ?? "").trim() || null },
       };
-      const selectedOpenMachines = iotOpenMachines
-        ? [...iotOpenMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
-        : [];
-      const selectedCloseMachines = iotCloseMachines
-        ? [...iotCloseMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
-        : [];
-      const [res, openRes, closeRes] = await Promise.all([
-        fetch(`${API_BASE}/api/iot/schedule`, {
-          method: "PUT",
-          headers: {
-            authorization: `Bearer ${token}`,
-            "x-lavanderia-id": String(activeLavId),
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }),
-        fetch(`${API_BASE}/api/iot/store-open-machines`, {
-          method: "PUT",
-          headers: {
-            authorization: `Bearer ${token}`,
-            "x-lavanderia-id": String(activeLavId),
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({ maquinas: selectedOpenMachines }),
-        }),
-        fetch(`${API_BASE}/api/iot/store-close-machines`, {
-          method: "PUT",
-          headers: {
-            authorization: `Bearer ${token}`,
-            "x-lavanderia-id": String(activeLavId),
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({ maquinas: selectedCloseMachines }),
-        }),
-      ]);
+      const res = await fetch(`${API_BASE}/api/iot/schedule`, {
+        method: "PUT",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "x-lavanderia-id": String(activeLavId),
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
       const data = await res.json().catch(() => ({}));
       iotSaveSchedule.disabled = false;
-      if (!res.ok || !openRes.ok || !closeRes.ok) {
+      if (!res.ok) {
         setIotHint(`Error: ${data?.error || "NO_OK"} (solo ADMIN)`);
         return;
       }
@@ -884,7 +892,7 @@ refresh();
       });
     };
 
-    usersSearch?.addEventListener("entrada", () => {
+    usersSearch?.addEventListener("input", () => {
       renderUsers(filteredUsers());
     });
 

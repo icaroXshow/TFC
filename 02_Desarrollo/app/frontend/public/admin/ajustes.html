@@ -44,6 +44,7 @@
         <div class="migas-admin" id="adminBreadcrumbs"></div>
         <div class="barra-superior-admin-right">
           <select class="selector-lavanderia-admin" id="adminLavSelect" aria-label="Lavandería activa"></select>
+          <button type="button" class="boton-secundario" id="adminAddLavBtn" hidden>+ Lavandería</button>
           <span class="ubicacion-admin" id="adminLocation">—</span>
         </div>
       </header>
@@ -96,6 +97,20 @@
             <div><button type="submit" class="boton-primario" id="envSettingsSave">Guardar ajustes</button></div>
           </form>
           <p class="nota-usuarios" id="envSettingsHint" hidden></p>
+
+          <form class="tarjeta-admin web-editor-form" id="tarifaSettingsForm">
+            <details class="web-editor-panel" open>
+              <summary>Tarifas y tiempos (vigencia desde ahora)</summary>
+              <div class="form-grid">
+                <label class="field"><span>Precio ciclo (€)</span><input class="entrada" id="tarifaPrecioCiclo" type="number" min="0" step="0.01" /></label>
+                <label class="field"><span>Tiempo ciclo (min)</span><input class="entrada" id="tarifaTiempoCiclo" type="number" min="1" step="1" /></label>
+                <label class="field"><span>Precio ampliación (€)</span><input class="entrada" id="tarifaPrecioAmpliacion" type="number" min="0.01" step="0.01" /></label>
+                <label class="field"><span>Minutos ampliación</span><input class="entrada" id="tarifaMinutosAmpliacion" type="number" min="1" step="1" /></label>
+              </div>
+            </details>
+            <div><button type="submit" class="boton-primario" id="tarifaSettingsSave">Guardar tarifas</button></div>
+          </form>
+          <p class="nota-usuarios" id="tarifaSettingsHint" hidden></p>
         </section>
       </main>
     </div>

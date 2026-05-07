@@ -23,6 +23,14 @@ type IoTSchedule = {
   luces?: IoTScheduleItem;
   ventilacion?: IoTScheduleItem;
 };
+type StoreSchedule = {
+  open?: string | null;
+  close?: string | null;
+};
+type StoreActions = {
+  abrir_tienda: { puerta_abierta: boolean; luces_encendidas: boolean };
+  cerrar_tienda: { puerta_abierta: boolean; luces_encendidas: boolean };
+};
 
 type IoTLast = Record<string, string | null>;
 
@@ -115,7 +123,15 @@ export function startIoTScheduler() {
         SELECT id_lavanderia, clave, valor
         FROM configuracion
         WHERE ambito='LAVANDERIA'
-          AND clave IN ('iot_schedule','iot_state','iot_last','iot_store_open_machines','iot_store_close_machines')
+          AND clave IN (
+            'iot_schedule',
+            'iot_store_schedule',
+            'iot_store_actions',
+            'iot_state',
+            'iot_last',
+            'iot_store_open_machines',
+            'iot_store_close_machines'
+          )
         `,
       );
 
@@ -130,7 +146,11 @@ export function startIoTScheduler() {
 
       for (const [idLav, cfg] of byLav.entries()) {
         const schedule = safeJsonParse<IoTSchedule>(cfg.iot_schedule ?? "{}", {});
-        if (!schedule || (!schedule.puerta && !schedule.luces && !schedule.ventilacion)) continue;
+        const storeSchedule = safeJsonParse<StoreSchedule>(cfg.iot_store_schedule ?? "{}", {});
+        const storeActions = safeJsonParse<StoreActions>(cfg.iot_store_actions ?? "{}", {
+          abrir_tienda: { puerta_abierta: true, luces_encendidas: true },
+          cerrar_tienda: { puerta_abierta: true, luces_encendidas: true },
+        });
         const openMachinesCfg = safeJsonParse<number[]>(cfg.iot_store_open_machines ?? "[]", []);
         const closeMachinesCfg = safeJsonParse<number[]>(cfg.iot_store_close_machines ?? "[]", []);
 
@@ -204,11 +224,26 @@ export function startIoTScheduler() {
           }
         };
 
-        await maybe("Puerta", "puerta_on", "puerta_off", schedule.puerta, "puerta_abierta");
-        await maybe("Luces", "luces_on", "luces_off", schedule.luces, "luces_encendidas");
-        await maybe("Ventilación", "ventilacion_on", "ventilacion_off", schedule.ventilacion, "ventilacion_encendida");
+        await maybe("Puerta", "puerta_on", "puerta_off", schedule?.puerta, "puerta_abierta");
+        await maybe("Luces", "luces_on", "luces_off", schedule?.luces, "luces_encendidas");
+        await maybe("Ventilación", "ventilacion_on", "ventilacion_off", schedule?.ventilacion, "ventilacion_encendida");
 
-        const openTime = schedule?.puerta?.on || schedule?.luces?.on || null;
+        const openTime = storeSchedule?.open || null;
+        if (openTime && openTime === hhmm && shouldRun(last, "store_open", dateKey, hhmm)) {
+          if (storeActions?.abrir_tienda?.puerta_abierta) {
+            apply("puerta_abierta", true);
+            publishIotCommand(idLav, { dispositivo: "puerta", accion: "on", ts: new Date().toISOString(), origen: "auto_store_open" });
+            await appendIotActionLog(idLav, { dispositivo: "puerta", accion: "on", ts: new Date().toISOString(), by: undefined, origen: "auto_store_open" });
+          }
+          if (storeActions?.abrir_tienda?.luces_encendidas) {
+            apply("luces_encendidas", true);
+            publishIotCommand(idLav, { dispositivo: "luces", accion: "on", ts: new Date().toISOString(), origen: "auto_store_open" });
+            await appendIotActionLog(idLav, { dispositivo: "luces", accion: "on", ts: new Date().toISOString(), by: undefined, origen: "auto_store_open" });
+          }
+          last.store_open = `${dateKey} ${hhmm}`;
+          await auditSystem(idLav, "IOT_STORE_SCHEDULE_OPEN", `Apertura tienda (${hhmm})`);
+        }
+
         if (openTime && openTime === hhmm && shouldRun(last, "maquinas_open", dateKey, hhmm) && openMachinesCfg.length) {
           const idsCsv = openMachinesCfg.join(",");
           const [mRows] = await db.query<MachineRow[]>(
@@ -235,7 +270,22 @@ export function startIoTScheduler() {
           await auditSystem(idLav, "IOT_SCHEDULE_MACHINES_OPEN", `Máquinas ON (${hhmm}): ${mRows.map((x) => x.codigo_visible).join(", ")}`);
         }
 
-        const closeTime = schedule?.puerta?.off || schedule?.luces?.off || null;
+        const closeTime = storeSchedule?.close || null;
+        if (closeTime && closeTime === hhmm && shouldRun(last, "store_close", dateKey, hhmm)) {
+          if (storeActions?.cerrar_tienda?.puerta_abierta) {
+            apply("puerta_abierta", false);
+            publishIotCommand(idLav, { dispositivo: "puerta", accion: "off", ts: new Date().toISOString(), origen: "auto_store_close" });
+            await appendIotActionLog(idLav, { dispositivo: "puerta", accion: "off", ts: new Date().toISOString(), by: undefined, origen: "auto_store_close" });
+          }
+          if (storeActions?.cerrar_tienda?.luces_encendidas) {
+            apply("luces_encendidas", false);
+            publishIotCommand(idLav, { dispositivo: "luces", accion: "off", ts: new Date().toISOString(), origen: "auto_store_close" });
+            await appendIotActionLog(idLav, { dispositivo: "luces", accion: "off", ts: new Date().toISOString(), by: undefined, origen: "auto_store_close" });
+          }
+          last.store_close = `${dateKey} ${hhmm}`;
+          await auditSystem(idLav, "IOT_STORE_SCHEDULE_CLOSE", `Cierre tienda (${hhmm})`);
+        }
+
         if (closeTime && closeTime === hhmm && shouldRun(last, "maquinas_close", dateKey, hhmm) && closeMachinesCfg.length) {
           const idsCsv = closeMachinesCfg.join(",");
           const [mRows] = await db.query<MachineRow[]>(
