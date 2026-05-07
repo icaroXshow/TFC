@@ -1037,12 +1037,35 @@
     }
 
     const creditoAplicadoPorCiclo = new Map();
-    const CREDITO_INICIO_EUR = 4;
+    let creditoInicioEur = 4;
+    let creditoTarifaLavId = 0;
+
+    async function syncCreditoInicioDesdeTarifa() {
+      if (creditoTarifaLavId === activeLavId) return;
+      try {
+        const r = await fetch(`${API_BASE}/api/configuracion/tarifa-actual`, {
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-lavanderia-id": String(activeLavId),
+          },
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) return;
+        const precio = Number(data?.tarifa?.precio_ciclo ?? Number.NaN);
+        if (Number.isFinite(precio) && precio > 0) {
+          creditoInicioEur = Number(precio.toFixed(2));
+          creditoTarifaLavId = activeLavId;
+        }
+      } catch {
+        // fallback: mantiene último valor conocido
+      }
+    }
 
     async function loadMaquinas() {
       if (loadMaquinas._busy) return;
       loadMaquinas._busy = true;
       try {
+        await syncCreditoInicioDesdeTarifa();
         const isMachinesView = location.pathname.toLowerCase().endsWith("/admin/maquinas.html");
         if (isMachinesView && machinesGrid?.querySelector(".cajon-maquina.is-open")) return;
         const res = await fetch(`${API_BASE}/api/maquinas`, {
@@ -1170,7 +1193,7 @@
             }
             const okConfirm = await confirmNice(
               "Confirmar crédito",
-              `Se añadirá ${CREDITO_INICIO_EUR.toFixed(2)} € para iniciar lavado. ¿Continuar?`,
+              `Se añadirá ${creditoInicioEur.toFixed(2)} € para iniciar lavado. ¿Continuar?`,
               "Sí, añadir",
               "Cancelar",
             );
@@ -1184,7 +1207,7 @@
                   "x-lavanderia-id": String(activeLavId),
                   "content-type": "application/json",
                 },
-                body: JSON.stringify({ importe: CREDITO_INICIO_EUR }),
+                body: JSON.stringify({ importe: creditoInicioEur }),
               });
               if (!res.ok) throw new Error("CREDIT_FAILED");
               if (cicloRef) creditoAplicadoPorCiclo.set(cicloKey, true);
@@ -1240,7 +1263,7 @@
               entrada.min = "0";
               entrada.max = "";
               entrada.step = "0.01";
-              entrada.value = "4.00";
+              entrada.value = creditoInicioEur.toFixed(2);
               entrada.readOnly = true;
             } else {
               entrada.min = "0.10";

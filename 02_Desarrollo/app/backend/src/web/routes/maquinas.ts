@@ -566,9 +566,8 @@ maquinasRouter.post(
   requireLavanderia,
   async (req, res) => {
     const idMaquina = Number(req.params.id);
-    const importe = Number(req.body?.importe ?? 0);
+    const importeSolicitado = Number(req.body?.importe ?? 0);
     if (!Number.isFinite(idMaquina) || idMaquina <= 0) return res.status(400).json({ ok: false, error: "BAD_MACHINE_ID" });
-    if (!Number.isFinite(importe) || importe <= 0) return res.status(400).json({ ok: false, error: "BAD_IMPORTE" });
 
     const idLavanderia = req.auth?.id_lavanderia ?? 1;
     const idUsuario = Number(req.auth?.id_usuario ?? "0");
@@ -614,15 +613,21 @@ maquinasRouter.post(
     if (!tarifaRows[0]) return res.status(409).json({ ok: false, error: "SIN_TARIFA_VIGENTE" });
 
     const precioArranque = Number(tarifaRows[0].precio_arranque ?? 0);
-    const importeAplicado = Math.max(0, Math.min(importe, precioArranque));
-    const importeDevuelto = Number((importe - importeAplicado).toFixed(2));
+    if (!Number.isFinite(precioArranque) || precioArranque <= 0) {
+      return res.status(409).json({ ok: false, error: "PRECIO_ARRANQUE_INVALIDO" });
+    }
+    // El botón Crédito siempre debe cubrir el ciclo completo según tarifa vigente.
+    const importeAplicado = Number(precioArranque.toFixed(2));
+    const importeDevuelto = Number(
+      Math.max(0, (Number.isFinite(importeSolicitado) ? importeSolicitado : 0) - importeAplicado).toFixed(2),
+    );
 
     await db.query<ResultSetHeader>(
       `
       INSERT INTO log_maquina (id_lavanderia, id_maquina, id_ciclo, fecha_hora, tipo_evento, nivel, payload, procesado)
-      VALUES (:idLav, :idMaquina, NULL, NOW(), 'CREDITO_ACUMULADO_WEB', 'INFO', JSON_OBJECT('origen','web_admin','importe_introducido',:importeIntroducido,'importe_aplicado',:importeAplicado,'importe_devuelto',:importeDevuelto), 1)
+      VALUES (:idLav, :idMaquina, NULL, NOW(), 'CREDITO_ACUMULADO_WEB', 'INFO', JSON_OBJECT('origen','web_admin','importe_solicitado',:importeSolicitado,'importe_aplicado',:importeAplicado,'importe_devuelto',:importeDevuelto), 1)
       `,
-      { idLav: idLavanderia, idMaquina, importeIntroducido: importe, importeAplicado, importeDevuelto },
+      { idLav: idLavanderia, idMaquina, importeSolicitado, importeAplicado, importeDevuelto },
     );
     await db.query<ResultSetHeader>(
       `
