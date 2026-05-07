@@ -221,29 +221,6 @@ Frontend
 
 ---
 
-# Estado del Proyecto
-
-Actualmente el proyecto se encuentra en fase de desarrollo para el **Trabajo de Fin de Ciclo (TFC)**.
-
-Infraestructura completada:
-
-- servidor Proxmox
-- red interna
-- máquinas virtuales
-- broker MQTT
-- base de datos
-- backend preparado para desarrollo
-
-Siguientes fases:
-
-- desarrollo del backend
-- desarrollo del panel web
-- implementación de dispositivos IoT
-- pruebas con máquinas reales
-- documentación final del proyecto
-
----
-
 # Licencia
 
-Este proyecto se desarrolla como parte de un Trabajo de Fin de Ciclo con fines educativos y de investigación.
+Este proyecto se desarrolla como parte de un Trabajo de Fin de Ciclo con fines educativos y de investigación. Todos los derechos reservados a Diego Rodríguez López

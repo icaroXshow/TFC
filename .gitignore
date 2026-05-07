@@ -1,6 +1,6 @@
-############################
-# SISTEMA / EDITORES
-############################
+###############################################
+# Sistema / Editores
+###############################################
 .DS_Store
 Thumbs.db
 *.log
@@ -8,101 +8,99 @@ Thumbs.db
 *.swp
 *.swo
 *.bak
+
+# VSCode
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
 
+# JetBrains
 .idea/
 *.iml
 
-############################
-# NODE.JS / JAVASCRIPT
-############################
+# Windows / macOS
+.metadata/
+
+###############################################
+# Node.js / JavaScript
+###############################################
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
 .logs/
 .run/
+
+# Builds
 dist/
 build/
 .out/
 .cache/
 
+###############################################
+# Entornos (env)
+###############################################
 .env
 .env.*
 !.env.example
 
-############################
-# FRAMEWORKS JS
-############################
+###############################################
+# Frameworks JS
+###############################################
 .next/
 .nuxt/
 .svelte-kit/
 .parcel-cache/
 .vite/
 
-############################
-# PHP
-############################
+###############################################
+# PHP / Composer
+###############################################
 vendor/
 composer.phar
-
-############################
-# COMPOSER
-############################
 composer.lock
 
-############################
-# TESTING / COVERAGE
-############################
-coverage/
-.nyc_output/
-
-############################
-# SERVIDORES / DEPLOY
-############################
+###############################################
+# Backend / Servidores / Deploy
+###############################################
 .htaccess
 .htpasswd
 
-############################
-# MISC
-############################
+# SQLite / DB local
 *.sqlite
 *.sqlite3
 *.db
-.metadata/
-node_modules/
-.env
-dist/
-build/
-.vscode/
-.metadata/
-.DS_Store
+
+###############################################
+# Archivos y directorios del repo (proyecto)
+###############################################
 Recursos/
-bootstrap-5.3.8-dist/
-Paquete_Bootstrap.zip/
-bootstrap/
-vendor/
-node_modules/
-Soluciones/
+
+# Fotos y programas: se excluyen a nivel de repo
 03_Recursos/_Fotos/
 03_Recursos/Programas/
+
+# Instaladores / artefactos locales
 *.msi
 *.fig
-.gitignore
+
+# Git y notas locales
 .git/
 Notas/
+
+# Ejecutables/privados y documentación local
+Privado_KWL
 Lavanderia QWL.pdf
 Backupper/
-05_KWL/
 Acceso.md
-node_modules/
-dist/
-.env
-npm-debug.log*
+real/
+
+# Carpeta de trabajo / configuraciones locales
 02_Desarrollo/Versiones
-Privado_KWL
 02_Desarrollo/context
+
+# Temporal/Tareas
 TODO.md
+
