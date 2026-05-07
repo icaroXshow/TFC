@@ -22,7 +22,7 @@ const SIM_LAV_IDS = String(process.env.SIM_LAV_IDS || "3")
   .split(",")
   .map((x) => Number(x.trim()))
   .filter((x) => Number.isFinite(x) && x > 0);
-const DOOR_SIGNAL_DELAY_MS = 30000;
+const DOOR_SIGNAL_DELAY_MS = 10000;
 
 const client = mqtt.connect(MQTT_URL, {
   reconnectPeriod: 3000,
@@ -59,7 +59,7 @@ function ensureMachine(codigo) {
       ventiladorOn: false,
       saldoCredito: 0,
       endAtMs: 0,
-      puertaSecadoraAbierta: false,
+      puertaAbierta: false,
       aperturaPuertaPendiente: null,
       segundosRestantesPausaPuerta: 0,
     });
@@ -68,7 +68,9 @@ function ensureMachine(codigo) {
 }
 
 function isDryer(codigo) {
-  return String(codigo || "").toUpperCase().startsWith("S");
+  return String(codigo || "")
+    .toUpperCase()
+    .startsWith("S");
 }
 
 function pausarPorPuerta(idLav, codigo) {
@@ -118,17 +120,39 @@ function reanudarPorPuerta(idLav, codigo) {
   });
 }
 
-function toggleDryerDoor(idLav, codigo) {
+function toggleMachineDoor(idLav, codigo) {
   const st = ensureMachine(codigo);
-  if (!st || !isDryer(codigo)) return;
+  if (!st) return;
 
-  if (!st.puertaSecadoraAbierta) {
+  if (!st.puertaAbierta) {
+    if (!isDryer(codigo) && st.estado === "EN_MARCHA") {
+      publishEvento(idLav, codigo, "INICIO_RECHAZADO_PUERTA_ABIERTA", {
+        origen: "simulador",
+        motivo: "lavadora_en_marcha",
+      });
+      return;
+    }
     if (st.aperturaPuertaPendiente) {
+      clearTimeout(st.aperturaPuertaPendiente);
+      st.aperturaPuertaPendiente = null;
+      if (isDryer(codigo)) {
+        publishEvento(idLav, codigo, "SECADORA_PUERTA_CERRADA", {
+          origen: "simulador",
+          cancelada_apertura_pendiente: true,
+        });
+      }
+      return;
+    }
+    if (!isDryer(codigo)) {
+      st.puertaAbierta = true;
+      publishEvento(idLav, codigo, "LAVADORA_PUERTA_ABIERTA", {
+        origen: "simulador",
+      });
       return;
     }
     st.aperturaPuertaPendiente = setTimeout(() => {
       st.aperturaPuertaPendiente = null;
-      st.puertaSecadoraAbierta = true;
+      st.puertaAbierta = true;
       publishEvento(idLav, codigo, "SECADORA_PUERTA_ABIERTA", {
         origen: "simulador",
         retardo_ms: DOOR_SIGNAL_DELAY_MS,
@@ -142,11 +166,17 @@ function toggleDryerDoor(idLav, codigo) {
     return;
   }
 
-  st.puertaSecadoraAbierta = false;
-  publishEvento(idLav, codigo, "SECADORA_PUERTA_CERRADA", {
-    origen: "simulador",
-  });
-  reanudarPorPuerta(idLav, codigo);
+  st.puertaAbierta = false;
+  if (isDryer(codigo)) {
+    publishEvento(idLav, codigo, "SECADORA_PUERTA_CERRADA", {
+      origen: "simulador",
+    });
+    reanudarPorPuerta(idLav, codigo);
+  } else {
+    publishEvento(idLav, codigo, "LAVADORA_PUERTA_CERRADA", {
+      origen: "simulador",
+    });
+  }
 }
 
 function ensureIotLav(idLav) {
@@ -281,7 +311,7 @@ function stopCycle(idLav, codigo) {
   st.saldoCredito = 0;
   st.endAtMs = 0;
   st.segundosRestantesPausaPuerta = 0;
-  st.puertaSecadoraAbierta = false;
+  st.puertaAbierta = false;
   publishEstado(idLav, codigo, "STOP", { segundos_restantes_estimados: 0 });
   publishEvento(idLav, codigo, "VENTILADOR_OFF", {
     origen: "simulador",
@@ -305,14 +335,6 @@ function extendCycle(idLav, codigo, cmd) {
   }
   if (st.estado !== "EN_MARCHA") return;
   const euros = Number(cmd.importe) || 0;
-  if (Math.abs(euros - 1) > 0.0001) {
-    publishEvento(idLav, codigo, "AMPLIACION_RECHAZADA_IMPORTE", {
-      origen: "simulador",
-      importe: euros,
-      esperado: 1,
-    });
-    return;
-  }
   const minutosExtra = Number(cmd.minutos_extra);
   const extraMs =
     Number.isFinite(minutosExtra) && minutosExtra > 0
@@ -330,7 +352,7 @@ function extendCycle(idLav, codigo, cmd) {
   }
 
   publishEvento(idLav, codigo, "AMPLIACION_APLICADA", {
-    origen: "simulador",
+    origen: String(cmd?.origen || "simulador"),
     importe: Number(cmd.importe) || 0,
     minutos: minutosAplicados,
   });
@@ -418,19 +440,28 @@ function onCommand(topic, payloadBuf) {
     }
     if (st.estado === "EN_MARCHA") {
       if (!isDryer(codigo)) {
-        publishEvento(idLav, codigo, "CREDITO_RECHAZADO_NO_SECADORA_EN_MARCHA", {
-          origen: "simulador",
-          importe: euros,
-        });
+        publishEvento(
+          idLav,
+          codigo,
+          "CREDITO_RECHAZADO_NO_SECADORA_EN_MARCHA",
+          {
+            origen: "simulador",
+            importe: euros,
+          },
+        );
         return;
       }
-      st.saldoCredito = Number((Number(st.saldoCredito || 0) + euros).toFixed(2));
+      // En secadora en marcha, el crédito del cliente se transforma directamente en ampliación.
       publishEvento(idLav, codigo, "CREDITO_ACUMULADO_AMPLIACION", {
         origen: "simulador",
         importe: euros,
-        saldo: st.saldoCredito,
+        saldo: 0,
       });
-      return;
+      st.saldoCredito = 0;
+      return extendCycle(idLav, codigo, {
+        ...cmd,
+        importe: euros,
+      });
     }
 
     const saldoActual = Number(st.saldoCredito || 0);
@@ -484,7 +515,16 @@ function onCommand(topic, payloadBuf) {
   if (accion === "confirmar_inicio") {
     const st = ensureMachine(codigo);
     if (!st) return;
-    if (isDryer(codigo) && (st.puertaSecadoraAbierta || Boolean(st.aperturaPuertaPendiente))) {
+    if (
+      isDryer(codigo) &&
+      (st.puertaAbierta || Boolean(st.aperturaPuertaPendiente))
+    ) {
+      publishEvento(idLav, codigo, "INICIO_RECHAZADO_PUERTA_ABIERTA", {
+        origen: "simulador",
+      });
+      return;
+    }
+    if (!isDryer(codigo) && st.puertaAbierta) {
       publishEvento(idLav, codigo, "INICIO_RECHAZADO_PUERTA_ABIERTA", {
         origen: "simulador",
       });
@@ -498,7 +538,9 @@ function onCommand(topic, payloadBuf) {
       return extendCycle(idLav, codigo, {
         ...cmd,
         importe: 1,
-        minutos_extra: Math.floor((saldoParaAmpliar * PLUS_SECONDS_PER_EURO) / 60),
+        minutos_extra: Math.floor(
+          (saldoParaAmpliar * PLUS_SECONDS_PER_EURO) / 60,
+        ),
       });
     }
     if (st.estado !== "PAUSADA") return;
@@ -511,7 +553,10 @@ function onCommand(topic, payloadBuf) {
       return;
     }
     const saldoUsado = Math.min(START_MIN_CREDIT, Number(st.saldoCredito || 0));
-    const devuelto = Math.max(0, Number((Number(st.saldoCredito || 0) - saldoUsado).toFixed(2)));
+    const devuelto = Math.max(
+      0,
+      Number((Number(st.saldoCredito || 0) - saldoUsado).toFixed(2)),
+    );
     st.saldoCredito = 0;
     if (devuelto > 0) {
       publishEvento(idLav, codigo, "CREDITO_DEVUELTO_AL_INICIAR", {
@@ -525,7 +570,8 @@ function onCommand(topic, payloadBuf) {
       credito_total: saldoUsado,
     });
   }
-  if (accion === "toggle_puerta_secadora") return toggleDryerDoor(idLav, codigo);
+  if (accion === "toggle_puerta_secadora" || accion === "toggle_puerta_maquina")
+    return toggleMachineDoor(idLav, codigo);
   if (accion === "ampliar_tiempo") return extendCycle(idLav, codigo, cmd);
   if (accion === "reiniciar_maquina") {
     stopCycle(idLav, codigo);
@@ -540,7 +586,9 @@ client.on("connect", () => {
     for (const c of SIM_MACHINE_CODES) {
       const st = ensureMachine(c);
       const estadoInicial = String(st?.estado || "PAUSADA").toUpperCase();
-      publishEstado(idLav, c, estadoInicial, { segundos_restantes_estimados: 0 });
+      publishEstado(idLav, c, estadoInicial, {
+        segundos_restantes_estimados: 0,
+      });
     }
   }
   for (const idLav of SIM_LAV_IDS) publishIotEstado(idLav);

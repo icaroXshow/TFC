@@ -10,7 +10,7 @@ Resumen rápido:
 
 La cámara no se simula aquí.
 
-## Qué hace exactamente
+## Qué hace?
 
 - escucha comandos de máquina en:
   - `kwl/maquinas/{idLav}/{codigo}/comando`
@@ -24,13 +24,13 @@ La cámara no se simula aquí.
   - `kwl/iot/{idLav}/estado`
 
 Flujo de máquina:
-- `Encender` desde la web pone la máquina en `PAUSADA` que equivale a darle corriente
+- `ENCENDIDO` desde la web pone la máquina en `PAUSADA` que equivale a darle corriente
 - `Introducir monedas` suma saldo 
 - `START` arranca si hay saldo con el importe mínimo para el ciclo
 - durante ciclo está en `EN_MARCHA` y si tiene refrigeracion activada en la web el ventilador se enciende
 - al terminar vuelve a `PAUSADA`
 - `apagar_rele` desde la web la deja en `STOP` y no se puede usar
-- `Abrir/Cerrar Puerta` simula que se abre la puerta y pausa la maquina despues de 30seg o simula que se cierra y la pone en marcha de nuevo. En las lavadoras no es posible por eso no se implemento
+- `Puerta` simula que se abre la puerta y pausa la maquina despues de 30seg o simula que se cierra y la pone en marcha de nuevo. En las lavadoras no es posible por eso no se implemento
 
 ## Tiempos actuales
 

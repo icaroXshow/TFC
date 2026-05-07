@@ -5,13 +5,15 @@ import helmet from "helmet";
 import cors from "cors";
 import morgan from "morgan";
 import { WebSocketServer } from "ws";
+import type { RowDataPacket } from "mysql2/promise";
+import { verifyToken } from "./web/auth/token.js";
 
 import { env } from "./system/env.js";
 import { apiRouter } from "./web/api.js";
 import { notFoundHandler, errorHandler } from "./web/errors.js";
 import { db } from "./db/pool.js";
 import { startIoTScheduler } from "./iot/scheduler.js";
-import { getMqttHealth, startMqttBridge } from "./iot/mqtt.js";
+import { getMqttHealth, getRuntimeMachineStateByLav, startMqttBridge } from "./iot/mqtt.js";
 import { getRedisHealthSnapshot, redisPingOk } from "./cache/redis.js";
 
 // En algunos entornos (WSL/Windows), resolver IPv6 primero puede colgar conexiones HTTP.
@@ -91,6 +93,15 @@ const wss = new WebSocketServer({ server, path: "/ws/admin-live" });
 
 type LiveClient = { ws: any; lavId: number };
 const liveClients = new Set<LiveClient>();
+type LavAccessRow = RowDataPacket & { id_lavanderia: number };
+
+async function userHasLavAccess(userId: number, idLav: number): Promise<boolean> {
+  const [rows] = await db.query<LavAccessRow[]>(
+    "SELECT id_lavanderia FROM usuario_lavanderia WHERE id_usuario = :idUsuario AND id_lavanderia = :idLav LIMIT 1",
+    { idUsuario: userId, idLav },
+  );
+  return Boolean(rows[0]);
+}
 
 async function buildLiveSnapshot(lavId: number) {
   const [mRows] = await db.query<any[]>(
@@ -113,19 +124,68 @@ async function buildLiveSnapshot(lavId: number) {
   try {
     if (iotRows?.[0]?.valor) iot = JSON.parse(String(iotRows[0].valor));
   } catch {}
-  return { ts: new Date().toISOString(), lav_id: lavId, maquinas: mRows, iot };
+  const runtimeMap = await getRuntimeMachineStateByLav(lavId);
+  const maquinas = mRows.map((m) => {
+    const runtime = runtimeMap[String(Number(m.id_maquina))] || {};
+    const estado = String(m.estado_actual || "");
+    const secsRuntime = Number(runtime.segundos_restantes ?? Number.NaN);
+    const secsBase = Number(m.segundos_restantes_estimados ?? 0);
+    const secs =
+      (estado === "PAUSADA" || estado === "STOP") && Number.isFinite(secsRuntime)
+        ? Math.max(0, Math.floor(secsRuntime))
+        : Number.isFinite(secsRuntime) && estado === "EN_MARCHA"
+          ? Math.max(0, Math.floor(secsRuntime))
+          : Math.max(0, Math.floor(secsBase));
+    return {
+      ...m,
+      segundos_restantes_estimados: secs,
+      credito_actual: Number(runtime.saldo_credito ?? 0),
+      puerta_estado: String(runtime.puerta_estado || "CERRADA"),
+    };
+  });
+  return { ts: new Date().toISOString(), lav_id: lavId, maquinas, iot };
 }
 
 wss.on("connection", (ws, req) => {
+  const fail = (code: number, reason: string) => {
+    try {
+      ws.close(code, reason);
+    } catch {}
+  };
   const url = new URL(req.url || "", `http://${req.headers.host || "localhost"}`);
-  const lavId = Math.max(1, Number(url.searchParams.get("lav") || "1"));
-  const client = { ws, lavId };
-  liveClients.add(client);
-  ws.on("close", () => liveClients.delete(client));
-  ws.on("error", () => liveClients.delete(client));
-  buildLiveSnapshot(lavId)
-    .then((snap) => ws.send(JSON.stringify(snap)))
-    .catch(() => {});
+  const lavId = Math.max(1, Number(url.searchParams.get("lav") || "0"));
+  const tokenFromQuery = String(url.searchParams.get("t") || "").trim();
+  const protoRaw = String(req.headers["sec-websocket-protocol"] || "");
+  const tokenFromProto = protoRaw
+    .split(",")
+    .map((x) => x.trim())
+    .find((x) => x.startsWith("auth."))?.slice(5) || "";
+  const token = tokenFromProto || tokenFromQuery;
+  const payload = token ? verifyToken(token) : null;
+  if (!payload || !["ADMIN", "OPERADOR"].includes(String(payload.rol || "").toUpperCase())) {
+    fail(1008, "UNAUTHORIZED");
+    return;
+  }
+  const userId = Number(payload.sub || "0");
+  if (!Number.isFinite(userId) || userId <= 0 || !Number.isFinite(lavId) || lavId <= 0) {
+    fail(1008, "BAD_REQUEST");
+    return;
+  }
+  userHasLavAccess(userId, lavId)
+    .then((allowed) => {
+      if (!allowed) {
+        fail(1008, "FORBIDDEN_LAV");
+        return;
+      }
+      const client = { ws, lavId };
+      liveClients.add(client);
+      ws.on("close", () => liveClients.delete(client));
+      ws.on("error", () => liveClients.delete(client));
+      buildLiveSnapshot(lavId)
+        .then((snap) => ws.send(JSON.stringify(snap)))
+        .catch(() => {});
+    })
+    .catch(() => fail(1011, "DB_UNAVAILABLE"));
 });
 
 setInterval(async () => {

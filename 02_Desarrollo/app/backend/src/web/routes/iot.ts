@@ -211,7 +211,7 @@ iotRouter.get("/relay-action-log", requireAuth, requireLavanderia, async (req, r
 iotRouter.post("/relay-action", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = req.auth?.id_lavanderia ?? 1;
   const raw = String(req.body?.dispositivo ?? "").toLowerCase();
-  const allowedDevices = new Set(["puerta", "luces", "ventilacion", "audio", "tienda"]);
+  const allowedDevices = new Set(["puerta", "luces", "ventilacion", "tienda"]);
   if (!allowedDevices.has(raw)) return res.status(400).json({ ok: false, error: "BAD_DISPOSITIVO" });
   const accionRaw = String(req.body?.accion ?? "toggle").toLowerCase();
   const accion = accionRaw === "on" || accionRaw === "off" ? accionRaw : "toggle";

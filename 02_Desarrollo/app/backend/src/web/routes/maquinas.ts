@@ -3,7 +3,7 @@ import { requireAuth, requireLavanderia, requireRole } from "../auth/middleware.
 import { db } from "../../db/pool.js";
 import type { MaquinaRow, TarifaRow } from "../../db/types.js";
 import type { ResultSetHeader, RowDataPacket } from "mysql2/promise";
-import { publishMachineCommand } from "../../iot/mqtt.js";
+import { getRuntimeMachineStateByLav, publishMachineCommand, setCreditOriginPendingByMachine } from "../../iot/mqtt.js";
 
 export const maquinasRouter = Router();
 
@@ -172,7 +172,27 @@ maquinasRouter.get("/", requireAuth, requireLavanderia, async (req, res) => {
     `,
     { id: idLavanderia },
   );
-  const maquinas = rows.map((m) => ({ ...m, ventilador_auto: Boolean(fanAutoMap[fanKey(Number(m.id_maquina))]) }));
+  const runtimeMap = await getRuntimeMachineStateByLav(idLavanderia);
+  const maquinas = rows.map((m) => {
+    const runtime = runtimeMap[String(Number(m.id_maquina))] || {};
+    const estadoActual = String(m.estado_actual || "");
+    const secsRuntime = Number(runtime.segundos_restantes ?? Number.NaN);
+    const secsBase = Number(m.segundos_restantes_estimados ?? 0);
+    const shouldFreeze = estadoActual === "PAUSADA" || estadoActual === "STOP";
+    const secs =
+      shouldFreeze && Number.isFinite(secsRuntime)
+        ? Math.max(0, Math.floor(secsRuntime))
+        : Number.isFinite(secsRuntime) && estadoActual === "EN_MARCHA"
+          ? Math.max(0, Math.floor(secsRuntime))
+          : Math.max(0, Math.floor(secsBase));
+    return {
+      ...m,
+      ventilador_auto: Boolean(fanAutoMap[fanKey(Number(m.id_maquina))]),
+      segundos_restantes_estimados: secs,
+      credito_actual: Number(runtime.saldo_credito ?? 0),
+      puerta_estado: String(runtime.puerta_estado || "CERRADA"),
+    };
+  });
   res.json({ ok: true, maquinas });
 });
 
@@ -452,6 +472,7 @@ maquinasRouter.post(
         id_ciclo: idCiclo,
         timestamp: new Date().toISOString(),
       }, idLavanderia);
+      await setCreditOriginPendingByMachine(idLavanderia, idMaquina, null);
       return res.json({ ok: true, id_ciclo: idCiclo, maquina: { ...maquina, estado_actual: "STOP" } });
     } catch {
       try {
@@ -521,6 +542,7 @@ maquinasRouter.post(
       id_maquina: idMaquina,
       timestamp: new Date().toISOString(),
     }, idLavanderia);
+    await setCreditOriginPendingByMachine(idLavanderia, idMaquina, null);
 
     return res.json({ ok: true, maquina });
   },
@@ -550,6 +572,19 @@ maquinasRouter.post(
     }
     if (maquina.estado_actual !== "PAUSADA") {
       return res.status(409).json({ ok: false, error: "MAQUINA_NO_ENCENDIDA", estado: maquina.estado_actual });
+    }
+    const creditOriginMap = await getConfigLav<Record<string, { origen?: string; importe?: number; ts?: string } | null>>(
+      idLavanderia,
+      "machine_credit_origin_pending",
+      {},
+    );
+    const pending = creditOriginMap[String(idMaquina)] ?? null;
+    if (pending && String(pending.origen || "").toUpperCase() === "WEB_MANUAL") {
+      return res.status(409).json({
+        ok: false,
+        error: "CREDITO_YA_APLICADO_EN_ARRANQUE",
+        importe_pendiente: Number(pending.importe ?? 0),
+      });
     }
 
     const [tarifaRows] = await db.query<TarifaRow[]>(
@@ -621,6 +656,11 @@ maquinasRouter.post(
       },
       idLavanderia,
     );
+    await setCreditOriginPendingByMachine(idLavanderia, idMaquina, {
+      origen: "WEB_MANUAL",
+      importe: importeAplicado,
+      ts: new Date().toISOString(),
+    });
 
     return res.json({
       ok: true,
@@ -831,6 +871,7 @@ maquinasRouter.post(
         id_ciclo: ciclo.id_ciclo,
         importe: importeAplicado,
         minutos_extra: minutosExtra,
+        origen: "web_admin",
         timestamp: new Date().toISOString(),
       }, idLavanderia);
       return res.json({

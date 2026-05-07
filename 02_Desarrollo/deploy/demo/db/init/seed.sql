@@ -1,40 +1,53 @@
 USE kwl_lavanderia;
 
 SET @pwd_admin = '$2a$10$BO/WPcuampZtc6x7cd3WlOwWNd/e46BLcC8c8F.v8x6vUCW5Pmlue';
+SET @pwd_profes = '$2b$10$q1HYXXS96AawBtzs3ABPDOzMc/9cQ/mUxhEAiD84E29MCyOv/8zcC';
 
-DELETE FROM auditoria;
-DELETE FROM log_maquina;
-DELETE FROM movimiento_maquina;
-DELETE FROM ciclo;
-DELETE FROM tarifa_maquina;
-DELETE FROM maquina;
-DELETE FROM usuario_lavanderia;
-DELETE FROM usuario;
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE auditoria;
+TRUNCATE TABLE log_maquina;
+TRUNCATE TABLE movimiento_maquina;
+TRUNCATE TABLE ciclo;
+TRUNCATE TABLE tarifa_maquina;
+TRUNCATE TABLE maquina;
+TRUNCATE TABLE usuario_lavanderia;
+TRUNCATE TABLE usuario;
 DELETE FROM configuracion WHERE ambito = 'LAVANDERIA';
-DELETE FROM lavanderia;
+TRUNCATE TABLE lavanderia;
+SET FOREIGN_KEY_CHECKS = 1;
 
-INSERT INTO lavanderia (nombre, codigo, direccion, ciudad, provincia, activo)
+INSERT INTO lavanderia (id_lavanderia, nombre, codigo, direccion, ciudad, provincia, activo)
 VALUES
-  ('KWL Aqua Fleming', 'FLEM-01', 'Calle Dr. Fleming, 26', 'Ponferrada', 'León', 1),
-  ('KWL Aqua Puebla', 'PUEB-01', 'Av. de la Puebla 30', 'Ponferrada', 'León', 1),
-  ('KWL Simulador', 'SIM-01', 'SIMULADOR', 'Ponferrada', 'León', 1);
+  (1, 'KWL Aqua Fleming', 'FLEM-01', 'Calle Dr. Fleming, 26', 'Ponferrada', 'León', 1),
+  (2, 'KWL Aqua Puebla', 'PUEB-01', 'Av. de la Puebla 30', 'Ponferrada', 'León', 1),
+  (3, 'KWL Simulador', 'SIM-01', 'SIMULADOR', 'Ponferrada', 'León', 1);
+
+ALTER TABLE lavanderia AUTO_INCREMENT = 4;
 
 SET @lav_flem = (SELECT id_lavanderia FROM lavanderia WHERE codigo = 'FLEM-01' LIMIT 1);
 SET @lav_pueb = (SELECT id_lavanderia FROM lavanderia WHERE codigo = 'PUEB-01' LIMIT 1);
 SET @lav_sim = (SELECT id_lavanderia FROM lavanderia WHERE codigo = 'SIM-01' LIMIT 1);
 
--- Un único superusuario (rol ADMIN)
+-- Superusuario global (rol ADMIN)
 INSERT INTO usuario (nombre, apellidos, login, password_hash, rol, activo, ultimo_acceso)
 VALUES
   ('Admin', 'Global', 'admin@gmail.com', @pwd_admin, 'ADMIN', 1, NOW() - INTERVAL 60 MINUTE);
 
 SET @u_admin = (SELECT id_usuario FROM usuario WHERE login = 'admin@gmail.com' LIMIT 1);
 
+-- ADMIN exclusivo para la tienda simulador (profesorado)
+INSERT INTO usuario (nombre, apellidos, login, password_hash, rol, activo, ultimo_acceso)
+VALUES
+  ('Profesorado', 'Simulador', 'profes.simulador@gmail.com', @pwd_profes, 'ADMIN', 1, NULL);
+
+SET @u_admin_sim = (SELECT id_usuario FROM usuario WHERE login = 'profes.simulador@gmail.com' LIMIT 1);
+
 INSERT INTO usuario_lavanderia (id_usuario, id_lavanderia)
 VALUES
   (@u_admin, @lav_flem),
   (@u_admin, @lav_pueb),
-  (@u_admin, @lav_sim);
+  (@u_admin, @lav_sim),
+  (@u_admin_sim, @lav_sim);
 
 -- Tarifa y máquinas solo para SIMULADOR
 INSERT INTO tarifa_maquina (
@@ -63,8 +76,11 @@ SET @ms_s2 = (SELECT id_maquina FROM maquina WHERE id_lavanderia = @lav_sim AND 
 INSERT INTO configuracion (ambito, id_lavanderia, clave, valor, descripcion)
 VALUES
   ('LAVANDERIA', @lav_sim, 'iot_state', '{"puerta_abierta": false, "luces_encendidas": false, "ventilacion_encendida": false, "updated_at": "2026-01-01T10:00:00Z"}', 'Estado IoT'),
-  ('LAVANDERIA', @lav_sim, 'iot_schedule', '{"puerta":{"on":"02:00","off":"03:50"},"luces":{"on":"02:05","off":"03:55"},"ventilacion":{"on":"02:10","off":"03:45"}}', 'Horario IoT'),
-  ('LAVANDERIA', @lav_sim, 'env_settings', '{"CAMERA_BASE_URL":"","CAMERA_USER":"","CAMERA_PASS":"","CAMERA2_BASE_URL":"","CAMERA2_USER":"","CAMERA2_PASS":"","MQTT_URL":"mqtt://mqtt:1883","MQTT_USER":"","MQTT_PASS":"","REDIS_ENABLED":"true","REDIS_HOST":"redis","REDIS_PORT":"6379","REDIS_PASSWORD":"","REDIS_DB":"0","REDIS_TIMEOUT_MS":"500","REDIS_KEY_PREFIX":"kwl"}', 'Ajustes por tienda para simulador');
+  ('LAVANDERIA', @lav_sim, 'iot_schedule', '{"puerta":{"on":null,"off":null},"luces":{"on":null,"off":null},"ventilacion":{"on":null,"off":null}}', 'Horario IoT (inicial OFF)'),
+  ('LAVANDERIA', @lav_sim, 'iot_store_actions', '{"abrir_tienda":{"puerta_abierta":true,"luces_encendidas":true},"cerrar_tienda":{"puerta_abierta":true,"luces_encendidas":true}}', 'Acciones de tienda (abrir/cerrar)'),
+  ('LAVANDERIA', @lav_sim, 'iot_store_open_machines', '[]', 'Máquinas a encender con botón Abrir'),
+  ('LAVANDERIA', @lav_sim, 'iot_store_close_machines', '[]', 'Máquinas a apagar con botón Cerrar'),
+  ('LAVANDERIA', @lav_sim, 'env_settings', '{"CAMERA_BASE_URL":"","CAMERA_USER":"","CAMERA_PASS":"","CAMERA2_BASE_URL":"","CAMERA2_USER":"","CAMERA2_PASS":"","MQTT_URL":"mqtt://mqtt:1883","MQTT_USER":"","MQTT_PASS":"","REDIS_ENABLED":"true","REDIS_HOST":"redis","REDIS_PORT":"6379","REDIS_PASSWORD":"","REDIS_DB":"0","REDIS_TIMEOUT_MS":"1500","REDIS_KEY_PREFIX":"kwl"}', 'Ajustes por tienda para simulador');
 
 -- Simulador: histórico base para informes
 INSERT INTO ciclo (

@@ -203,7 +203,7 @@
       setCashFilterHint("");
       cashTbody.innerHTML = "";
       if (!items.length) {
-        cashTbody.innerHTML = `<tr><td colspan="4" class="table-empty">Sin actividad en el periodo seleccionado</td></tr>`;
+        cashTbody.innerHTML = `<tr><td colspan="6" class="table-empty">Sin actividad en el periodo seleccionado</td></tr>`;
       } else {
         items.forEach((it) => {
           const tr = document.createElement("tr");
@@ -211,7 +211,9 @@
             <td>${escapeHtml(it.codigo_visible)}</td>
             <td>${escapeHtml(it.tipo_maquina)}</td>
             <td>${escapeHtml(it.movimientos)}</td>
-            <td>${escapeHtml(eur(it.importe_total))}</td>
+            <td>${escapeHtml(eur(it.importe))}</td>
+            <td>${escapeHtml(eur(it.abonado))}</td>
+            <td>${escapeHtml(eur(it.total))}</td>
           `;
           cashTbody.appendChild(tr);
         });
@@ -232,10 +234,10 @@
           if (moves === "6-15" && (m < 6 || m > 15)) return false;
           if (moves === "16+" && m < 16) return false;
         }
-        const a = Number(it.importe_total ?? 0);
+        const a = Number(it.total ?? 0);
         if (!(a <= maxAmount)) return false;
         if (!q) return true;
-        const rowText = `${it.codigo_visible} ${it.tipo_maquina} ${it.movimientos} ${eur(it.importe_total)}`.toLowerCase();
+        const rowText = `${it.codigo_visible} ${it.tipo_maquina} ${it.movimientos} ${eur(it.importe)} ${eur(it.abonado)} ${eur(it.total)}`.toLowerCase();
         return rowText.includes(q);
       });
 
@@ -249,10 +251,10 @@
       applyCashFilters();
       if (cashMoves) cashMoves.textContent = String(data?.movimientos ?? "0");
       if (cashTotal) cashTotal.textContent = eur(data?.total ?? 0);
-      const top = [...cashRawItems].sort((a, b) => Number(b.importe_total || 0) - Number(a.importe_total || 0))[0];
+      const top = [...cashRawItems].sort((a, b) => Number(b.total || 0) - Number(a.total || 0))[0];
       if (cashTopMachine) {
         cashTopMachine.textContent = top
-          ? `${top.codigo_visible} · ${eur(top.importe_total)} · ${top.movimientos} mov.`
+          ? `${top.codigo_visible} · ${eur(top.total)} · ${top.movimientos} mov.`
           : "Sin actividad";
       }
     };
@@ -727,14 +729,14 @@
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           setHint(`Error: ${data?.error || "NO_OK"}`);
-          repTbody.innerHTML = `<tr><td colspan="7">Error</td></tr>`;
+          repTbody.innerHTML = `<tr><td colspan="9">Error</td></tr>`;
           return;
         }
 
         const ciclos = data?.ciclos || [];
         repTbody.innerHTML = "";
         if (!ciclos.length) {
-          repTbody.innerHTML = `<tr><td colspan="7">Sin ciclos</td></tr>`;
+          repTbody.innerHTML = `<tr><td colspan="9">Sin ciclos</td></tr>`;
         } else {
           ciclos.forEach((c) => {
             const tr = document.createElement("tr");
@@ -745,7 +747,9 @@
               <td>${escapeHtml(fmt(c.fecha_hora_fin))}</td>
               <td>${escapeHtml(c.estado_ciclo)}</td>
               <td>${escapeHtml(c.duracion_total_programada_min)}</td>
-              <td>${escapeHtml(eur(c.importe_total_aplicado))}</td>
+              <td>${escapeHtml(eur(c.importe))}</td>
+              <td>${escapeHtml(eur(c.abonado))}</td>
+              <td>${escapeHtml(eur(c.total))}</td>
             `;
             repTbody.appendChild(tr);
           });
@@ -1032,6 +1036,9 @@
       await loadLogs();
     }
 
+    const creditoAplicadoPorCiclo = new Map();
+    const CREDITO_INICIO_EUR = 4;
+
     async function loadMaquinas() {
       if (loadMaquinas._busy) return;
       loadMaquinas._busy = true;
@@ -1077,6 +1084,20 @@
           // fallback silencioso
         }
         const all = data?.maquinas || [];
+        all.forEach((m) => {
+          const id = Number(m?.id_maquina);
+          if (!Number.isFinite(id) || id <= 0) return;
+          const estado = String(m?.estado_actual || "").toUpperCase();
+          const cicloRef = String(m?.fecha_hora_inicio || "");
+          const clave = `${id}::${cicloRef}`;
+          if ((estado !== "EN_MARCHA" && estado !== "PAUSADA") || !cicloRef) {
+            for (const k of Array.from(creditoAplicadoPorCiclo.keys())) {
+              if (k.startsWith(`${id}::`)) creditoAplicadoPorCiclo.delete(k);
+            }
+            return;
+          }
+          if (!creditoAplicadoPorCiclo.has(clave)) creditoAplicadoPorCiclo.set(clave, false);
+        });
         const isInicio = location.pathname.toLowerCase().endsWith("/admin/inicio.html");
         renderMaquinas(isInicio ? all.filter((m) => m.estado_actual === "EN_MARCHA") : all, puertaAbierta);
 
@@ -1138,6 +1159,73 @@
         if (creditBtn || extendBtn) {
           const tile = (creditBtn || extendBtn).closest(".tarjeta-maquina");
           if (!tile) return;
+          const id = Number((creditBtn || extendBtn).getAttribute("data-id"));
+          if (!Number.isFinite(id) || id <= 0) return;
+          if (creditBtn) {
+            const cicloRef = String(tile.querySelector(".temporizador-maquina")?.getAttribute("data-start") || "");
+            const cicloKey = `${id}::${cicloRef}`;
+            if (cicloRef && creditoAplicadoPorCiclo.get(cicloKey)) {
+              notifyNice("El crédito inicial ya fue añadido en este ciclo.");
+              return;
+            }
+            const okConfirm = await confirmNice(
+              "Confirmar crédito",
+              `Se añadirá ${CREDITO_INICIO_EUR.toFixed(2)} € para iniciar lavado. ¿Continuar?`,
+              "Sí, añadir",
+              "Cancelar",
+            );
+            if (!okConfirm) return;
+            creditBtn.disabled = true;
+            try {
+              const res = await fetch(`${API_BASE}/api/maquinas/${id}/credito`, {
+                method: "POST",
+                headers: {
+                  authorization: `Bearer ${token}`,
+                  "x-lavanderia-id": String(activeLavId),
+                  "content-type": "application/json",
+                },
+                body: JSON.stringify({ importe: CREDITO_INICIO_EUR }),
+              });
+              if (!res.ok) throw new Error("CREDIT_FAILED");
+              if (cicloRef) creditoAplicadoPorCiclo.set(cicloKey, true);
+              await loadMaquinas();
+            } catch {
+              notifyNice("No se pudo añadir crédito.");
+              await loadMaquinas();
+            } finally {
+              creditBtn.disabled = false;
+            }
+            return;
+          }
+          if (extendBtn) {
+            const okConfirm = await confirmNice(
+              "Confirmar ampliación",
+              "Se añadirá 1,00 € para ampliar el secado. ¿Continuar?",
+              "Sí, ampliar",
+              "Cancelar",
+            );
+            if (!okConfirm) return;
+            extendBtn.disabled = true;
+            try {
+              const res = await fetch(`${API_BASE}/api/maquinas/${id}/ampliar`, {
+                method: "POST",
+                headers: {
+                  authorization: `Bearer ${token}`,
+                  "x-lavanderia-id": String(activeLavId),
+                  "content-type": "application/json",
+                },
+                body: JSON.stringify({ importe: 1 }),
+              });
+              if (!res.ok) throw new Error("EXTEND_FAILED");
+              await loadMaquinas();
+            } catch {
+              notifyNice("No se pudo ampliar la máquina.");
+              await loadMaquinas();
+            } finally {
+              extendBtn.disabled = false;
+            }
+            return;
+          }
           const drawer = tile.querySelector(".cajon-maquina");
           const title = tile.querySelector(".titulo-cajon-maquina");
           const apply = tile.querySelector(".js-amount-apply");
@@ -1146,16 +1234,19 @@
           closeAllDrawers();
           const isCredit = Boolean(creditBtn);
           title.textContent = isCredit ? "Añadir crédito" : "Ampliar tiempo";
-          apply.setAttribute("data-mode", isCredit ? "credito" : "ampliar");
+          apply.setAttribute("data-mode", "credito");
           if (entrada) {
             if (isCredit) {
-              entrada.min = "0.10";
+              entrada.min = "0";
               entrada.max = "";
-              entrada.step = "0.10";
+              entrada.step = "0.01";
+              entrada.value = "4.00";
+              entrada.readOnly = true;
             } else {
               entrada.min = "0.10";
               entrada.max = "";
               entrada.step = "0.10";
+              entrada.readOnly = false;
               if (!entrada.value || Number(entrada.value) <= 0) entrada.value = "1.00";
             }
           }
@@ -1172,6 +1263,13 @@
         const entrada = tile?.querySelector(".entrada-cajon-maquina");
         const importe = Number(String(entrada?.value ?? "").replace(",", "."));
         if (!Number.isFinite(importe) || importe <= 0) return;
+        const okConfirm = await confirmNice(
+          "Confirmar crédito",
+          `¿Añadir ${importe.toFixed(2)} € a la máquina?`,
+          "Sí, añadir",
+          "Cancelar",
+        );
+        if (!okConfirm) return;
         applyBtn.disabled = true;
         try {
           const res = await fetch(`${API_BASE}/api/maquinas/${id}/${mode}`, {
@@ -1184,6 +1282,10 @@
             body: JSON.stringify({ importe }),
           });
           if (!res.ok) throw new Error("AMOUNT_FAILED");
+          if (mode === "credito") {
+            const cicloRef = String(tile?.querySelector(".temporizador-maquina")?.getAttribute("data-start") || "");
+            if (cicloRef) creditoAplicadoPorCiclo.set(`${id}::${cicloRef}`, true);
+          }
           await loadMaquinas();
         } catch {
           await loadMaquinas();
@@ -1200,6 +1302,13 @@
       const action = btn ? "iniciar" : "detener";
       const body = {};
 
+      const okConfirm = await confirmNice(
+        btn ? "Confirmar encendido" : "Confirmar apagado",
+        btn ? "¿Quieres encender esta máquina?" : "¿Quieres apagar/detener esta máquina?",
+        "Confirmar",
+        "Cancelar",
+      );
+      if (!okConfirm) return;
       anyBtn.disabled = true;
       try {
         const res = await fetch(`${API_BASE}/api/maquinas/${id}/${action}`, {
@@ -1227,6 +1336,13 @@
       const id = Number(fanBtn.getAttribute("data-id"));
       if (!Number.isFinite(id) || id <= 0) return;
       const enabled = fanBtn.getAttribute("data-enabled") !== "1";
+      const okConfirm = await confirmNice(
+        "Confirmar refrigerar",
+        `¿Quieres ${enabled ? "activar" : "desactivar"} el ventilador automático?`,
+        "Confirmar",
+        "Cancelar",
+      );
+      if (!okConfirm) return;
       fanBtn.disabled = true;
       const res = await fetch(`${API_BASE}/api/maquinas/${id}/ventilador-auto`, {
         method: "PUT",

@@ -75,8 +75,8 @@
   const cameraHint = $("#cameraHint");
   const quickDoorBtn = $("#quickDoorBtn");
   const quickLightsBtn = $("#quickLightsBtn");
-  const quickAudioBtn = $("#quickAudioBtn");
-  const quickAudioSound = $("#quickAudioSound");
+  const quickDoorState = $("#quickDoorState");
+  const quickLightsState = $("#quickLightsState");
   const usersTbody = $("#usersTbody");
   const usersSearch = $("#usersSearch");
   const userNewBtn = $("#userNewBtn");
@@ -421,11 +421,22 @@
 
   function stateClass(estado) {
     if (estado === "STOP") return "state-stop";
-    if (estado === "EN_MARCHA") return "state-running";
+    if (estado === "PAUSADA") return "state-on";
+    if (estado === "EN_MARCHA") return "state-cycle";
     if (estado === "MANTENIMIENTO") return "state-maint";
     if (estado === "FUERA_SERVICIO") return "state-maint";
-    if (estado === "PAUSADA") return "state-maint";
     return "state-stop";
+  }
+
+  function estadoLabel(estado) {
+    if (estado === "STOP") return "APAGADO";
+    if (estado === "PAUSADA") return "ENCENDIDA";
+    if (estado === "EN_MARCHA") return "CICLO";
+    return estado;
+  }
+
+  function refrigerarLabel(enabled) {
+    return enabled ? "VENTILANDO" : "NOAIR";
   }
 
   function tipoLabel(tipo) {
@@ -436,6 +447,7 @@
 
   function renderMaquinas(maquinas, puertaAbierta = false) {
     if (!machinesGrid) return;
+    const isInicioView = location.pathname.toLowerCase().endsWith("/admin/inicio.html");
     machinesGrid.innerHTML = "";
     if (!maquinas?.length) {
       machinesGrid.innerHTML = `<div class="vacio-admin">Sin máquinas</div>`;
@@ -445,6 +457,7 @@
     maquinas.forEach((m) => {
       const el = document.createElement("article");
       el.className = "tarjeta-maquina";
+      if (isInicioView) el.classList.add("tarjeta-maquina-inicio");
       const estado = String(m.estado_actual || "STOP");
       const id = Number(m.id_maquina);
       const canStart = estado === "STOP";
@@ -471,6 +484,40 @@
       const creditoVisible = Number(
         m.credito_actual ?? m.credito_pendiente ?? m.saldo_credito ?? 0,
       );
+      const isDryer = String(m.tipo_maquina || "").toUpperCase() === "SECADORA";
+      const puertaEstado = String(m.puerta_estado || "CERRADA").toUpperCase();
+      const puertaClass =
+        puertaEstado === "ABIERTA"
+          ? "state-running"
+          : puertaEstado === "APERTURA_PENDIENTE"
+            ? "state-maint"
+            : "state-stop";
+      const rightStatusBlock = `
+        <div class="resumen-derecha-maquina">
+          <span
+            class="temporizador-maquina"
+            data-codigo="${m.codigo_visible || ""}"
+            data-estado="${estado}"
+            data-start="${m.fecha_hora_inicio || ""}"
+            data-duration-min="${Number(m.duracion_total_programada_min ?? 0)}"
+            data-rest-sec="${restSec}"
+          >${timerLabel}</span>
+          <div class="meta-credito-maquina">${creditoVisible.toFixed(2)} €</div>
+        </div>
+      `;
+
+      const actionsInicio = `
+        <div class="acciones-maquina acciones-maquina-inicio">
+          ${canExtend ? `<button type="button" class="boton-secundario js-extend" data-id="${id}">Ampliar</button>` : ""}
+          <button
+            type="button"
+            class="boton-secundario js-fan-auto-btn"
+            data-id="${id}"
+            data-enabled="${fanEnabled ? "1" : "0"}"
+          >Refrigerar</button>
+        </div>
+      `;
+
       el.innerHTML = `
         <div class="meta-maquina">
           <strong>${m.codigo_visible}</strong>
@@ -478,20 +525,13 @@
         </div>
         <div class="estado-maquina">
           <div class="izquierda-estado-maquina">
-            <span class="state-pill ${stateClass(estado)}">${estado}</span>
-            <span class="state-pill ${fanEnabled ? "state-running" : "state-stop"}">REFRIGERAR ${fanEnabled ? "ON" : "OFF"}</span>
-            <span class="state-pill ${puertaAbierta ? "state-running" : "state-stop"}">PUERTA ${puertaAbierta ? "ABIERTA" : "CERRADA"}</span>
+            <span class="state-pill ${stateClass(estado)}">${estadoLabel(estado)}</span>
+            <span class="state-pill ${fanEnabled ? "state-cycle" : "state-noair"}">${refrigerarLabel(fanEnabled)}</span>
+            <span class="state-pill ${puertaClass}">PUERTA ${puertaEstado}</span>
           </div>
-          <span
-            class="temporizador-maquina"
-            data-codigo="${m.codigo_visible || ""}"
-            data-start="${m.fecha_hora_inicio || ""}"
-            data-duration-min="${Number(m.duracion_total_programada_min ?? 0)}"
-            data-rest-sec="${restSec}"
-          >${timerLabel}</span>
+          ${rightStatusBlock}
         </div>
-        <div class="meta-credito-maquina">Crédito: ${creditoVisible.toFixed(2)} €</div>
-        <div class="acciones-maquina">
+        ${isInicioView ? actionsInicio : `<div class="acciones-maquina">
           <button type="button" class="boton-primario js-start" data-id="${id}" ${canStart ? "" : "disabled"}>Encender</button>
           <button type="button" class="boton-secundario js-stop" data-id="${id}" ${canStop ? "" : "disabled"}>Apagar</button>
           ${canCredit ? `<button type="button" class="boton-secundario js-credit" data-id="${id}">Crédito</button>` : ""}
@@ -510,7 +550,7 @@
             <button type="button" class="boton-primario js-amount-apply" data-id="${id}" data-mode="">Aplicar</button>
             <button type="button" class="boton-secundario js-amount-cancel" data-id="${id}">Cancelar</button>
           </div>
-        </div>
+        </div>`}
       `;
       machinesGrid.appendChild(el);
     });
@@ -527,11 +567,13 @@
       let nextMinSec = Number.POSITIVE_INFINITY;
       let nextCode = "";
       timers.forEach((el) => {
+        const estado = String(el.getAttribute("data-estado") || "").toUpperCase();
         const startRaw = el.getAttribute("data-start") || "";
         const durationMin = Number(el.getAttribute("data-duration-min") || 0);
         const restSecAttr = Number(el.getAttribute("data-rest-sec") || 0);
         let secondsLeft = Math.max(0, Math.floor(restSecAttr));
-        if (startRaw && durationMin > 0) {
+        const debeCongelar = estado === "PAUSADA" || estado === "STOP";
+        if (!debeCongelar && startRaw && durationMin > 0) {
           const startMs = new Date(startRaw).getTime();
           if (Number.isFinite(startMs)) {
             const endMs = startMs + durationMin * 60 * 1000;
@@ -579,9 +621,19 @@
       doorState.className = `estado-iot ${iot.puerta_abierta ? "on" : "off"}`;
       doorState.textContent = iot.puerta_abierta ? "ON" : "OFF";
     }
+    if (quickDoorState) {
+      quickDoorState.classList.toggle("estado-iot-encendido", Boolean(iot.puerta_abierta));
+      quickDoorState.classList.toggle("estado-iot-apagado", !Boolean(iot.puerta_abierta));
+      quickDoorState.textContent = iot.puerta_abierta ? "ON" : "OFF";
+    }
     if (lightsState) {
       lightsState.className = `estado-iot ${iot.luces_encendidas ? "on" : "off"}`;
       lightsState.textContent = iot.luces_encendidas ? "ON" : "OFF";
+    }
+    if (quickLightsState) {
+      quickLightsState.classList.toggle("estado-iot-encendido", Boolean(iot.luces_encendidas));
+      quickLightsState.classList.toggle("estado-iot-apagado", !Boolean(iot.luces_encendidas));
+      quickLightsState.textContent = iot.luces_encendidas ? "ON" : "OFF";
     }
     if (fanState && "ventilacion_encendida" in iot) {
       fanState.className = `estado-iot ${iot.ventilacion_encendida ? "on" : "off"}`;
@@ -604,13 +656,17 @@
     if (!enabled) return;
 
     const proto = window.location.protocol === "https:" ? "wss" : "ws";
-    const wsUrl = `${proto}://${window.location.hostname}:8080/ws/admin-live?lav=${encodeURIComponent(String(activeLavId))}`;
+    const wsBase =
+      window.location.port === "8081"
+        ? `${proto}://${window.location.hostname}:8080`
+        : `${proto}://${window.location.host}`;
+    const wsUrl = `${wsBase}/ws/admin-live?lav=${encodeURIComponent(String(activeLavId))}`;
     let ws = null;
     let reconnectTimer = null;
 
     const connect = () => {
       try {
-        ws = new WebSocket(wsUrl);
+        ws = new WebSocket(wsUrl, [`auth.${String(token || "")}`]);
       } catch {
         return;
       }
@@ -772,10 +828,10 @@
         luces: { on: openLights?.checked ? (storeOpenTime?.value || null) : null, off: closeLights?.checked ? (storeCloseTime?.value || null) : null },
       };
       const selectedOpenMachines = storeOpenMachines
-        ? [...storeOpenMachines.querySelectorAll("entrada[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        ? [...storeOpenMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
         : [];
       const selectedCloseMachines = storeCloseMachines
-        ? [...storeCloseMachines.querySelectorAll("entrada[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        ? [...storeCloseMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
         : [];
       return { actionsPayload, schedulePayload, selectedOpenMachines, selectedCloseMachines };
     };

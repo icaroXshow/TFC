@@ -49,11 +49,28 @@ async function resolveCameraConfig(cam: 1 | 2, idLav: number): Promise<CameraCon
   }
 }
 
-function resolveCamByLav(idLav: number): 1 | 2 {
-  return idLav === 2 ? 2 : 1;
+async function resolveCamByLav(idLav: number): Promise<1 | 2> {
+  const [rows] = await db.query<ConfigRow[]>(
+    `
+    SELECT valor
+    FROM configuracion
+    WHERE ambito = 'LAVANDERIA' AND id_lavanderia = :idLav AND clave = 'env_settings'
+    LIMIT 1
+    `,
+    { idLav },
+  );
+  const raw = rows[0]?.valor;
+  if (!raw) return 1;
+  try {
+    const parsed = JSON.parse(raw) as { CAMERA_SLOT?: unknown; CAMERA_ID?: unknown };
+    const slot = Number(parsed?.CAMERA_SLOT ?? parsed?.CAMERA_ID ?? 1);
+    return slot === 2 ? 2 : 1;
+  } catch {
+    return 1;
+  }
 }
 
-function resolveCamFromBody(req: any, idLav: number): 1 | 2 {
+async function resolveCamFromBody(req: any, idLav: number): Promise<1 | 2> {
   const raw = Number(req.body?.cam);
   if (raw === 2) return 2;
   if (raw === 1) return 1;
@@ -73,7 +90,9 @@ async function resolveStreamRequest(req: any) {
   const m = header.match(/^Bearer\s+(.+)$/i);
   const token = (m?.[1] ?? String(req.query?.t ?? "")).trim();
   const payload = token ? verifyToken(token) : null;
-  if (!payload || payload.rol !== "ADMIN") return { ok: false as const, status: 401 };
+  if (!payload || !["ADMIN", "OPERADOR"].includes(String(payload.rol || "").toUpperCase())) {
+    return { ok: false as const, status: 401 };
+  }
 
   const lav = Number(req.query?.lav ?? "1");
   const idUsuario = Number(payload.sub ?? "0");
@@ -82,7 +101,7 @@ async function resolveStreamRequest(req: any) {
   const hasAccess = await userHasLavAccess(idUsuario, lav);
   if (!hasAccess) return { ok: false as const, status: 403 };
 
-  const cam = String(req.query?.cam ?? "") ? (String(req.query?.cam) === "2" ? 2 : 1) : resolveCamByLav(lav);
+  const cam = String(req.query?.cam ?? "") ? (String(req.query?.cam) === "2" ? 2 : 1) : await resolveCamByLav(lav);
   const cfg = await resolveCameraConfig(cam, lav);
   if (!cameraConfigured(cfg)) return { ok: false as const, status: 503 };
   return { ok: true as const, cfg };
@@ -156,7 +175,7 @@ async function audit(req: any, accion: string, detalle: string) {
 
 cameraRouter.get("/ptz/status", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = Number(req.auth?.id_lavanderia ?? 1);
-  const cam = resolveCamFromBody(req, idLav);
+  const cam = await resolveCamFromBody(req, idLav);
   const cfg = await resolveCameraConfig(cam, idLav);
   if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });
 
@@ -172,7 +191,7 @@ cameraRouter.get("/ptz/status", requireAuth, requireRole(["ADMIN"]), requireLava
 
 cameraRouter.post("/ptz/center", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = Number(req.auth?.id_lavanderia ?? 1);
-  const cam = resolveCamFromBody(req, idLav);
+  const cam = await resolveCamFromBody(req, idLav);
   const cfg = await resolveCameraConfig(cam, idLav);
   if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });
   const url = buildUrl("/control/click.cgi?center=yes", cfg);
@@ -188,7 +207,7 @@ cameraRouter.post("/ptz/center", requireAuth, requireRole(["ADMIN"]), requireLav
 
 cameraRouter.post("/zoom", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = Number(req.auth?.id_lavanderia ?? 1);
-  const cam = resolveCamFromBody(req, idLav);
+  const cam = await resolveCamFromBody(req, idLav);
   const cfg = await resolveCameraConfig(cam, idLav);
   if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });
 
@@ -212,7 +231,7 @@ cameraRouter.post("/zoom", requireAuth, requireRole(["ADMIN"]), requireLavanderi
 
 cameraRouter.post("/display-mode", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = Number(req.auth?.id_lavanderia ?? 1);
-  const cam = resolveCamFromBody(req, idLav);
+  const cam = await resolveCamFromBody(req, idLav);
   const cfg = await resolveCameraConfig(cam, idLav);
   if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });
 
@@ -272,26 +291,9 @@ cameraRouter.post("/display-mode", requireAuth, requireRole(["ADMIN"]), requireL
   return res.json({ ok: true, mode: rawMode });
 });
 
-cameraRouter.post("/audio/play", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
-  const idLav = Number(req.auth?.id_lavanderia ?? 1);
-  const cam = resolveCamByLav(idLav);
-  const cfg = await resolveCameraConfig(cam, idLav);
-  if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });
-  const soundfile = String(req.body?.soundfile ?? "PUBLICIDAD").trim();
-  if (!/^[A-Za-z0-9_]{1,40}$/.test(soundfile)) return res.status(400).json({ ok: false, error: "BAD_SOUNDFILE" });
-  const url = buildUrl(`/control/rcontrol?action=sound&soundfile=${encodeURIComponent(soundfile)}`, cfg);
-  const fr = await fetchWithTimeout(url, 5000, cfg);
-  if (!fr.ok) return res.status(504).json({ ok: false, error: "CAMERA_TIMEOUT" });
-  const r = fr.response;
-  const text = await r.text();
-  if (!r.ok) return res.status(502).json({ ok: false, error: "CAMERA_UPSTREAM_ERROR" });
-  await audit(req, "CAMERA_AUDIO_PLAY", `Audio reproducido: ${soundfile}`);
-  return res.json({ ok: true, raw: text });
-});
-
 cameraRouter.post("/relay/pulse", requireAuth, requireRole(["ADMIN"]), requireLavanderia, async (req, res) => {
   const idLav = Number(req.auth?.id_lavanderia ?? 1);
-  const cam = resolveCamByLav(idLav);
+  const cam = await resolveCamByLav(idLav);
   const cfg = await resolveCameraConfig(cam, idLav);
   if (!cameraConfigured(cfg)) return res.status(503).json({ ok: false, error: "CAMERA_NOT_CONFIGURED" });
 

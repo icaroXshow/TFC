@@ -123,7 +123,7 @@
       webPreviewReload?.addEventListener("click", loadPreviewFrame);
 
       let previewDebounce = null;
-      webEditorForm.querySelectorAll("entrada, textarea, select").forEach((el) => {
+      webEditorForm.querySelectorAll("input, textarea, select").forEach((el) => {
         el.addEventListener("entrada", () => {
           if (previewDebounce) clearTimeout(previewDebounce);
           previewDebounce = setTimeout(() => {
@@ -400,6 +400,7 @@ refresh();
 
     // Cámara: panel principal + panel adicional (si existe).
     const cameraTargets = [];
+    if (cameraImg) cameraTargets.push({ el: cameraImg, cam: 1, mode: "mjpeg" });
     if (cameraImg1) cameraTargets.push({ el: cameraImg1, cam: 1, mode: "mjpeg" });
     if (cameraImg2) cameraTargets.push({ el: cameraImg2, cam: 2, mode: "mjpeg" });
     let camaraActiva = 1;
@@ -470,7 +471,7 @@ refresh();
     enlazarControlesCamara(2);
 
     // IOT / Programador
-    const isIotView = Boolean(iotSaveSchedule || doorToggle || lightsToggle || fanOn);
+    const isIotView = Boolean(iotSaveSchedule || doorToggle || lightsToggle || fanOn || quickDoorBtn || quickLightsBtn);
     let currentIotState = { puerta_abierta: false, luces_encendidas: false, ventilacion_encendida: false };
     let iotScheduleDirty = false;
     const setIotHint = (text) => {
@@ -526,6 +527,8 @@ refresh();
         setPill(doorState, st.puerta_abierta);
         setPill(lightsState, st.luces_encendidas);
         setPill(fanState, st.ventilacion_encendida);
+        setPill(document.getElementById("quickDoorState"), st.puerta_abierta);
+        setPill(document.getElementById("quickLightsState"), st.luces_encendidas);
 
         const sc = schData?.schedule || {};
         if (!iotScheduleDirty) {
@@ -655,34 +658,6 @@ refresh();
         notifyNice("No se pudo cambiar luces.");
       }
     });
-    quickAudioBtn?.addEventListener("click", async () => {
-      const soundfile = String(quickAudioSound?.value || "PUBLICIDAD");
-      if (!(await confirmNice("Confirmar audio", `¿Reproducir "${soundfile}" en la tienda?`))) return;
-      try {
-        const r = await fetch(`${API_BASE}/api/camera/audio/play`, {
-          method: "POST",
-          headers: {
-            authorization: `Bearer ${token}`,
-            "x-lavanderia-id": String(activeLavId),
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({ soundfile }),
-        });
-        if (!r.ok) throw new Error("AUDIO_FAILED");
-        await fetch(`${API_BASE}/api/iot/relay-action`, {
-          method: "POST",
-          headers: {
-            authorization: `Bearer ${token}`,
-            "x-lavanderia-id": String(activeLavId),
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({ dispositivo: "audio", accion: "play", origen: "inicio" }),
-        });
-      } catch {
-        notifyNice("No se pudo reproducir audio.");
-      }
-    });
-
     doorToggle?.addEventListener("click", async () => {
       const nextAction = currentIotState.puerta_abierta ? "off" : "on";
       try {
@@ -740,10 +715,10 @@ refresh();
         ventilacion: { on: String(fanOnTime?.value ?? "").trim() || null, off: String(fanOffTime?.value ?? "").trim() || null },
       };
       const selectedOpenMachines = iotOpenMachines
-        ? [...iotOpenMachines.querySelectorAll("entrada[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        ? [...iotOpenMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
         : [];
       const selectedCloseMachines = iotCloseMachines
-        ? [...iotCloseMachines.querySelectorAll("entrada[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
+        ? [...iotCloseMachines.querySelectorAll("input[type='checkbox']:checked")].map((i) => Number(i.value)).filter((n) => Number.isFinite(n) && n > 0)
         : [];
       const [res, openRes, closeRes] = await Promise.all([
         fetch(`${API_BASE}/api/iot/schedule`, {

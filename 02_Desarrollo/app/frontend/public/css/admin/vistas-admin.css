@@ -389,8 +389,16 @@
 
 .pestana-informesle thead th {
   border-top: 0;
-  background: rgba(0, 0, 0, 0.22);
+  background: linear-gradient(90deg, rgba(9, 15, 35, 0.92), rgba(20, 38, 74, 0.88));
   font-weight: 800;
+  color: rgba(226, 255, 250, 0.98);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-size: 11px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  box-shadow: inset 0 -1px 0 rgba(51, 229, 195, 0.2);
 }
 
 .paginador-informes {

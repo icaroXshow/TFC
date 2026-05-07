@@ -474,3 +474,50 @@ Verificación:
 - Garantiza consistencia entre estado de máquina en backend/simulador y comportamiento esperado en panel admin.
 - Evita falsos negativos en pruebas de temporizador y transiciones operativas.
 - Deja una base defendible para demo y memoria del TFC.
+
+## 2026-05-07 — Errores corregidos (auditoría TODO)
+
+### Qué
+
+- Se corrigen fallos críticos detectados en `02_Desarrollo/TODO.md`:
+  - WS `admin-live` sin autenticación/autorización por tienda.
+  - Incongruencia de permisos de cámara para `OPERADOR`.
+  - Dependencia de IDs mágicos en simulador/cámara.
+  - `API_BASE` frágil por hardcode a `:8080`.
+  - Timeout Redis demasiado agresivo.
+
+### Cómo
+
+- Backend WS:
+  - `app/backend/src/server.ts`
+  - `ws://.../ws/admin-live` ahora exige token JWT en query (`t`), valida rol (`ADMIN`/`OPERADOR`) y acceso a `lav` en `usuario_lavanderia`.
+  - Cierre de conexión con código/política cuando no cumple permisos.
+
+- Cámara:
+  - `app/backend/src/web/routes/camera.ts`
+  - Stream ahora acepta `OPERADOR` con acceso a lavandería (ya no solo `ADMIN`).
+  - Se elimina mapeo rígido por ID (`idLav===2`), resolviendo cámara por configuración por tienda (`env_settings`: `CAMERA_SLOT`/`CAMERA_ID`) con fallback.
+
+- Frontend admin:
+  - `app/frontend/public/js/admin/nucleo-dashboard-maquinas.js`
+  - WS `admin-live` envía token y `lav`.
+  - `API_BASE` adaptado al origen/puerto real en lugar de asumir siempre `:8080`.
+  - Limpieza de referencias residuales de zoom fijo (`1x/2x/4x/8x`).
+
+- Configuración:
+  - `app/backend/src/system/env.ts` → `REDIS_TIMEOUT_MS` por defecto de `500` a `1500`.
+  - Sincronizado en:
+    - `app/backend/.env.example`
+    - `deploy/demo/.env`
+    - `deploy/demo/.env.example`
+  - Simulador demo configurado por defecto a lavandería simulador (seed limpio):
+    - `SIM_LAV_IDS=3`
+    - `SIM_LAV_ID=3`
+
+### Resultado
+
+- Admin realtime protegido por auth y alcance de tienda.
+- Cámara consistente con permisos de UI para `OPERADOR`.
+- Menos roturas por IDs variables tras reseed/redeploy.
+- Mejor tolerancia a latencia de Redis en demo.
+- Conectividad web/simulador más estable por alineación de `lav_id`.

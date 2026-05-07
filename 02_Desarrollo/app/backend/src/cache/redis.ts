@@ -66,6 +66,7 @@ async function rawCommand(parts: Array<string | number>): Promise<string | null>
   return new Promise((resolve, reject) => {
     const sock = net.createConnection({ host: env.redis.host, port: env.redis.port });
     const chunks: Array<Buffer | string> = [];
+    const expectedReplies = (env.redis.password ? 1 : 0) + (env.redis.db > 0 ? 1 : 0) + 1;
     let settled = false;
     const done = (fn: () => void) => {
       if (settled) return;
@@ -86,18 +87,24 @@ async function rawCommand(parts: Array<string | number>): Promise<string | null>
     sock.setTimeout(env.redis.timeoutMs);
     sock.on("timeout", () => fail(new Error("REDIS_TIMEOUT")));
     sock.on("error", fail);
-    sock.on("data", (c) => chunks.push(c));
-    sock.on("end", () => {
+    sock.on("data", (c) => {
+      chunks.push(c);
       try {
-        const all = parseRespAll(
-          Buffer.concat(chunks.map((c) => (typeof c === "string" ? Buffer.from(c, "utf8") : c))),
-        );
-        const out = all.length ? all[all.length - 1] : null;
+        const all = parseRespAll(Buffer.concat(chunks.map((x) => (typeof x === "string" ? Buffer.from(x, "utf8") : x))));
+        if (all.length < expectedReplies) return;
+        const out = all[expectedReplies - 1] ?? null;
         lastError = null;
         done(() => resolve(out));
       } catch (e) {
-        fail(e);
+        // Puede venir RESP fragmentado; esperamos más datos salvo errores de respuesta explícitos.
+        const msg = e instanceof Error ? e.message : "";
+        if (msg.startsWith("REDIS_ERROR") || msg === "NOAUTH Authentication required.") {
+          fail(e);
+        }
       }
+    });
+    sock.on("end", () => {
+      if (!settled) fail(new Error("REDIS_CONNECTION_CLOSED"));
     });
     sock.on("connect", async () => {
       try {
@@ -147,12 +154,35 @@ export async function redisDel(key: string): Promise<void> {
 
 export async function redisPingOk(): Promise<boolean> {
   if (!env.redis.enabled) return false;
-  try {
-    const pong = await rawCommand(["PING"]);
-    return pong === "PONG";
-  } catch {
-    return false;
-  }
+  return new Promise((resolve) => {
+    const sock = net.createConnection({ host: env.redis.host, port: env.redis.port });
+    let settled = false;
+    const done = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      try {
+        sock.end();
+      } catch {
+        // ignore
+      }
+      resolve(ok);
+    };
+    sock.setTimeout(Math.max(300, env.redis.timeoutMs));
+    sock.on("timeout", () => done(false));
+    sock.on("error", () => done(false));
+    sock.on("data", (buf) => {
+      const txt = buf.toString("utf8");
+      done(txt.includes("PONG") || txt.startsWith("+PONG"));
+    });
+    sock.on("connect", () => {
+      try {
+        // Inline protocol is enough for health-check and avoids RESP fragmentation issues.
+        sock.write("PING\r\n");
+      } catch {
+        done(false);
+      }
+    });
+  });
 }
 
 export function getRedisHealthSnapshot(ok: boolean): RedisHealth {

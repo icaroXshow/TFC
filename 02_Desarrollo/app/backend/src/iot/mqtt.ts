@@ -28,6 +28,18 @@ type MaquinaRef = RowDataPacket & {
 type ConfigRow = RowDataPacket & { valor: string };
 type TarifaRow = RowDataPacket & { id_tarifa: number; tiempo_base_minutos: number };
 type CicloOpenRow = RowDataPacket & { id_ciclo: number };
+type MachineRuntimeState = {
+  segundos_restantes?: number;
+  saldo_credito?: number;
+  puerta_estado?: "CERRADA" | "APERTURA_PENDIENTE" | "ABIERTA";
+  estado_operativo?: string;
+  updated_at?: string;
+};
+type CreditOriginPending = {
+  origen: "MONEDERO" | "WEB_MANUAL" | "SISTEMA";
+  importe?: number;
+  ts?: string;
+};
 
 let client: MqttClient | null = null;
 let mqttConnected = false;
@@ -79,6 +91,21 @@ async function clearFanPendingOff(idLav: number, idMaquina: number) {
   const pending = await getConfigLav<Record<string, string | null>>(idLav, "fan_pending_off", {});
   delete pending[fanKey(idMaquina)];
   await setConfigLav(idLav, "fan_pending_off", pending, "Apagado diferido de ventiladores por máquina");
+}
+
+async function getMachineRuntimeStateMap(idLav: number) {
+  return getConfigLav<Record<string, MachineRuntimeState>>(idLav, "machine_runtime_state", {});
+}
+
+async function setMachineRuntimeStateMap(idLav: number, map: Record<string, MachineRuntimeState>) {
+  await setConfigLav(idLav, "machine_runtime_state", map, "Estado runtime por máquina (MQTT)");
+}
+
+async function patchMachineRuntimeState(idLav: number, idMaquina: number, patch: Partial<MachineRuntimeState>) {
+  const map = await getMachineRuntimeStateMap(idLav);
+  const key = String(idMaquina);
+  map[key] = { ...(map[key] || {}), ...patch, updated_at: new Date().toISOString() };
+  await setMachineRuntimeStateMap(idLav, map);
 }
 
 async function hasManualPriority(idLav: number, idMaquina: number) {
@@ -181,6 +208,11 @@ async function processEstado(idLav: number | undefined, codigo: string, data: Es
     `UPDATE maquina SET estado_actual = :estado WHERE id_maquina = :idMaquina`,
     { estado, idMaquina: machine.id_maquina },
   );
+  const secs = Number((data as any)?.segundos_restantes_estimados ?? Number.NaN);
+  await patchMachineRuntimeState(machine.id_lavanderia, machine.id_maquina, {
+    estado_operativo: estado,
+    segundos_restantes: Number.isFinite(secs) && secs >= 0 ? Math.floor(secs) : undefined,
+  });
 
   await db.query<ResultSetHeader>(
     `
@@ -242,6 +274,19 @@ async function processEvento(idLav: number | undefined, codigo: string, data: Ev
     );
     const tarifa = tarifaRows[0];
     if (!tarifa) return null;
+    const creditOriginMap = await getConfigLav<Record<string, CreditOriginPending | null>>(
+      machine.id_lavanderia,
+      "machine_credit_origin_pending",
+      {},
+    );
+    const pendingOrigin = creditOriginMap[String(machine.id_maquina)] ?? null;
+    const precioArranque = Number(tarifa.precio_arranque || 0);
+    const abonadoInicial =
+      pendingOrigin?.origen === "WEB_MANUAL"
+        ? Math.max(0, Math.min(precioArranque, Number(pendingOrigin.importe ?? 0)))
+        : 0;
+    const importeClienteInicial = Math.max(0, precioArranque - abonadoInicial);
+
     const [ins] = await db.query<ResultSetHeader>(
       `
       INSERT INTO ciclo (
@@ -251,32 +296,55 @@ async function processEvento(idLav: number | undefined, codigo: string, data: Ev
         duracion_total_programada_min, observaciones
       ) VALUES (
         :idMaquina, :idTarifa, NOW(), NULL, 'INICIADO',
-        :precioArranque, :tiempoBase, 0, :precioArranque, 0.00, :precioArranque, :tiempoBase, 'MQTT auto-cycle'
+        :precioArranque, :tiempoBase, 0, :importeCliente, :abonado, :precioArranque, :tiempoBase, 'MQTT auto-cycle'
       )
       `,
       {
         idMaquina: machine.id_maquina,
         idTarifa: tarifa.id_tarifa,
         tiempoBase: Number(tarifa.tiempo_base_minutos || 35),
-        precioArranque: Number(tarifa.precio_arranque || 0),
+        precioArranque,
+        importeCliente: importeClienteInicial,
+        abonado: abonadoInicial,
       },
     );
     const idCiclo = ins.insertId || null;
-    const precioArranque = Number(tarifa.precio_arranque || 0);
     if (idCiclo && precioArranque > 0) {
-      await db.query<ResultSetHeader>(
-        `
-        INSERT INTO movimiento_maquina (
-          id_lavanderia, id_maquina, id_ciclo, id_usuario, fecha_hora,
-          tipo_movimiento, origen_movimiento, importe, minutos_extra_generados,
-          es_bonificacion, descripcion
-        ) VALUES (
-          :idLav, :idMaquina, :idCiclo, NULL, NOW(),
-          'ARRANQUE', 'MONEDERO', :importe, 0, 0, 'Arranque detectado por MQTT'
-        )
-        `,
-        { idLav: machine.id_lavanderia, idMaquina: machine.id_maquina, idCiclo, importe: precioArranque },
-      );
+      const originMov = pendingOrigin?.origen === "WEB_MANUAL" ? "WEB_MANUAL" : "MONEDERO";
+      const isBonif = originMov === "WEB_MANUAL" ? 1 : 0;
+      // Si el crédito ya se registró como WEB_MANUAL en /credito, no duplicamos contabilidad en arranque.
+      if (originMov !== "WEB_MANUAL") {
+        await db.query<ResultSetHeader>(
+          `
+          INSERT INTO movimiento_maquina (
+            id_lavanderia, id_maquina, id_ciclo, id_usuario, fecha_hora,
+            tipo_movimiento, origen_movimiento, importe, minutos_extra_generados,
+            es_bonificacion, descripcion
+          ) VALUES (
+            :idLav, :idMaquina, :idCiclo, NULL, NOW(),
+            'ARRANQUE', :origen, :importe, 0, :bonif, :descripcion
+          )
+          `,
+          {
+            idLav: machine.id_lavanderia,
+            idMaquina: machine.id_maquina,
+            idCiclo,
+            importe: precioArranque,
+            origen: originMov,
+            bonif: isBonif,
+            descripcion: "Arranque detectado por MQTT",
+          },
+        );
+      }
+      if (pendingOrigin) {
+        delete creditOriginMap[String(machine.id_maquina)];
+        await setConfigLav(
+          machine.id_lavanderia,
+          "machine_credit_origin_pending",
+          creditOriginMap,
+          "Origen de crédito pendiente por máquina",
+        );
+      }
     }
     return idCiclo;
   };
@@ -316,6 +384,11 @@ async function processEvento(idLav: number | undefined, codigo: string, data: Ev
       { idMaquina: machine.id_maquina },
     );
     await setFanPendingOff(machine.id_lavanderia, machine.id_maquina, 5);
+    await patchMachineRuntimeState(machine.id_lavanderia, machine.id_maquina, {
+      estado_operativo: estadoFinal,
+      segundos_restantes: 0,
+      puerta_estado: "CERRADA",
+    });
   }
 
   if (tipoEvento === "PULSO_INICIO") {
@@ -331,6 +404,9 @@ async function processEvento(idLav: number | undefined, codigo: string, data: Ev
         timestamp: new Date().toISOString(),
       }, machine.id_lavanderia);
     }
+    await patchMachineRuntimeState(machine.id_lavanderia, machine.id_maquina, {
+      estado_operativo: "EN_MARCHA",
+    });
   }
 
   if (tipoEvento === "PULSO_FIN") {
@@ -348,27 +424,84 @@ async function processEvento(idLav: number | undefined, codigo: string, data: Ev
       { idMaquina: machine.id_maquina },
     );
     await setFanPendingOff(machine.id_lavanderia, machine.id_maquina, 5);
+    await patchMachineRuntimeState(machine.id_lavanderia, machine.id_maquina, {
+      estado_operativo: "PAUSADA",
+      segundos_restantes: 0,
+    });
   }
 
   if (tipoEvento === "AMPLIACION_APLICADA") {
+    const origen = String(payload?.origen ?? "").toLowerCase();
+    const minutosPayload = Number(payload?.minutos ?? Number.NaN);
+    const importePayload = Number(payload?.importe ?? 0);
+    const minutosCalculados = Number.isFinite(minutosPayload)
+      ? Math.max(0, Math.floor(minutosPayload))
+      : Math.max(0, Math.floor(importePayload * 15));
+    if (minutosCalculados <= 0) return;
+
+    // Si la ampliación vino de web (/maquinas/:id/ampliar), ya está persistida en BD.
+    // Aquí solo confirmamos ejecución física para no duplicar minutos.
+    if (origen === "web_admin") return;
+
+    // Si la ampliación viene del simulador (cliente mete monedas en secadora en marcha),
+    // hay que persistirla en ciclo para mantener web y simulador sincronizados.
     const idCiclo = await ensureOpenCycle();
-    if (idCiclo) {
-      const minutosExtra = Math.max(0, Number(payload.minutos ?? 0));
-      const importeExtra = Math.max(0, Number(payload.importe ?? 0));
-      if (minutosExtra > 0 || importeExtra > 0) {
-        await db.query<ResultSetHeader>(
-          `
-          UPDATE ciclo
-          SET minutos_extra_total = minutos_extra_total + :minutos,
-              importe_bonificado_total = importe_bonificado_total + :importe,
-              importe_total_aplicado = importe_total_aplicado + :importe,
-              duracion_total_programada_min = duracion_total_programada_min + :minutos
-          WHERE id_ciclo = :idCiclo
-          `,
-          { minutos: minutosExtra, importe: importeExtra, idCiclo },
-        );
-      }
+    if (!idCiclo) return;
+
+    await db.query<ResultSetHeader>(
+      `
+      UPDATE ciclo
+      SET
+        minutos_extra_total = minutos_extra_total + :minutos,
+        importe_cliente_total = importe_cliente_total + :importe,
+        importe_total_aplicado = importe_total_aplicado + :importe,
+        duracion_total_programada_min = duracion_total_programada_min + :minutos
+      WHERE id_ciclo = :idCiclo
+      `,
+      {
+        idCiclo,
+        minutos: minutosCalculados,
+        importe: Number(importePayload.toFixed(2)),
+      },
+    );
+
+    await db.query<ResultSetHeader>(
+      `
+      INSERT INTO movimiento_maquina (
+        id_lavanderia, id_maquina, id_ciclo, id_usuario, fecha_hora,
+        tipo_movimiento, origen_movimiento, importe, minutos_extra_generados,
+        es_bonificacion, descripcion
+      ) VALUES (
+        :idLav, :idMaquina, :idCiclo, NULL, NOW(),
+        'AMPLIACION_TIEMPO', 'MONEDERO', :importe, :minutos, 0, 'Ampliación desde simulador'
+      )
+      `,
+      {
+        idLav: machine.id_lavanderia,
+        idMaquina: machine.id_maquina,
+        idCiclo,
+        importe: Number(importePayload.toFixed(2)),
+        minutos: minutosCalculados,
+      },
+    );
+  }
+  if (tipoEvento === "CREDITO_ACUMULADO" || tipoEvento === "CREDITO_ACUMULADO_AMPLIACION") {
+    const saldo = Number(payload.saldo ?? Number.NaN);
+    if (Number.isFinite(saldo) && saldo >= 0) {
+      await patchMachineRuntimeState(machine.id_lavanderia, machine.id_maquina, { saldo_credito: Number(saldo.toFixed(2)) });
     }
+  }
+  if (tipoEvento === "CICLO_INICIADO") {
+    await patchMachineRuntimeState(machine.id_lavanderia, machine.id_maquina, { saldo_credito: 0 });
+  }
+  if (tipoEvento === "SECADORA_APERTURA_PENDIENTE") {
+    await patchMachineRuntimeState(machine.id_lavanderia, machine.id_maquina, { puerta_estado: "APERTURA_PENDIENTE" });
+  }
+  if (tipoEvento === "SECADORA_PUERTA_ABIERTA" || tipoEvento === "LAVADORA_PUERTA_ABIERTA") {
+    await patchMachineRuntimeState(machine.id_lavanderia, machine.id_maquina, { puerta_estado: "ABIERTA" });
+  }
+  if (tipoEvento === "SECADORA_PUERTA_CERRADA" || tipoEvento === "LAVADORA_PUERTA_CERRADA") {
+    await patchMachineRuntimeState(machine.id_lavanderia, machine.id_maquina, { puerta_estado: "CERRADA" });
   }
 }
 
@@ -502,4 +635,20 @@ export function publishIotState(
   const topic = `kwl/iot/${Math.trunc(idLav)}/estado`;
   client.publish(topic, JSON.stringify({ ...state, timestamp: new Date().toISOString(), origen: "gui_sim" }), { qos: 0 });
   return true;
+}
+
+export async function getRuntimeMachineStateByLav(idLav: number): Promise<Record<string, MachineRuntimeState>> {
+  return getMachineRuntimeStateMap(idLav);
+}
+
+export async function setCreditOriginPendingByMachine(
+  idLav: number,
+  idMaquina: number,
+  origin: CreditOriginPending | null,
+) {
+  const map = await getConfigLav<Record<string, CreditOriginPending | null>>(idLav, "machine_credit_origin_pending", {});
+  const key = String(idMaquina);
+  if (!origin) delete map[key];
+  else map[key] = origin;
+  await setConfigLav(idLav, "machine_credit_origin_pending", map, "Origen de crédito pendiente por máquina");
 }

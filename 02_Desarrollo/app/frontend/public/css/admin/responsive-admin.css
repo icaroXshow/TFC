@@ -585,10 +585,6 @@ body[data-breadcrumb*="Programador"] .rejilla-principal-iot > .tarjeta-iot:last-
   /* Camara movil: dejar solo Zoom +, Zoom -, selector de modo */
   body[data-breadcrumb*="Cámara"] #camDetach,
   body[data-breadcrumb*="Cámara"] #camCenter,
-  body[data-breadcrumb*="Cámara"] #camZoom1x,
-  body[data-breadcrumb*="Cámara"] #camZoom2x,
-  body[data-breadcrumb*="Cámara"] #camZoom4x,
-  body[data-breadcrumb*="Cámara"] #camZoom8x,
   body[data-breadcrumb*="Cámara"] #camDisplayApply {
     display: none !important;
   }

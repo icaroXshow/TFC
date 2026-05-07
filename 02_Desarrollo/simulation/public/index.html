@@ -10,46 +10,25 @@
   <body>
     <main class="contenedor" aria-label="Panel del simulador IoT">
       <section class="columna-izquierda">
-        <p id="pistaSimulacion" class="mensaje-operacion" role="status" aria-live="polite"></p>
+        <p
+          id="pistaSimulacion"
+          class="mensaje-operacion"
+          role="status"
+          aria-live="polite"
+        ></p>
 
-        <section class="tarjeta controles-iot" aria-labelledby="tituloInterruptores">
-          <div class="seccion-titulo seccion-titulo-compacta">
+        <section class="seccion-maquinas" aria-labelledby="tituloMaquinas">
+          <div class="seccion-titulo">
             <div>
-              <p class="etiqueta">IoT tienda</p>
-              <h2 id="tituloInterruptores">Interruptores</h2>
+              <p class="etiqueta">Máquinas</p>
+              <h2 id="tituloMaquinas">Panel de máquinas</h2>
             </div>
-            <p class="ayuda">Simula relés de puerta y luces de la tienda.</p>
+            <p class="ayuda">
+              Crédito, arranque, estado y temporizador de cada una.
+            </p>
           </div>
-          <div class="fila-control">
-            <div>
-              <div class="texto-suave">Puerta</div>
-              <div id="doorState" class="estado estado-off">
-                <span class="punto"></span><span>OFF</span>
-              </div>
-            </div>
-            <button id="doorToggle" class="boton boton-principal" type="button">Interruptor puerta</button>
-          </div>
-          <div class="fila-control">
-            <div>
-              <div class="texto-suave">Luces</div>
-              <div id="lightsState" class="estado estado-off">
-                <span class="punto"></span><span>OFF</span>
-              </div>
-            </div>
-            <button id="lightsToggle" class="boton boton-principal" type="button">Interruptor luces</button>
-          </div>
+          <div class="cuadricula-maquinas" id="panelGrid"></div>
         </section>
-
-      <section class="seccion-maquinas" aria-labelledby="tituloMaquinas">
-        <div class="seccion-titulo">
-          <div>
-            <p class="etiqueta">Máquinas</p>
-            <h2 id="tituloMaquinas">Panel de máquinas</h2>
-          </div>
-          <p class="ayuda">Crédito, arranque, estado y temporizador de cada equipo.</p>
-        </div>
-        <div class="cuadricula-maquinas" id="panelGrid"></div>
-      </section>
       </section>
 
       <aside class="columna-derecha">
@@ -57,16 +36,26 @@
           <section class="marca" aria-labelledby="tituloSimulador">
             <div class="marca-icono" aria-hidden="true">KWL</div>
             <div>
-              <p class="etiqueta">Simulador técnico</p>
-              <h1 id="tituloSimulador">Tienda simulación</h1>
-              <p class="subtitulo">Entorno aislado para pruebas MQTT e IoT</p>
+              <p class="etiqueta">Simulador Test</p>
+              <h1 id="tituloSimulador">SIMULADOR</h1>
+              <p class="subtitulo">Entorno aislado para pruebas</p>
             </div>
           </section>
           <section class="estado-global" aria-label="Estado de conexión">
-            <div id="indicadorMqtt" class="insignia estado-malo" role="status" aria-live="polite">
+            <div
+              id="indicadorMqtt"
+              class="insignia estado-malo"
+              role="status"
+              aria-live="polite"
+            >
               MQTT: OFF
             </div>
-            <div id="indicadorRedis" class="insignia estado-malo" role="status" aria-live="polite">
+            <div
+              id="indicadorRedis"
+              class="insignia estado-malo"
+              role="status"
+              aria-live="polite"
+            >
               Redis: OFF
             </div>
             <div class="ultima-lectura">
@@ -80,19 +69,28 @@
           <div class="panel-alertas-cabecera">
             <div>
               <p class="etiqueta">Monitorización</p>
-              <h2 id="tituloAlarmas">Alarmas y eventos recientes</h2>
+              <h2 id="tituloAlarmas">Eventos</h2>
             </div>
-            <button id="limpiarAlarmas" class="boton boton-secundario" type="button">
+            <button
+              id="limpiarAlarmas"
+              class="boton boton-secundario"
+              type="button"
+            >
               Limpiar
             </button>
           </div>
           <ol id="listaAlarmas" class="lista-alarmas" aria-live="polite">
-            <li class="alarma-vacia">Sin alarmas recientes.</li>
+            <li class="alarma-vacia">Nada por ahora</li>
           </ol>
         </section>
       </aside>
     </main>
 
-    <div id="contenedorTostadas" class="contenedor-tostadas" aria-live="polite" aria-label="Notificaciones"></div>
+    <div
+      id="contenedorTostadas"
+      class="contenedor-tostadas"
+      aria-live="polite"
+      aria-label="Notificaciones"
+    ></div>
   </body>
 </html>

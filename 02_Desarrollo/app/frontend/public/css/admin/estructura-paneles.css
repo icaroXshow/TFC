@@ -431,8 +431,9 @@ body.admin-locked .principal-admin {
 }
 
 .meta-maquina {
-  display: flex;
-  align-items: baseline;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
@@ -446,6 +447,15 @@ body.admin-locked .principal-admin {
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.meta-maquina .temporizador-maquina-top {
+  justify-self: center;
+  text-align: center;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: 0.6px;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .estado-maquina {
@@ -469,6 +479,35 @@ body.admin-locked .principal-admin {
   color: rgba(255, 255, 255, 0.8);
 }
 
+.meta-credito-maquina {
+  margin-top: 8px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.resumen-derecha-maquina {
+  margin-left: auto;
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.resumen-derecha-maquina .meta-credito-maquina {
+  margin-top: 0;
+}
+
+.tarjeta-maquina-inicio .estado-maquina {
+  align-items: flex-start;
+}
+
+.tarjeta-maquina-inicio .acciones-maquina-inicio {
+  margin-top: 10px;
+  justify-content: flex-start;
+  padding-right: 140px;
+}
+
 .state-pill {
   display: inline-flex;
   align-items: center;
@@ -482,13 +521,23 @@ body.admin-locked .principal-admin {
 }
 
 .state-stop {
-  background: rgba(255, 244, 125, 0.15);
-  color: #fff47d;
+  background: rgba(255, 107, 129, 0.14);
+  color: #ff6b81;
 }
 
-.state-running {
-  background: rgba(152, 255, 174, 0.12);
-  color: #98ffae;
+.state-on {
+  background: rgba(81, 220, 164, 0.14);
+  color: #51dca4;
+}
+
+.state-cycle {
+  background: rgba(114, 174, 255, 0.16);
+  color: #72aeff;
+}
+
+.state-noair {
+  background: rgba(184, 192, 207, 0.16);
+  color: #b8c0cf;
 }
 
 .state-maint {

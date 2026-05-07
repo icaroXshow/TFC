@@ -9,7 +9,9 @@ type CajaRow = RowDataPacket & {
   id_maquina: number;
   codigo_visible: string;
   tipo_maquina: string;
-  importe_total: string; // mysql2 devuelve DECIMAL como string
+  importe: string;
+  abonado: string;
+  total: string;
   movimientos: number;
 };
 
@@ -67,13 +69,16 @@ async function computeCaja(idLav: number, from: string, to: string) {
       m.id_maquina,
       m.codigo_visible,
       m.tipo_maquina,
-      CAST(SUM(CASE WHEN mm.es_bonificacion = 1 THEN -mm.importe ELSE mm.importe END) AS CHAR) AS importe_total,
+      CAST(SUM(COALESCE(c.importe_total_aplicado, 0)) AS CHAR) AS importe,
+      CAST(SUM(COALESCE(c.importe_bonificado_total, 0)) AS CHAR) AS abonado,
+      CAST(SUM(GREATEST(0, COALESCE(c.importe_total_aplicado, 0) - COALESCE(c.importe_bonificado_total, 0))) AS CHAR) AS total,
       COUNT(*) AS movimientos
-    FROM movimiento_maquina mm
-    INNER JOIN maquina m ON m.id_maquina = mm.id_maquina
-    WHERE mm.id_lavanderia = :idLav
-      AND mm.fecha_hora >= :from
-      AND mm.fecha_hora < DATE_ADD(:to, INTERVAL 1 DAY)
+    FROM ciclo c
+    INNER JOIN maquina m ON m.id_maquina = c.id_maquina
+    WHERE c.estado_ciclo IN ('INICIADO','FINALIZADO')
+      AND m.id_lavanderia = :idLav
+      AND c.fecha_hora_inicio >= :from
+      AND c.fecha_hora_inicio < DATE_ADD(:to, INTERVAL 1 DAY)
     GROUP BY m.id_maquina, m.codigo_visible, m.tipo_maquina
     ORDER BY m.codigo_visible ASC
     `,
@@ -84,11 +89,13 @@ async function computeCaja(idLav: number, from: string, to: string) {
     id_maquina: r.id_maquina,
     codigo_visible: r.codigo_visible,
     tipo_maquina: r.tipo_maquina,
-    importe_total: Number(r.importe_total ?? "0"),
+    importe: Number(r.importe ?? "0"),
+    abonado: Number(r.abonado ?? "0"),
+    total: Number(r.total ?? "0"),
     movimientos: Number(r.movimientos ?? 0),
   }));
 
-  const total = items.reduce((acc, it) => acc + (Number.isFinite(it.importe_total) ? it.importe_total : 0), 0);
+  const total = items.reduce((acc, it) => acc + (Number.isFinite(it.total) ? it.total : 0), 0);
   const movimientos = items.reduce((acc, it) => acc + (Number.isFinite(it.movimientos) ? it.movimientos : 0), 0);
 
   return { items, total, movimientos };

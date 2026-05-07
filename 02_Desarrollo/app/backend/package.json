@@ -8,7 +8,7 @@
     "start": "node --env-file=.env dist/server.js",
     "dev": "sh -c 'npm run clean && tsc -p tsconfig.json --watch --preserveWatchOutput & node --env-file=.env --watch dist/server.js'",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "node -e \"const fs=require('fs'); try{fs.rmSync('dist',{recursive:true,force:true})}catch(e){}\""
   },
   "dependencies": {
     "cors": "^2.8.5",

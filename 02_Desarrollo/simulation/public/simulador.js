@@ -3,8 +3,8 @@ const seleccionar = (selector) => document.querySelector(selector);
 const panelCuadricula = seleccionar("#panelGrid");
 const indicadorMqtt = seleccionar("#indicadorMqtt");
 const indicadorRedis = seleccionar("#indicadorRedis");
-const estadoPuerta = seleccionar("#doorState");
-const estadoLuces = seleccionar("#lightsState");
+let estadoPuerta = null;
+let estadoLuces = null;
 const pistaSimulacion = seleccionar("#pistaSimulacion");
 const ultimaLectura = seleccionar("#ultimaLectura");
 const listaAlarmas = seleccionar("#listaAlarmas");
@@ -18,7 +18,7 @@ let codigosMaquina = [];
 let estadoAnterior = null;
 let ultimaAlarmaId = 0;
 let redisConectadoCache = false;
-let sseActiva = false;
+let streamActivo = false;
 let wsActiva = false;
 
 function horaActual() {
@@ -47,7 +47,9 @@ function textoEstado(estado) {
 }
 
 function etiquetaEstado(estadoNormalizado) {
+  if (estadoNormalizado === "STOP") return "APAGADO";
   if (estadoNormalizado === "PAUSADA") return "ENCENDIDA";
+  if (estadoNormalizado === "EN_MARCHA") return "CICLO";
   return estadoNormalizado;
 }
 
@@ -90,13 +92,22 @@ function mostrarNotificacion(mensaje, tipo = "info") {
 }
 
 function limpiarAlarmas() {
-  listaAlarmas.innerHTML = '<li class="alarma-vacia">Sin alarmas recientes.</li>';
+  listaAlarmas.innerHTML =
+    '<li class="alarma-vacia">Sin alarmas recientes.</li>';
 }
 
-function actualizarIndicador(el, activo, textoActivo = "ON", textoInactivo = "OFF") {
+function actualizarIndicador(
+  el,
+  activo,
+  textoActivo = "ON",
+  textoInactivo = "OFF",
+) {
+  if (!el) return;
   el.classList.toggle("estado-on", Boolean(activo));
   el.classList.toggle("estado-off", !activo);
-  el.querySelector("span:last-child").textContent = activo ? textoActivo : textoInactivo;
+  el.querySelector("span:last-child").textContent = activo
+    ? textoActivo
+    : textoInactivo;
 }
 
 function actualizarEstadoMaquina(codigo, estado) {
@@ -105,10 +116,11 @@ function actualizarEstadoMaquina(codigo, estado) {
   const estadoNormalizado = textoEstado(estado);
   const enMarcha = estadoNormalizado === "EN_MARCHA";
   const pausada = estadoNormalizado === "PAUSADA";
-  el.classList.toggle("estado-marcha", enMarcha);
-  el.classList.toggle("estado-pausada", pausada);
-  el.classList.toggle("estado-parada", !enMarcha && !pausada);
-  el.querySelector("span:last-child").textContent = etiquetaEstado(estadoNormalizado);
+  el.classList.toggle("estado-ciclo", enMarcha);
+  el.classList.toggle("estado-encendida", pausada);
+  el.classList.toggle("estado-apagado", !enMarcha && !pausada);
+  el.querySelector("span:last-child").textContent =
+    etiquetaEstado(estadoNormalizado);
 
   const btn = seleccionar(`[data-confirm="${codigo}"]`);
   if (btn) {
@@ -135,7 +147,7 @@ async function api(path, body) {
 }
 
 function renderizarPanelesMaquina() {
-  panelCuadricula.innerHTML = codigosMaquina
+  const tarjetasMaquina = codigosMaquina
     .map((codigo) => {
       const esSecadora = String(codigo).toUpperCase().startsWith("S");
       return `
@@ -146,7 +158,7 @@ function renderizarPanelesMaquina() {
           </header>
           <div class="bloque-dato">
             <span class="texto-suave">Estado</span>
-            <div class="estado estado-parada" data-machine-state="${codigo}">
+            <div class="estado estado-apagado" data-machine-state="${codigo}">
               <span class="punto"></span><span>STOP</span>
             </div>
           </div>
@@ -154,16 +166,16 @@ function renderizarPanelesMaquina() {
             <div><span>Temporizador</span><strong data-timer="${codigo}">00:00</strong></div>
             <div><span>Refrigerar</span><strong data-fan="${codigo}">OFF</strong></div>
             <div><span>Saldo sin aplicar</span><strong data-saldo="${codigo}">0.00 €</strong></div>
-            ${esSecadora ? `<div><span>Puerta secadora</span><strong data-dryer-door="${codigo}">CERRADA</strong></div>` : ""}
+            <div><span>Puerta máquina</span><strong data-dryer-door="${codigo}">CERRADA</strong></div>
           </div>
           <div class="acciones-maquina">
             <label class="campo-credito">
               <span>Importe</span>
               <input type="number" min="0.1" step="0.1" value="1.0" data-credit="${codigo}" />
             </label>
-            <button class="boton boton-principal" data-confirm="${codigo}" type="button">Introducir monedas</button>
+            <button class="boton boton-principal" data-confirm="${codigo}" type="button">Insertar</button>
             <button class="boton boton-secundario" data-start="${codigo}" type="button">START</button>
-            ${esSecadora ? `<button class="boton boton-secundario" data-toggle-door="${codigo}" type="button">Abrir/Cerrar puerta</button>` : ""}
+            <button class="boton boton-secundario" data-toggle-door="${codigo}" data-machine-type="${esSecadora ? "SECADORA" : "LAVADORA"}" type="button">Puerta</button>
           </div>
           <footer class="ayuda-maquina">
             <span>Ciclo: ${minutosCiclo} min</span>
@@ -174,6 +186,36 @@ function renderizarPanelesMaquina() {
       `;
     })
     .join("");
+
+  const tarjetaInterruptores = `
+    <article class="tarjeta tarjeta-maquina tarjeta-interruptores">
+      <header class="maquina-cabecera">
+        <p class="titulo-maquina">IOT</p>
+        <span class="tipo-maquina">Interruptores</span>
+      </header>
+      <div class="datos-maquina">
+        <div>
+          <span>Puerta tienda</span>
+          <strong id="doorState" class="estado estado-off"><span class="punto"></span><span>OFF</span></strong>
+        </div>
+        <div>
+          <span>Luces tienda</span>
+          <strong id="lightsState" class="estado estado-off"><span class="punto"></span><span>OFF</span></strong>
+        </div>
+      </div>
+      <div class="acciones-maquina">
+        <button id="doorToggle" class="boton boton-principal" type="button">Puerta</button>
+        <button id="lightsToggle" class="boton boton-principal" type="button">Luces</button>
+      </div>
+      <footer class="ayuda-maquina">
+        <span>Control general de tienda</span>
+      </footer>
+    </article>
+  `;
+
+  panelCuadricula.innerHTML = `${tarjetasMaquina}${tarjetaInterruptores}`;
+  estadoPuerta = seleccionar("#doorState");
+  estadoLuces = seleccionar("#lightsState");
 }
 
 async function cargarConfiguracion() {
@@ -183,8 +225,14 @@ async function cargarConfiguracion() {
     ? datos.machine_codes
     : ["L1", "L2", "L3", "S1", "S2"];
   minimoCreditoArranque = Number(datos?.start_min_credit || 4);
-  minutosCiclo = Math.max(1, Math.floor(Number(datos?.cycle_seconds || 2220) / 60));
-  minutosAmpliacion = Math.max(1, Math.floor(Number(datos?.plus_seconds_per_euro || 540) / 60));
+  minutosCiclo = Math.max(
+    1,
+    Math.floor(Number(datos?.cycle_seconds || 2220) / 60),
+  );
+  minutosAmpliacion = Math.max(
+    1,
+    Math.floor(Number(datos?.plus_seconds_per_euro || 540) / 60),
+  );
   renderizarPanelesMaquina();
 }
 
@@ -199,27 +247,41 @@ function comprobarAlarmas(datos) {
 
   if (!estadoAnterior) {
     estadoAnterior = actual;
-    if (!actual.mqtt) agregarAlarma("MQTT desconectado al iniciar el panel.", "mqtt-off", false);
+    if (!actual.mqtt)
+      agregarAlarma(
+        "MQTT desconectado al iniciar el panel.",
+        "mqtt-off",
+        false,
+      );
     return;
   }
 
   if (estadoAnterior.mqtt !== actual.mqtt) {
-    agregarAlarma(actual.mqtt ? "MQTT conectado de nuevo." : "MQTT desconectado.", actual.mqtt ? "info" : "mqtt-off");
+    agregarAlarma(
+      actual.mqtt ? "MQTT conectado de nuevo." : "MQTT desconectado.",
+      actual.mqtt ? "info" : "mqtt-off",
+    );
   }
 
   codigosMaquina.forEach((codigo) => {
     const previo = textoEstado(estadoAnterior.maquinas[codigo]);
     const nuevo = textoEstado(actual.maquinas[codigo]);
     if (previo !== nuevo) {
-      if (nuevo === "EN_MARCHA") agregarAlarma(`${codigo} ha iniciado ciclo.`, "info");
-      else if (nuevo === "PAUSADA") agregarAlarma(`${codigo} está en pausa/lista.`, "pausada");
-      else if (nuevo === "STOP") agregarAlarma(`${codigo} está apagada.`, "stop");
+      if (nuevo === "EN_MARCHA")
+        agregarAlarma(`${codigo} ha iniciado ciclo.`, "info");
+      else if (nuevo === "PAUSADA")
+        agregarAlarma(`${codigo} está en pausa/lista.`, "pausada");
+      else if (nuevo === "STOP")
+        agregarAlarma(`${codigo} está apagada.`, "stop");
       else agregarAlarma(`${codigo} cambió a ${nuevo}.`, "info");
     }
 
     const creditoPrevio = Number(estadoAnterior.credito[codigo] || 0);
     const creditoNuevo = Number(actual.credito[codigo] || 0);
-    if (creditoPrevio < minimoCreditoArranque && creditoNuevo >= minimoCreditoArranque) {
+    if (
+      creditoPrevio < minimoCreditoArranque &&
+      creditoNuevo >= minimoCreditoArranque
+    ) {
       agregarAlarma(`${codigo} tiene crédito suficiente para START.`, "info");
     }
 
@@ -230,11 +292,25 @@ function comprobarAlarmas(datos) {
     }
   });
 
-  if (Boolean(estadoAnterior.iot.puerta_abierta) !== Boolean(actual.iot.puerta_abierta)) {
-    agregarAlarma(actual.iot.puerta_abierta ? "Puerta de tienda abierta." : "Puerta de tienda cerrada.", "aviso");
+  if (
+    Boolean(estadoAnterior.iot.puerta_abierta) !==
+    Boolean(actual.iot.puerta_abierta)
+  ) {
+    agregarAlarma(
+      actual.iot.puerta_abierta
+        ? "Puerta de tienda abierta."
+        : "Puerta de tienda cerrada.",
+      "aviso",
+    );
   }
-  if (Boolean(estadoAnterior.iot.luces_encendidas) !== Boolean(actual.iot.luces_encendidas)) {
-    agregarAlarma(actual.iot.luces_encendidas ? "Luces encendidas." : "Luces apagadas.", "info");
+  if (
+    Boolean(estadoAnterior.iot.luces_encendidas) !==
+    Boolean(actual.iot.luces_encendidas)
+  ) {
+    agregarAlarma(
+      actual.iot.luces_encendidas ? "Luces encendidas." : "Luces apagadas.",
+      "info",
+    );
   }
 
   estadoAnterior = actual;
@@ -244,14 +320,16 @@ async function refrescarEstado() {
   try {
     let redisConectado = false;
     try {
-      const backendHealth = await fetch(`${window.location.protocol}//${window.location.hostname}:8080/health`);
+      const backendHealth = await fetch(
+        `${window.location.protocol}//${window.location.hostname}:8080/health`,
+      );
       if (backendHealth.ok) {
         const h = await backendHealth.json();
         redisConectado = Boolean(
           h?.redis?.ok ??
-            h?.redis?.connected ??
-            h?.cache?.redis?.ok ??
-            h?.cache?.redis?.connected,
+          h?.redis?.connected ??
+          h?.cache?.redis?.ok ??
+          h?.cache?.redis?.connected,
         );
       }
     } catch {}
@@ -274,6 +352,8 @@ async function refrescarEstado() {
 }
 
 function aplicarEstado(datos, redisConectado = redisConectadoCache) {
+  if (!estadoPuerta) estadoPuerta = seleccionar("#doorState");
+  if (!estadoLuces) estadoLuces = seleccionar("#lightsState");
   const conectado = Boolean(datos?.mqtt_connected);
   indicadorMqtt.textContent = `MQTT: ${conectado ? "ON" : "OFF"}`;
   indicadorMqtt.classList.toggle("estado-bueno", conectado);
@@ -291,19 +371,37 @@ function aplicarEstado(datos, redisConectado = redisConectadoCache) {
   const creditos = datos?.credit || {};
   const temporizadores = datos?.timer_sec || {};
 
-  codigosMaquina.forEach((codigo) => actualizarEstadoMaquina(codigo, maquinas[codigo] || "STOP"));
+  codigosMaquina.forEach((codigo) =>
+    actualizarEstadoMaquina(codigo, maquinas[codigo] || "STOP"),
+  );
   codigosMaquina.forEach((codigo) => {
     const fanEl = seleccionar(`[data-fan="${codigo}"]`);
-    if (fanEl) fanEl.textContent = ventiladores[codigo] ? "ON" : "OFF";
+    if (fanEl) fanEl.textContent = ventiladores[codigo] ? "VENTILANDO" : "NOAIR";
     const saldoEl = seleccionar(`[data-saldo="${codigo}"]`);
-    if (saldoEl) saldoEl.textContent = `${Number(creditos[codigo] || 0).toFixed(2)} €`;
+    if (saldoEl)
+      saldoEl.textContent = `${Number(creditos[codigo] || 0).toFixed(2)} €`;
     const puertaSecadoraEl = seleccionar(`[data-dryer-door="${codigo}"]`);
-    if (puertaSecadoraEl) puertaSecadoraEl.textContent = estadoPuertaSecadora[codigo] ? "ABIERTA" : "CERRADA";
+    if (puertaSecadoraEl)
+      puertaSecadoraEl.textContent = estadoPuertaSecadora[codigo]
+        ? "ABIERTA"
+        : "CERRADA";
+    const puertaBtn = seleccionar(`[data-toggle-door="${codigo}"]`);
+    if (puertaBtn) {
+      const tipo = String(puertaBtn.getAttribute("data-machine-type") || "");
+      const estado = textoEstado(maquinas[codigo]);
+      const bloquear = tipo === "LAVADORA" && estado === "EN_MARCHA";
+      puertaBtn.disabled = bloquear;
+      puertaBtn.title = bloquear
+        ? "En lavadoras no se puede Puerta en marcha"
+        : "";
+    }
     const startBtn = seleccionar(`[data-start="${codigo}"]`);
     if (startBtn) {
       const estado = textoEstado(maquinas[codigo]);
       const saldo = Number(creditos[codigo] || 0);
-      startBtn.disabled = !(estado === "PAUSADA" && saldo >= minimoCreditoArranque);
+      startBtn.disabled = !(
+        estado === "PAUSADA" && saldo >= minimoCreditoArranque
+      );
     }
     const timerEl = seleccionar(`[data-timer="${codigo}"]`);
     if (timerEl) {
@@ -325,7 +423,7 @@ function iniciarStreamTiempoReal() {
     const ws = new WebSocket(url);
     ws.onopen = () => {
       wsActiva = true;
-      sseActiva = true;
+      streamActivo = true;
     };
     ws.onmessage = (ev) => {
       try {
@@ -335,16 +433,16 @@ function iniciarStreamTiempoReal() {
     };
     ws.onerror = () => {
       wsActiva = false;
-      sseActiva = false;
+      streamActivo = false;
     };
     ws.onclose = () => {
       wsActiva = false;
-      sseActiva = false;
+      streamActivo = false;
       window.setTimeout(iniciarStreamTiempoReal, 2000);
     };
   } catch {
     wsActiva = false;
-    sseActiva = false;
+    streamActivo = false;
   }
 }
 
@@ -362,7 +460,10 @@ document.addEventListener("click", async (evento) => {
     try {
       await api("/api/machine/credit", { codigo, importe });
       pistaSimulacion.textContent = "";
-      agregarAlarma(`Crédito enviado a ${codigo}: ${importe.toFixed(2)} €.`, "info");
+      agregarAlarma(
+        `Crédito enviado a ${codigo}: ${importe.toFixed(2)} €.`,
+        "info",
+      );
     } catch (err) {
       pistaSimulacion.textContent = `Error crédito (${codigo}): ${err.message}`;
       agregarAlarma(`Error crédito ${codigo}: ${err.message}`, "error");
@@ -395,8 +496,8 @@ document.addEventListener("click", async (evento) => {
     botonPuertaSecadora.disabled = true;
     try {
       await api("/api/machine/toggle-dryer-door", { codigo });
-      pistaSimulacion.textContent = `Acción puerta enviada (${codigo}). Si se abre, la señal al backend llega en 30s.`;
-      agregarAlarma(`Puerta de secadora accionada en ${codigo}.`, "aviso");
+      pistaSimulacion.textContent = `Acción puerta enviada (${codigo}).`;
+      agregarAlarma(`Puerta accionada en ${codigo}.`, "aviso");
     } catch (err) {
       pistaSimulacion.textContent = `Error puerta (${codigo}): ${err.message}`;
       agregarAlarma(`Error puerta ${codigo}: ${err.message}`, "error");
@@ -406,25 +507,35 @@ document.addEventListener("click", async (evento) => {
   }
 });
 
-seleccionar("#doorToggle").addEventListener("click", () => {
-  api("/api/iot/toggle", { dispositivo: "puerta" })
-    .then(() => agregarAlarma("Comando enviado: interruptor puerta.", "info"))
-    .catch((err) => agregarAlarma(`Error interruptor puerta: ${err.message}`, "error"));
-});
-
-seleccionar("#lightsToggle").addEventListener("click", () => {
-  api("/api/iot/toggle", { dispositivo: "luces" })
-    .then(() => agregarAlarma("Comando enviado: interruptor luces.", "info"))
-    .catch((err) => agregarAlarma(`Error interruptor luces: ${err.message}`, "error"));
+document.addEventListener("click", (evento) => {
+  const doorBtn = evento.target.closest("#doorToggle");
+  if (doorBtn) {
+    api("/api/iot/toggle", { dispositivo: "puerta" })
+      .then(() => agregarAlarma("Comando enviado: interruptor puerta.", "info"))
+      .catch((err) =>
+        agregarAlarma(`Error interruptor puerta: ${err.message}`, "error"),
+      );
+    return;
+  }
+  const lightsBtn = evento.target.closest("#lightsToggle");
+  if (lightsBtn) {
+    api("/api/iot/toggle", { dispositivo: "luces" })
+      .then(() => agregarAlarma("Comando enviado: interruptor luces.", "info"))
+      .catch((err) =>
+        agregarAlarma(`Error interruptor luces: ${err.message}`, "error"),
+      );
+  }
 });
 
 botonLimpiarAlarmas.addEventListener("click", limpiarAlarmas);
 
 cargarConfiguracion()
   .then(refrescarEstado)
-  .catch(() => agregarAlarma("No se pudo cargar la configuración del simulador.", "error"));
+  .catch(() =>
+    agregarAlarma("No se pudo cargar la configuración del simulador.", "error"),
+  );
 
 iniciarStreamTiempoReal();
 setInterval(() => {
-  if (!sseActiva) refrescarEstado();
+  if (!streamActivo) refrescarEstado();
 }, 1200);

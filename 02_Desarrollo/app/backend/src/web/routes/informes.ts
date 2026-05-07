@@ -13,7 +13,9 @@ type CicloRow = RowDataPacket & {
   fecha_hora_inicio: Date;
   fecha_hora_fin: Date | null;
   estado_ciclo: string;
-  importe_total_aplicado: string;
+  importe: string;
+  abonado: string;
+  total: string;
   duracion_total_programada_min: number;
 };
 
@@ -107,9 +109,9 @@ async function loadMachineCompareByCondition(
     SELECT
       m.id_maquina,
       m.codigo_visible,
-      CAST(SUM(CASE WHEN ${currentWhere} THEN c.importe_total_aplicado ELSE 0 END) AS CHAR) AS total,
+      CAST(SUM(CASE WHEN ${currentWhere} THEN GREATEST(0, COALESCE(c.importe_total_aplicado,0) - COALESCE(c.importe_bonificado_total,0)) ELSE 0 END) AS CHAR) AS total,
       SUM(CASE WHEN ${currentWhere} THEN 1 ELSE 0 END) AS ciclos,
-      CAST(SUM(CASE WHEN ${prevWhere} THEN c.importe_total_aplicado ELSE 0 END) AS CHAR) AS total_prev,
+      CAST(SUM(CASE WHEN ${prevWhere} THEN GREATEST(0, COALESCE(c.importe_total_aplicado,0) - COALESCE(c.importe_bonificado_total,0)) ELSE 0 END) AS CHAR) AS total_prev,
       SUM(CASE WHEN ${prevWhere} THEN 1 ELSE 0 END) AS ciclos_prev
     FROM maquina m
     LEFT JOIN ciclo c ON c.id_maquina = m.id_maquina
@@ -211,7 +213,9 @@ informesRouter.get("/ciclos", requireAuth, requireLavanderia, async (req, res) =
       c.fecha_hora_inicio,
       c.fecha_hora_fin,
       c.estado_ciclo,
-      CAST(c.importe_total_aplicado AS CHAR) AS importe_total_aplicado,
+      CAST(c.importe_total_aplicado AS CHAR) AS importe,
+      CAST(COALESCE(c.importe_bonificado_total, 0) AS CHAR) AS abonado,
+      CAST(GREATEST(0, COALESCE(c.importe_total_aplicado,0) - COALESCE(c.importe_bonificado_total,0)) AS CHAR) AS total,
       c.duracion_total_programada_min
     FROM ciclo c
     INNER JOIN maquina m ON m.id_maquina = c.id_maquina
@@ -230,7 +234,9 @@ informesRouter.get("/ciclos", requireAuth, requireLavanderia, async (req, res) =
     fecha_hora_inicio: r.fecha_hora_inicio,
     fecha_hora_fin: r.fecha_hora_fin,
     estado_ciclo: r.estado_ciclo,
-    importe_total_aplicado: Number(r.importe_total_aplicado ?? "0"),
+    importe: Number(r.importe ?? "0"),
+    abonado: Number(r.abonado ?? "0"),
+    total: Number(r.total ?? "0"),
     duracion_total_programada_min: Number(r.duracion_total_programada_min ?? 0),
   }));
 
@@ -348,7 +354,7 @@ informesRouter.get("/tramos/diario", requireAuth, requireLavanderia, async (req,
       LPAD(HOUR(c.fecha_hora_inicio), 2, '0') AS slot_key,
       m.id_maquina,
       m.codigo_visible,
-      CAST(SUM(c.importe_total_aplicado) AS CHAR) AS total,
+      CAST(SUM(GREATEST(0, COALESCE(c.importe_total_aplicado,0) - COALESCE(c.importe_bonificado_total,0))) AS CHAR) AS total,
       COUNT(*) AS ciclos
     FROM ciclo c
     INNER JOIN maquina m ON m.id_maquina = c.id_maquina
@@ -383,7 +389,7 @@ informesRouter.get("/tramos/mensual", requireAuth, requireLavanderia, async (req
       LPAD(DAY(c.fecha_hora_inicio), 2, '0') AS slot_key,
       m.id_maquina,
       m.codigo_visible,
-      CAST(SUM(c.importe_total_aplicado) AS CHAR) AS total,
+      CAST(SUM(GREATEST(0, COALESCE(c.importe_total_aplicado,0) - COALESCE(c.importe_bonificado_total,0))) AS CHAR) AS total,
       COUNT(*) AS ciclos
     FROM ciclo c
     INNER JOIN maquina m ON m.id_maquina = c.id_maquina
@@ -413,7 +419,7 @@ informesRouter.get("/tramos/anual", requireAuth, requireLavanderia, async (req, 
       LPAD(MONTH(c.fecha_hora_inicio), 2, '0') AS slot_key,
       m.id_maquina,
       m.codigo_visible,
-      CAST(SUM(c.importe_total_aplicado) AS CHAR) AS total,
+      CAST(SUM(GREATEST(0, COALESCE(c.importe_total_aplicado,0) - COALESCE(c.importe_bonificado_total,0))) AS CHAR) AS total,
       COUNT(*) AS ciclos
     FROM ciclo c
     INNER JOIN maquina m ON m.id_maquina = c.id_maquina

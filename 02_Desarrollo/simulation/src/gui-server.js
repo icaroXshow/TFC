@@ -22,7 +22,6 @@ const SIM_START_MIN_CREDIT = Number(process.env.SIM_START_MIN_CREDIT || "4");
 
 const app = express();
 app.use(express.json({ limit: "256kb" }));
-const sseClients = new Set();
 const wsClients = new Set();
 
 let mqttConnected = false;
@@ -37,7 +36,9 @@ const iotState = {
 };
 const machineCredit = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, 0]));
 const machineTimer = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, 0]));
-const dryerDoorState = Object.fromEntries(SIM_MACHINE_CODES.map((c) => [c, false]));
+const dryerDoorState = Object.fromEntries(
+  SIM_MACHINE_CODES.map((c) => [c, false]),
+);
 const localIso = () => {
   const parts = new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Europe/Madrid",
@@ -70,14 +71,6 @@ function buildSnapshot() {
 
 function broadcastSnapshot() {
   const json = JSON.stringify(buildSnapshot());
-  const payload = `data: ${JSON.stringify(buildSnapshot())}\n\n`;
-  for (const res of sseClients) {
-    try {
-      res.write(payload);
-    } catch {
-      sseClients.delete(res);
-    }
-  }
   for (const ws of wsClients) {
     try {
       ws.send(json);
@@ -123,7 +116,7 @@ mqttClient.on("message", (topic, payloadBuf) => {
     const secs = Number(data?.segundos_restantes_estimados ?? Number.NaN);
     if (Number.isFinite(secs) && secs >= 0)
       machineTimer[code] = Math.floor(secs);
-    if (machineState[code] !== "EN_MARCHA") machineTimer[code] = 0;
+    if (machineState[code] === "STOP") machineTimer[code] = 0;
     lastUpdate = localIso();
     broadcastSnapshot();
     return;
@@ -222,24 +215,6 @@ app.get("/api/state", (_req, res) => {
   res.json(buildSnapshot());
 });
 
-app.get("/api/stream", (req, res) => {
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache, no-transform");
-  res.setHeader("Connection", "keep-alive");
-  res.flushHeaders?.();
-  sseClients.add(res);
-  res.write(`data: ${JSON.stringify(buildSnapshot())}\n\n`);
-  const keepAlive = setInterval(() => {
-    try {
-      res.write(": keepalive\n\n");
-    } catch {}
-  }, 15000);
-  req.on("close", () => {
-    clearInterval(keepAlive);
-    sseClients.delete(res);
-  });
-});
-
 app.post("/api/machine/credit", (req, res) => {
   const codigo = String(req.body?.codigo ?? "")
     .trim()
@@ -282,17 +257,18 @@ app.post("/api/machine/confirm-start", (req, res) => {
 });
 
 app.post("/api/machine/toggle-dryer-door", (req, res) => {
-  const codigo = String(req.body?.codigo ?? "").trim().toUpperCase();
+  const codigo = String(req.body?.codigo ?? "")
+    .trim()
+    .toUpperCase();
   if (!SIM_MACHINE_CODES.includes(codigo))
     return res.status(400).json({ ok: false, error: "BAD_CODIGO" });
-  if (!codigo.startsWith("S"))
-    return res.status(400).json({ ok: false, error: "NOT_DRYER" });
   const ok = publish(`kwl/maquinas/${SIM_LAV_ID}/${codigo}/comando`, {
-    accion: "toggle_puerta_secadora",
+    accion: "toggle_puerta_maquina",
     timestamp: nowIso(),
     origen: "sim_gui",
   });
-  if (!ok) return res.status(503).json({ ok: false, error: "MQTT_NOT_CONNECTED" });
+  if (!ok)
+    return res.status(503).json({ ok: false, error: "MQTT_NOT_CONNECTED" });
   return res.json({ ok: true });
 });
 

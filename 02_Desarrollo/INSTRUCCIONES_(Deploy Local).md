@@ -14,8 +14,8 @@
 5. Una vez desplegado:
     - Comprobar estado en  `http://127.0.0.1:8080/health`
     - Abrir el frontend `http://127.0.0.1:8081/index.html` y loguearse con:
-        User: admin@gmail.com 
-        Pass:admin
+        User: admin@gmail.com || profes.simulador@gmail.com
+        Pass: admin || profes
     - Abrir Adminer `http://127.0.0.1:8082` y loguearse con:
         Server: mariadb
         User: root 

@@ -1,13 +1,14 @@
 import type { RowDataPacket, ResultSetHeader } from "mysql2/promise";
 import { db } from "../db/pool.js";
 import { appendIotActionLog } from "./action-log.js";
-import { publishIotCommand } from "./mqtt.js";
+import { publishIotCommand, publishMachineCommand } from "./mqtt.js";
 
 type ConfigRow = RowDataPacket & {
   id_lavanderia: number | null;
   clave: string;
   valor: string;
 };
+type MachineRow = RowDataPacket & { id_maquina: number; codigo_visible: string };
 
 type IoTState = {
   puerta_abierta: boolean;
@@ -114,7 +115,7 @@ export function startIoTScheduler() {
         SELECT id_lavanderia, clave, valor
         FROM configuracion
         WHERE ambito='LAVANDERIA'
-          AND clave IN ('iot_schedule','iot_state','iot_last')
+          AND clave IN ('iot_schedule','iot_state','iot_last','iot_store_open_machines','iot_store_close_machines')
         `,
       );
 
@@ -130,6 +131,8 @@ export function startIoTScheduler() {
       for (const [idLav, cfg] of byLav.entries()) {
         const schedule = safeJsonParse<IoTSchedule>(cfg.iot_schedule ?? "{}", {});
         if (!schedule || (!schedule.puerta && !schedule.luces && !schedule.ventilacion)) continue;
+        const openMachinesCfg = safeJsonParse<number[]>(cfg.iot_store_open_machines ?? "[]", []);
+        const closeMachinesCfg = safeJsonParse<number[]>(cfg.iot_store_close_machines ?? "[]", []);
 
         const state = safeJsonParse<IoTState>(cfg.iot_state ?? "{}", {
           puerta_abierta: false,
@@ -204,6 +207,60 @@ export function startIoTScheduler() {
         await maybe("Puerta", "puerta_on", "puerta_off", schedule.puerta, "puerta_abierta");
         await maybe("Luces", "luces_on", "luces_off", schedule.luces, "luces_encendidas");
         await maybe("Ventilación", "ventilacion_on", "ventilacion_off", schedule.ventilacion, "ventilacion_encendida");
+
+        const openTime = schedule?.puerta?.on || schedule?.luces?.on || null;
+        if (openTime && openTime === hhmm && shouldRun(last, "maquinas_open", dateKey, hhmm) && openMachinesCfg.length) {
+          const idsCsv = openMachinesCfg.join(",");
+          const [mRows] = await db.query<MachineRow[]>(
+            "SELECT id_maquina, codigo_visible FROM maquina WHERE id_lavanderia = :idLav AND FIND_IN_SET(id_maquina, :idsCsv) > 0",
+            { idLav, idsCsv },
+          );
+          for (const m of mRows) {
+            await db.query<ResultSetHeader>("UPDATE maquina SET estado_actual = 'PAUSADA' WHERE id_maquina = :id", { id: m.id_maquina });
+            publishMachineCommand(m.codigo_visible, {
+              accion: "encender_rele",
+              id_maquina: m.id_maquina,
+              ts: new Date().toISOString(),
+              origen: "auto_schedule_machines_open",
+            }, idLav);
+            await appendIotActionLog(idLav, {
+              dispositivo: "maquina",
+              accion: "on",
+              ts: new Date().toISOString(),
+              by: undefined,
+              origen: `auto_schedule_machine_open:${m.codigo_visible}`,
+            });
+          }
+          last.maquinas_open = `${dateKey} ${hhmm}`;
+          await auditSystem(idLav, "IOT_SCHEDULE_MACHINES_OPEN", `Máquinas ON (${hhmm}): ${mRows.map((x) => x.codigo_visible).join(", ")}`);
+        }
+
+        const closeTime = schedule?.puerta?.off || schedule?.luces?.off || null;
+        if (closeTime && closeTime === hhmm && shouldRun(last, "maquinas_close", dateKey, hhmm) && closeMachinesCfg.length) {
+          const idsCsv = closeMachinesCfg.join(",");
+          const [mRows] = await db.query<MachineRow[]>(
+            "SELECT id_maquina, codigo_visible FROM maquina WHERE id_lavanderia = :idLav AND FIND_IN_SET(id_maquina, :idsCsv) > 0",
+            { idLav, idsCsv },
+          );
+          for (const m of mRows) {
+            await db.query<ResultSetHeader>("UPDATE maquina SET estado_actual = 'STOP' WHERE id_maquina = :id", { id: m.id_maquina });
+            publishMachineCommand(m.codigo_visible, {
+              accion: "apagar_rele",
+              id_maquina: m.id_maquina,
+              ts: new Date().toISOString(),
+              origen: "auto_schedule_machines_close",
+            }, idLav);
+            await appendIotActionLog(idLav, {
+              dispositivo: "maquina",
+              accion: "off",
+              ts: new Date().toISOString(),
+              by: undefined,
+              origen: `auto_schedule_machine_close:${m.codigo_visible}`,
+            });
+          }
+          last.maquinas_close = `${dateKey} ${hhmm}`;
+          await auditSystem(idLav, "IOT_SCHEDULE_MACHINES_CLOSE", `Máquinas OFF (${hhmm}): ${mRows.map((x) => x.codigo_visible).join(", ")}`);
+        }
 
         if (hhmm === "00:00" && shouldRun(last, "midnight_reset", dateKey, hhmm)) {
           let midnightChanged = false;

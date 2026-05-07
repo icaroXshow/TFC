@@ -72,7 +72,7 @@ export const env = {
     password: process.env.REDIS_PASSWORD ?? "",
     db: Number(process.env.REDIS_DB ?? "0"),
     enabled: (process.env.REDIS_ENABLED ?? "true").toLowerCase() === "true",
-    timeoutMs: Number(process.env.REDIS_TIMEOUT_MS ?? "500"),
+    timeoutMs: Number(process.env.REDIS_TIMEOUT_MS ?? "1500"),
     keyPrefix: process.env.REDIS_KEY_PREFIX ?? "kwl",
   },
 };
