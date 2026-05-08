@@ -6,6 +6,8 @@ import http from "node:http";
 import { WebSocketServer } from "ws";
 
 const MQTT_URL = process.env.MQTT_URL || "mqtt://mqtt:1883";
+const BACKEND_HEALTH_URL =
+  process.env.SIM_BACKEND_HEALTH_URL || "http://backend:8080/health";
 const PORT = Number(process.env.SIM_GUI_PORT || "8090");
 const SIM_MACHINE_CODES = String(
   process.env.SIM_MACHINE_CODES || "L1,L2,L3,S1,S2",
@@ -33,6 +35,7 @@ app.use(express.json({ limit: "256kb" }));
 const wsClients = new Set();
 
 let mqttConnected = false;
+let redisConnected = false;
 const machineState = Object.fromEntries(
   SIM_MACHINE_CODES.map((c) => [c, "STOP"]),
 );
@@ -67,6 +70,7 @@ function buildSnapshot() {
   return {
     ok: true,
     mqtt_connected: mqttConnected,
+    redis_connected: redisConnected,
     machines: machineState,
     fan: fanState,
     dryer_door: dryerDoorState,
@@ -75,6 +79,23 @@ function buildSnapshot() {
     timer_sec: machineTimer,
     last_update: lastUpdate,
   };
+}
+
+async function refreshRedisHealth() {
+  try {
+    const res = await fetch(BACKEND_HEALTH_URL);
+    if (!res.ok) return;
+    const h = await res.json();
+    redisConnected = Boolean(
+      h?.redis?.ok ??
+        h?.redis?.connected ??
+        h?.cache?.redis?.ok ??
+        h?.cache?.redis?.connected ??
+        false,
+    );
+  } catch {
+    // mantenemos último valor para evitar falsos OFF por cortes puntuales
+  }
 }
 
 function broadcastSnapshot() {
@@ -226,6 +247,7 @@ app.get("/health", (_req, res) => {
   res.json({
     ok: true,
     mqtt: { connected: mqttConnected, url: MQTT_URL },
+    redis: { connected: redisConnected, backend_health_url: BACKEND_HEALTH_URL },
     machine_codes: SIM_MACHINE_CODES,
     lav_id: SIM_LAV_ID,
   });
@@ -336,3 +358,8 @@ wss.on("connection", (ws) => {
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`sim-gui listening on http://0.0.0.0:${PORT}`);
 });
+
+setInterval(() => {
+  refreshRedisHealth().catch(() => {});
+}, 3000);
+refreshRedisHealth().catch(() => {});

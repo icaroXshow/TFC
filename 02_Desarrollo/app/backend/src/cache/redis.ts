@@ -154,35 +154,12 @@ export async function redisDel(key: string): Promise<void> {
 
 export async function redisPingOk(): Promise<boolean> {
   if (!env.redis.enabled) return false;
-  return new Promise((resolve) => {
-    const sock = net.createConnection({ host: env.redis.host, port: env.redis.port });
-    let settled = false;
-    const done = (ok: boolean) => {
-      if (settled) return;
-      settled = true;
-      try {
-        sock.end();
-      } catch {
-        // ignore
-      }
-      resolve(ok);
-    };
-    sock.setTimeout(Math.max(300, env.redis.timeoutMs));
-    sock.on("timeout", () => done(false));
-    sock.on("error", () => done(false));
-    sock.on("data", (buf) => {
-      const txt = buf.toString("utf8");
-      done(txt.includes("PONG") || txt.startsWith("+PONG"));
-    });
-    sock.on("connect", () => {
-      try {
-        // Inline protocol is enough for health-check and avoids RESP fragmentation issues.
-        sock.write("PING\r\n");
-      } catch {
-        done(false);
-      }
-    });
-  });
+  try {
+    const pong = await rawCommand(["PING"]);
+    return String(pong || "").toUpperCase() === "PONG";
+  } catch {
+    return false;
+  }
 }
 
 export function getRedisHealthSnapshot(ok: boolean): RedisHealth {

@@ -1,8 +1,5 @@
 # Bitácora de implementación (TFC)
 
-Este documento guarda **qué se ha creado**, **cómo se ha hecho** y **por qué**,
-de forma que pueda copiarse/adaptarse en la memoria del TFC.
-
 ## 2026-04-17 — Frontend: separación público/privado y mejoras responsive
 
 ### Qué

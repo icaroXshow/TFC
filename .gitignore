@@ -77,7 +77,6 @@ composer.lock
 # Archivos y directorios del repo (proyecto)
 ###############################################
 Recursos/
-
 # Fotos y programas: se excluyen a nivel de repo
 03_Recursos/_Fotos/
 03_Recursos/Programas/
@@ -96,11 +95,11 @@ Lavanderia QWL.pdf
 Backupper/
 Acceso.md
 real/
-
+_VERSIONES/
 # Carpeta de trabajo / configuraciones locales
 02_Desarrollo/Versiones
 02_Desarrollo/context
 
 # Temporal/Tareas
 TODO.md
-
+00_Presentacion/Acceso/

@@ -318,25 +318,32 @@ function comprobarAlarmas(datos) {
 
 async function refrescarEstado() {
   try {
-    let redisConectado = false;
-    try {
-      const backendHealth = await fetch(
-        `${window.location.protocol}//${window.location.hostname}:8080/health`,
-      );
-      if (backendHealth.ok) {
-        const h = await backendHealth.json();
-        redisConectado = Boolean(
-          h?.redis?.ok ??
-          h?.redis?.connected ??
-          h?.cache?.redis?.ok ??
-          h?.cache?.redis?.connected,
-        );
-      }
-    } catch {}
-
-    redisConectadoCache = redisConectado;
     const respuesta = await fetch("/api/state");
     const datos = await respuesta.json();
+    const redisDesdeGui = datos?.redis_connected;
+    if (typeof redisDesdeGui === "boolean") {
+      redisConectadoCache = redisDesdeGui;
+    } else {
+      let redisConectado = redisConectadoCache;
+      try {
+        const backendHealth = await fetch(
+          `${window.location.protocol}//${window.location.hostname}:8080/health`,
+        );
+        if (backendHealth.ok) {
+          const h = await backendHealth.json();
+          redisConectado = Boolean(
+            h?.redis?.ok ??
+              h?.redis?.connected ??
+              h?.cache?.redis?.ok ??
+              h?.cache?.redis?.connected ??
+              redisConectadoCache,
+          );
+          redisConectadoCache = redisConectado;
+        }
+      } catch {
+        // no forzar OFF por errores de red/cors
+      }
+    }
     aplicarEstado(datos, redisConectadoCache);
   } catch {
     indicadorMqtt.textContent = "MQTT: OFF";
