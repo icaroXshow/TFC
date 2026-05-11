@@ -32,7 +32,7 @@ Interfaz web responsive que permite:
 - Visualización de cámaras
 
 ## Backend
-API desarrollada en PHP que gestiona:
+API desarrollada en Node.js + TypeScript que gestiona:
 
 - Lógica del sistema
 - Usuarios
@@ -43,7 +43,7 @@ API desarrollada en PHP que gestiona:
 Servicios utilizados:
 
 - Nginx
-- PHP
+- Node.js
 - MariaDB
 - Redis
 - Mosquitto (MQTT)
@@ -76,7 +76,7 @@ Controladores ESP32 encargados de:
 Frontend (Web)
         │
         ▼
-Backend (API PHP)
+Backend (API Node.js)
         │
  ┌──────┼────────┐
  ▼      ▼        ▼

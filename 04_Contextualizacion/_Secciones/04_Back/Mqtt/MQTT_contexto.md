@@ -28,7 +28,7 @@ Flujo principal:
 MQTT no sustituye persistencia ni cache:
 
 - `MariaDB (VM_DATA)` persiste auditoria, estados consolidados y trazabilidad
-- `Redis (VM_CORE)` mantiene estado rapido y soporte de tiempo real
+- `Redis (VM_DATA)` mantiene estado rapido y soporte de tiempo real
 - `MQTT` transporta comandos y señales de IoT
 
 ## 4. Estructura de topics

@@ -1,47 +1,76 @@
-@Requisitos:
+# Justificación del Diseño de Base de Datos
+
+## Requisitos cubiertos
+
+El modelo se diseñó para cubrir los requisitos funcionales del sistema real:
+
 - varias lavanderías
 - varias máquinas por lavandería
-- ciclos con precio base configurable
-- ampliaciones durante el ciclo
-- intervenciones manuales desde web
-- contabilidad separando dinero real de bonificaciones
-- histórico y auditoría
-- posibilidad de subir precios en el futuro sin romper el histórico
+- tarifas modificables sin romper histórico
+- ciclos con ampliaciones
+- operaciones manuales desde panel
+- contabilidad separando cliente y bonificación
+- auditoría y trazabilidad técnica
 
-@Reglas de negocio 
+---
 
-Estas son las que doy por cerradas para el diseño:
+## Decisiones clave
 
-- Operación de máquina
-- Cada máquina pertenece a una lavandería.
-- Cada máquina tiene un precio de arranque.
-- Cada arranque da un tiempo base.
-- Durante el ciclo, cada 1 euro añade 9 minutos.
-- El tiempo extra es igual para todas las máquinas.
-- El precio base actual es 4,50 €.
-- El tiempo base actual es 37 min.
-- Los precios pueden cambiar en el futuro.
+### 1. Separar ciclo y movimiento económico
 
-@Registro económico
+Se eligió separar:
 
-- El dinero introducido antes del arranque se guarda acumulado, no moneda a moneda.
+- `ciclo` (hecho operativo)
+- `movimiento_maquina` (hecho económico)
 
-- Si el dueño añade saldo desde web:
+Motivo:
 
-    con máquina en STOP: añade el importe de arranque completo
-    con máquina en EN_MARCHA: añade 1 euro
+- permite registrar múltiples aportaciones por ciclo
+- diferencia origen (`MONEDERO` vs `WEB_MANUAL`)
+- mejora precisión contable y de informes
 
-- Lo añadido desde web, aunque la máquina lo reciba como saldo normal, contablemente se registra como bonificación/descuento manual.
-- El cliente paga por ciclo, no existe monedero de cliente ni saldo persistente de cliente.
+### 2. Guardar snapshot tarifario en ciclo
 
-@Idea central del diseño
+Aunque exista `tarifa_maquina`, el ciclo almacena los importes y tiempos aplicados.
 
-La base de datos se apoya en dos hechos principales:
+Motivo:
 
-1. ciclo: Representa una ejecución real de máquina.
-2. movimiento_maquina: Representa cada entrada económica aplicada a la máquina. Ese segundo punto es la clave del invento. 
-Porque ahí distinguimos:
-   - dinero real del cliente
-   - bonificación manual del dueño
-   - aporte de arranque
-   - aporte durante el ciclo
+- protege histórico ante cambios de tarifas
+- evita recalcular condiciones antiguas
+
+### 3. Mantener trazabilidad explícita
+
+Se separan `auditoria` y `log_maquina`.
+
+Motivo:
+
+- `auditoria`: acciones humanas/administrativas
+- `log_maquina`: eventos técnicos/operativos
+
+Esto simplifica análisis de incidencias y responsabilidades.
+
+### 4. Configuración por ámbito
+
+La tabla `configuracion` soporta claves `GLOBAL` y `LAVANDERIA`.
+
+Motivo:
+
+- permite parametrización sin cambios de esquema
+- facilita ajustes por tienda
+
+---
+
+## Beneficios del modelo
+
+- consistencia operativa
+- histórico fiable
+- consultas de informes directas
+- escalabilidad a múltiples lavanderías
+- desacoplo entre lógica de negocio y persistencia
+
+---
+
+## Trade-offs asumidos
+
+- Se acepta redundancia controlada en `ciclo` para preservar histórico y rendimiento.
+- El modelo prioriza trazabilidad y claridad de negocio frente a máxima compacidad.

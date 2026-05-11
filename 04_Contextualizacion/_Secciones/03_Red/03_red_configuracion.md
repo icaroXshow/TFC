@@ -54,7 +54,7 @@ El acceso remoto se realizará mediante WireGuard, que MikroTik documenta en Rou
 |---------|----|---------|
 | Router MikroTik | 192.168.1.1 | Gateway |
 | Proxmox | 192.168.1.50 | Host de virtualización |
-| VM_CORE | 192.168.1.51 | Backend + Web + Redis |
+| VM_CORE | 192.168.1.51 | Backend + Web + Simulador |
 | VM_DATA | 192.168.1.52 | MariaDB |
 | LXC_MQTT | 192.168.1.53 | Broker MQTT |
 

@@ -77,7 +77,7 @@ Ventajas principales:
 - estabilidad
 - buen rendimiento
 - software libre
-- integración sencilla con PHP
+- integración directa con Node.js
 
 ---
 

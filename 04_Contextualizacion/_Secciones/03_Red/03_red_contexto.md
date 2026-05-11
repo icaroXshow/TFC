@@ -87,7 +87,7 @@ El servidor ejecuta varios sistemas virtuales para separar los servicios.
 |-------------|------|--------|
 | Router MikroTik | 192.168.1.1 | Gateway |
 | Proxmox | 192.168.1.50 | Host |
-| VM_CORE | 192.168.1.51 | Backend |
+| VM_CORE | 192.168.1.51 | Backend + Web |
 | VM_DATA | 192.168.1.52 | Base de datos |
 | LXC_MQTT | 192.168.1.53 | Broker MQTT |
 
@@ -129,12 +129,12 @@ IP: 192.168.1.51
 Servicios:
 
 - Nginx
-- Backend PHP
+- Backend Node.js
 - Redis
 
 Función:
 
-- servir la aplicación web
+- servir la aplicación web en puerto 8081
 - ejecutar la lógica del sistema
 - coordinar la comunicación entre servicios
 
@@ -206,7 +206,7 @@ Usuario
 │  
 Panel Web  
 │  
-Backend (VM_CORE)  
+Backend (VM_CORE, Node.js)  
 │  
 MQTT (LXC_MQTT)  
 │  

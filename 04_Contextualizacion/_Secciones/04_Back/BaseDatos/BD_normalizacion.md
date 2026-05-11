@@ -1,38 +1,62 @@
-Normalización del modelo
+# Normalización del Modelo
 
-El modelo de datos propuesto cumple de forma general las tres primeras formas normales. En primer lugar, se cumple la primera forma normal al almacenarse únicamente valores atómicos y evitarse grupos repetidos. En segundo lugar, se cumple la segunda forma normal, ya que los atributos no clave dependen completamente de la clave primaria de cada tabla. Finalmente, se cumple la tercera forma normal, al haberse separado las distintas responsabilidades del sistema en entidades independientes, evitando dependencias transitivas innecesarias.
+El modelo de datos de KWL cumple de forma general 1FN, 2FN y 3FN, con redundancia controlada donde aporta valor operativo.
 
-No obstante, se ha introducido redundancia controlada en algunos atributos consolidados de la tabla ciclo, como el importe total aplicado o la duración total programada, con el objetivo de mejorar el rendimiento de consulta, simplificar la generación de informes y preservar el histórico exacto del estado del sistema en el momento de ejecución.
+---
 
-# Primera Forma Normal (1FN)
+## Primera Forma Normal (1FN)
 
 Se cumple porque:
-- todas las tablas tienen clave primaria
+
+- cada tabla tiene clave primaria
+- cada campo almacena valor atómico
 - no hay grupos repetidos en una misma fila
-- cada campo almacena un valor atómico
-- no se guardan listas dentro de una sola columna
 
-@ Ejemplo: en movimiento_maquina cada movimiento se guarda como un registro independiente, en lugar de meter varios movimientos dentro de un solo campo del ciclo.
+Ejemplo:
 
-# Segunda Forma Normal (2FN)
+- cada aportación económica se registra como fila independiente en `movimiento_maquina`.
+
+---
+
+## Segunda Forma Normal (2FN)
 
 Se cumple porque:
-- todas las tablas usan clave primaria simple
-- los atributos no clave dependen completamente de su clave primaria
+
+- el modelo usa claves primarias simples
+- los atributos no clave dependen de la clave completa de su tabla
 - no hay dependencias parciales
 
-@ Ejemplo: en maquina, atributos como tipo_maquina, estado_actual o activa dependen de id_maquina, no de una parte de una clave compuesta.
+Ejemplo:
 
-# Tercera Forma Normal (3FN)
+- en `maquina`, `tipo_maquina`, `estado_actual` y `activa` dependen de `id_maquina`.
 
-Se cumple en general porque:
-- no se almacenan datos que dependan de otros atributos no clave
-- se separan responsabilidades entre tablas
-- se evita mezclar información operativa, económica, técnica y de auditoría
+---
 
-@ Ejemplos claros:
-   ciclo guarda el uso real de la máquina
-   movimiento_maquina guarda el dinero o bonificación aplicada
-   log_maquina guarda eventos técnicos
-   auditoria guarda acciones humanas
-   tarifa_maquina separa la vigencia de precios para conservar histórico
+## Tercera Forma Normal (3FN)
+
+Se cumple en términos prácticos porque:
+
+- cada entidad mantiene una responsabilidad clara
+- se minimizan dependencias transitivas no necesarias
+- se evita mezclar hechos de naturaleza distinta
+
+Separación aplicada:
+
+- operación: `ciclo`
+- economía: `movimiento_maquina`
+- técnico: `log_maquina`
+- administrativo: `auditoria`
+
+---
+
+## Redundancia controlada (decisión consciente)
+
+Se mantiene redundancia en `ciclo` (por ejemplo: importes y duración total aplicada).
+
+Motivo:
+
+- preservar histórico exacto del momento de ejecución
+- simplificar informes
+- evitar recomputar condiciones tarifarias históricas
+
+Esta redundancia no rompe la coherencia funcional y está justificada por el dominio.

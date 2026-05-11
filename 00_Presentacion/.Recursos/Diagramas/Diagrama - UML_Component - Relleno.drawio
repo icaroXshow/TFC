@@ -1,0 +1,166 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.5.2 Chrome/142.0.7444.265 Electron/39.6.1 Safari/537.36" version="29.5.2">
+  <diagram name="Página-1" id="diag2">
+    <mxGraphModel dx="1186" dy="811" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1300" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t3" value="UML de componentes — KWL/QWL" style="rounded=0;whiteSpace=wrap;html=1;shadow=0;fontSize=16;fontStyle=1;strokeColor=none;fillColor=none;fontSize=22;" vertex="1" parent="1">
+          <mxGeometry x="20" y="15" width="1860" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="t4" value="Separación por capas: interfaz web, API/backend, persistencia/cache, mensajería IoT y dispositivos." style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="60" y="62" width="1600" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="v5" value="Frontend web estático" style="swimlane;html=1;rounded=1;startSize=34;fontSize=15;fontStyle=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="80" y="130" width="420" height="470" as="geometry"/>
+        </mxCell>
+        <mxCell id="v6" value="Público&lt;br&gt;index, about, contact, faqs" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="120" y="200" width="340" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="v7" value="Panel admin&lt;br&gt;inicio, máquinas, caja, informes" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="120" y="300" width="340" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="v8" value="Módulos JS&lt;br&gt;admin.js + núcleo dashboard/máquinas&lt;br&gt;iot, cámara, usuarios" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="120" y="410" width="340" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="v9" value="CSS responsive&lt;br&gt;public.css / admin.css" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="120" y="535" width="340" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="v10" value="Backend Node.js / TypeScript / Express" style="swimlane;html=1;rounded=1;startSize=34;fontSize=15;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="590" y="130" width="680" height="780" as="geometry"/>
+        </mxCell>
+        <mxCell id="v11" value="API Express&lt;br&gt;server.ts + web/api.ts&lt;br&gt;helmet, cors, morgan" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="625" y="200" width="280" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="v12" value="Autenticación&lt;br&gt;middleware, token, bcrypt&lt;br&gt;roles ADMIN/SUPERADMIN" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="940" y="200" width="290" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="v13" value="Rutas Máquinas&lt;br&gt;listar, iniciar, detener,&lt;br&gt;reiniciar, ampliar, crédito" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="625" y="325" width="280" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="v14" value="Rutas IoT + Scheduler&lt;br&gt;puerta, luces, ventilación,&lt;br&gt;apertura/cierre tienda" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="940" y="325" width="290" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="v15" value="Caja / Informes&lt;br&gt;día, semana, mes, año,&lt;br&gt;tramos y evolución" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="625" y="470" width="280" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="v16" value="Usuarios / Lavanderías&lt;br&gt;permisos, alta local,&lt;br&gt;configuración" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="940" y="470" width="290" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="v17" value="Camera proxy&lt;br&gt;stream, PTZ, zoom,&lt;br&gt;relay/pulse Mobotix" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="625" y="605" width="280" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="v18" value="Cliente MQTT&lt;br&gt;publishMachineCommand&lt;br&gt;publishIotCommand&lt;br&gt;procesa estado/evento" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="940" y="605" width="290" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="v19" value="DB Pool / Repositorio SQL&lt;br&gt;mysql2/promise" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="625" y="765" width="280" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="v20" value="Errores + auditoría + logs&lt;br&gt;respuestas ok/error consistentes" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="940" y="765" width="290" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="v21" value="Infraestructura y servicios externos" style="swimlane;html=1;rounded=1;startSize=34;fontSize=15;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1380" y="130" width="430" height="780" as="geometry"/>
+        </mxCell>
+        <mxCell id="v22" value="Nginx&lt;br&gt;sirve frontend + proxy API" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="200" width="330" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="v23" value="MariaDB&lt;br&gt;kwl_lavanderia&lt;br&gt;histórico, caja, auditoría" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;shape=cylinder3d;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="310" width="330" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="v24" value="Redis&lt;br&gt;cache estado/config IoT&lt;br&gt;fallback a BD" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;shape=cylinder3d;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="435" width="330" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="v25" value="Mosquitto MQTT&lt;br&gt;topics kwl/.../comando/estado/evento" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="555" width="330" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="v26" value="ESP32 / Simulador&lt;br&gt;máquinas, puerta, luces, ventilación" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="680" width="330" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="v27" value="Cámara IP / Mobotix&lt;br&gt;stream + relés" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="805" width="330" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e28" value="HTTP/JSON" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v6" target="v11">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e29" value="HTTP/JSON" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v7" target="v11">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e30" value="HTTP/JSON" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v8" target="v11">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e31" value="sirve" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="v22" target="v6">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e32" value="usa" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v11" target="v12">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e33" value="route handler" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v11" target="v13">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e34" value="route handler" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v11" target="v14">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e35" value="route handler" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v11" target="v15">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e36" value="route handler" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v11" target="v16">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e37" value="route handler" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v11" target="v17">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e38" value="SQL" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v13" target="v19">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e39" value="SQL" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v14" target="v19">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e40" value="SQL" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v15" target="v19">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e41" value="SQL" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v16" target="v19">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e42" value="SQL" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v17" target="v19">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e43" value="SQL" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v18" target="v19">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e44" value="SQL" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v20" target="v19">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e45" value="mysql2" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v19" target="v23">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e46" value="cache" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v14" target="v24">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e47" value="cache runtime" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v18" target="v24">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e48" value="MQTT" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v13" target="v18">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e49" value="MQTT" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v14" target="v18">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e50" value="publish/subscribe" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v18" target="v25">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e51" value="comandos / eventos" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v25" target="v26">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e52" value="HTTP cámara" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v17" target="v27">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="v53" value="&lt;b&gt;Regla arquitectónica&lt;/b&gt;&lt;br&gt;El frontend nunca accede directamente a MariaDB, Redis, MQTT ni hardware. Toda acción pasa por la API." style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="80" y="960" width="720" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="v54" value="&lt;b&gt;Persistencia&lt;/b&gt;&lt;br&gt;MariaDB = verdad histórica. Redis = estado operativo rápido. MQTT = comunicación con dispositivos." style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="880" y="960" width="720" height="80" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

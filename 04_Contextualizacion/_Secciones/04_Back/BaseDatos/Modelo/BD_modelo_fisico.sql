@@ -186,7 +186,7 @@ CREATE TABLE movimiento_maquina (
     INDEX idx_movimiento_tipo (tipo_movimiento),
     INDEX idx_movimiento_origen (origen_movimiento),
     INDEX idx_movimiento_bonificacion (es_bonificacion),
-    CONSTRAINT chk_movimiento_tipo CHECK (tipo_movimiento IN ('ARRANQUE', 'AMPLIACION_TIEMPO')),
+    CONSTRAINT chk_movimiento_tipo CHECK (tipo_movimiento IN ('ARRANQUE', 'AMPLIACION_TIEMPO', 'CREDITO')),
     CONSTRAINT chk_movimiento_origen CHECK (origen_movimiento IN ('MONEDERO', 'WEB_MANUAL')),
     CONSTRAINT chk_movimiento_importe CHECK (importe > 0),
     CONSTRAINT chk_movimiento_minutos_extra CHECK (minutos_extra_generados >= 0)

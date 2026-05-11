@@ -31,7 +31,7 @@ Distribución de máquinas:
 | Sistema | IP | Función |
 |--------|------|--------|
 | Proxmox | 192.168.1.50 | Host de virtualización |
-| VM_CORE | 192.168.1.51 | Backend + Web + Redis |
+| VM_CORE | 192.168.1.51 | Backend + Web + Simulador |
 | VM_DATA | 192.168.1.52 | Base de datos |
 | LXC_MQTT | 192.168.1.53 | Broker MQTT |
 
@@ -47,7 +47,7 @@ VM_CORE ejecuta:
 - backend del sistema
 - API
 - lógica de negocio
-- integración con Redis
+- integración con Redis (VM_DATA)
 - integración con MariaDB
 - integración con MQTT
 
@@ -79,8 +79,8 @@ Servicios instalados en VM_CORE:
 
 ## Backend
 
-- PHP 8.3
-- PHP-FPM
+- Node.js 20+
+- Node runtime
 
 ## Estado / cache
 
@@ -149,7 +149,7 @@ El panel web del sistema se sirve desde VM_CORE.
 
 Acceso local:
 
-http://192.168.1.51
+http://192.168.1.51:8081
 
 Acceso remoto:
 
@@ -190,8 +190,8 @@ Esto permite centralizar el control del sistema, registrar acciones críticas y 
 En el estado actual de la infraestructura, VM_CORE dispone de:
 
 - Nginx operativo
-- PHP 8.3 y PHP-FPM operativos
-- Redis operativo
+- Node.js 20+ y Node runtime operativos
+- Redis operativo en VM_DATA
 - conectividad con MariaDB en VM_DATA
 - conectividad con Mosquitto en LXC_MQTT
 - acceso web permitido desde LAN y desde la red VPN

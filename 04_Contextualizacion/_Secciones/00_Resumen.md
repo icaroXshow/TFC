@@ -45,14 +45,14 @@ El sistema se ejecutará completamente en infraestructura local.
 
 - Proxmox (virtualización)
 - Linux (servidor)
-- PHP (backend)
+- Node.js + TypeScript (backend)
 - HTML / CSS / JavaScript (frontend)
 - MariaDB (base de datos)
 - Redis (cache y tiempo real)
 - Mosquitto MQTT (comunicación IoT)
 - ESP32 (controladores físicos)
 - WireGuard (VPN)
-- WebSockets (tiempo real)
+- WebSockets (tiempo real en panel admin)
 
 ---
 

@@ -139,7 +139,7 @@ El servidor ejecuta varias instancias virtualizadas para separar los servicios.
 | Sistema | IP | Función |
 |-------|------|--------|
 | Proxmox | 192.168.1.50  | Host de virtualización |
-| VM_CORE | 192.168.1.51  | Backend + Web + Redis |
+| VM_CORE | 192.168.1.51  | Backend + Web + Simulador |
 | VM_DATA | 192.168.1.52  | Base de datos |
 | LXC_MQTT | 192.168.1.53 | Broker MQTT |
 | LXC_DNS | 192.168.1.5   | Servidor DNS |
@@ -150,7 +150,7 @@ El servidor ejecuta varias instancias virtualizadas para separar los servicios.
 Servicios:
 
 - Nginx
-- Backend PHP
+- Backend Node.js
 - Redis
 
 Función:

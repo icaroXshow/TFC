@@ -1,0 +1,141 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.5.2 Chrome/142.0.7444.265 Electron/39.6.1 Safari/537.36" version="29.5.2">
+  <diagram name="Página-1" id="diag2">
+    <mxGraphModel dx="1186" dy="811" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t3" value="Diagrama de red e infraestructura — KWL/QWL" style="rounded=0;whiteSpace=wrap;html=1;shadow=0;fontSize=16;fontStyle=1;strokeColor=none;fillColor=none;fontSize=22;" vertex="1" parent="1">
+          <mxGeometry x="20" y="15" width="1860" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="t4" value="Arquitectura local con acceso remoto por VPN. El backend decide, los dispositivos ejecutan por MQTT y reportan estado/eventos." style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="60" y="62" width="1600" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="v5" value="&lt;b&gt;Administrador&lt;/b&gt;&lt;br&gt;Navegador / móvil&lt;br&gt;Panel web" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="80" y="170" width="210" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="v6" value="&lt;b&gt;Cliente futuro&lt;/b&gt;&lt;br&gt;Consulta estado/pago&lt;br&gt;app/web" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="310" width="210" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="v7" value="&lt;b&gt;Internet&lt;/b&gt;&lt;br&gt;solo acceso controlado" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;ellipse;shape=cloud;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="360" y="210" width="200" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="v8" value="&lt;b&gt;VPN WireGuard&lt;/b&gt;&lt;br&gt;túnel administrativo&lt;br&gt;red privada" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="650" y="220" width="230" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="v9" value="&lt;b&gt;Router / Firewall&lt;/b&gt;&lt;br&gt;LAN lavandería&lt;br&gt;NAT + reglas" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="980" y="220" width="230" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="v10" value="&lt;b&gt;Switch LAN&lt;/b&gt;&lt;br&gt;Ethernet local&lt;br&gt;servidor + IoT + cámaras" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="220" width="250" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="e11" value="HTTPS/VPN" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v5" target="v7">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e12" value="futuro HTTPS" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="v6" target="v7">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e13" value="túnel" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v7" target="v8">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e14" value="LAN segura" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v8" target="v9">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e15" value="RJ45" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v9" target="v10">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="v16" value="Servidor local Proxmox / host físico" style="swimlane;html=1;rounded=1;shadow=0;startSize=34;fontSize=15;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="150" y="500" width="1220" height="540" as="geometry"/>
+        </mxCell>
+        <mxCell id="v17" value="VM_CORE" style="swimlane;html=1;rounded=1;startSize=28;fontSize=14;fontStyle=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="190" y="570" width="360" height="390" as="geometry"/>
+        </mxCell>
+        <mxCell id="v18" value="&lt;b&gt;Nginx&lt;/b&gt;&lt;br&gt;frontend estático&lt;br&gt;proxy API&lt;br&gt;puertos 8080/8081 demo" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="220" y="625" width="300" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="v19" value="&lt;b&gt;Backend Node.js / Express&lt;/b&gt;&lt;br&gt;API REST, auth, lógica negocio&lt;br&gt;MQTT client + scheduler" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="220" y="730" width="300" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="v20" value="&lt;b&gt;Redis&lt;/b&gt;&lt;br&gt;estado operativo&lt;br&gt;cache IoT" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;shape=cylinder3d;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="250" y="860" width="230" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="v21" value="VM_DATA" style="swimlane;html=1;rounded=1;startSize=28;fontSize=14;fontStyle=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="620" y="570" width="260" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="v22" value="&lt;b&gt;MariaDB&lt;/b&gt;&lt;br&gt;kwl_lavanderia&lt;br&gt;persistencia" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;shape=cylinder3d;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="655" y="635" width="190" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="v23" value="LXC_MQTT" style="swimlane;html=1;rounded=1;startSize=28;fontSize=14;fontStyle=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="940" y="570" width="260" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="v24" value="&lt;b&gt;Mosquitto&lt;/b&gt;&lt;br&gt;Broker MQTT&lt;br&gt;1883 LAN" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="975" y="635" width="190" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="v25" value="LXC_SIM / Demo" style="swimlane;html=1;rounded=1;startSize=28;fontSize=14;fontStyle=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="940" y="830" width="260" height="155" as="geometry"/>
+        </mxCell>
+        <mxCell id="v26" value="&lt;b&gt;Simulador&lt;/b&gt;&lt;br&gt;lavadoras, puerta,&lt;br&gt;luces, ventilación" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="975" y="885" width="190" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e27" value="uplink LAN" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v10" target="v16">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e28" value="HTTP interno" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v18" target="v19">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e29" value="SQL 3306" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v19" target="v22">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e30" value="Redis 6379" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v19" target="v20">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e31" value="MQTT publish/subscribe" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v19" target="v24">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e32" value="MQTT" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v26" target="v24">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="v33" value="Red física IoT / local" style="swimlane;html=1;rounded=1;shadow=0;startSize=34;fontSize=15;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1430" y="500" width="390" height="540" as="geometry"/>
+        </mxCell>
+        <mxCell id="v34" value="&lt;b&gt;ESP32 / módulo por máquina&lt;/b&gt;&lt;br&gt;WiFi o RJ45 según montaje&lt;br&gt;topics kwl/maquinas/..." style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="570" width="290" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="v35" value="&lt;b&gt;Monedero RM5&lt;/b&gt;&lt;br&gt;impulsos / crédito&lt;br&gt;24V en instalación actual" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="710" width="290" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="v36" value="&lt;b&gt;Lavadora / Secadora&lt;/b&gt;&lt;br&gt;relés: crédito, reinicio, apagado&lt;br&gt;estado por eventos" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="830" width="290" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="v37" value="&lt;b&gt;Cámara IP / Mobotix&lt;/b&gt;&lt;br&gt;stream + relés puerta/luces&lt;br&gt;proxy backend" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1480" y="960" width="290" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="e38" value="LAN" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v10" target="v34">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e39" value="LAN" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v10" target="v37">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e40" value="MQTT 1883" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v24" target="v34">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e41" value="pulsos / señales" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v34" target="v35">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e42" value="relés / pulsos" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v34" target="v36">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e43" value="HTTP cámara/relé" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v19" target="v37">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="580" y="900"/>
+              <mxPoint x="1400" y="900"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="v44" value="&lt;b&gt;Entorno demo Docker Compose&lt;/b&gt;&lt;br&gt;En evaluación puede ejecutarse todo en una sola máquina con servicios: core-nginx, core-node, mariadb, redis, mqtt, mqtt-sim, mqtt-sim-gui y adminer." style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1080" width="850" height="70" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

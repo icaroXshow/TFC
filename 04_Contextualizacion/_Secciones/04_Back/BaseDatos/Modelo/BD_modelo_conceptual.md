@@ -1,31 +1,23 @@
 # Modelo Conceptual — Base de Datos
 ## Sistema: LAVANDERÍA KWL
 
-Este documento describe el **modelo conceptual de la base de datos** del sistema.
+Este documento describe el modelo conceptual de datos del sistema KWL.
 
-El sistema está diseñado para:
-- Gestionar múltiples lavanderías
-- Controlar máquinas (lavadoras/secadoras)
-- Registrar ciclos de uso
-- Registrar aportaciones económicas (monedas o manuales)
-- Permitir ampliaciones de tiempo durante el ciclo
-- Registrar acciones manuales del administrador
-- Mantener histórico económico y técnico
+El objetivo es representar de forma clara:
 
-Principios del diseño:
-- simplicidad
-- trazabilidad
-- consistencia contable
-- capacidad de crecimiento
+- entidades de negocio
+- relaciones entre entidades
+- reglas funcionales principales
 
 ---
 
-# Entidades del sistema
+## Entidades principales
 
-## Lavanderia
-    Representa cada local físico.
+### Lavanderia
+Representa cada local físico gestionado por el sistema.
 
-Atributos:
+Atributos clave:
+
 - id_lavanderia
 - nombre
 - codigo
@@ -33,58 +25,74 @@ Atributos:
 - ciudad
 - provincia
 - activo
-- fecha_alta
 
-Relación: Lavanderia 1 --- N Maquina
+Relaciones:
+
+- Lavanderia 1 --- N Maquina
+- Lavanderia 1 --- N TarifaMaquina
+- Lavanderia 1 --- N MovimientoMaquina
 
 ---
 
-## Usuario
-    Representa a los usuarios que acceden al panel web.
+### Usuario
+Representa los usuarios con acceso al panel.
 
-Atributos:
+Atributos clave:
+
 - id_usuario
-- nombre
-- apellidos
 - login
 - password_hash
 - rol
 - activo
-- fecha_creacion
-- ultimo_acceso
 
 Relaciones:
 
-Usuario 1 --- N MovimientoMaquina  
-Usuario 1 --- N Auditoria
+- Usuario N --- N Lavanderia (vía UsuarioLavanderia)
+- Usuario 1 --- N Auditoria
+- Usuario 1 --- N MovimientoMaquina (cuando aplica acción manual)
 
 ---
 
-## Maquina
-    Representa cada lavadora o secadora.
+### UsuarioLavanderia
+Asociación de permisos por lavandería.
 
-Atributos:
+Atributos clave:
+
+- id_usuario
+- id_lavanderia
+
+Regla:
+
+- un usuario puede tener acceso a varias lavanderías
+- una lavandería puede tener varios usuarios
+
+---
+
+### Maquina
+Representa cada lavadora/secadora de una lavandería.
+
+Atributos clave:
+
 - id_maquina
 - id_lavanderia
-- codigo_visible (L1, L2, S1, etc)
+- codigo_visible
 - tipo_maquina
 - estado_actual
 - activa
-- fecha_alta
-- observaciones
 
 Relaciones:
 
-Maquina 1 --- N Ciclo  
-Maquina 1 --- N MovimientoMaquina  
-Maquina 1 --- N LogMaquina
+- Maquina 1 --- N Ciclo
+- Maquina 1 --- N MovimientoMaquina
+- Maquina 1 --- N LogMaquina
 
 ---
 
-## TarifaMaquina
-    Define las condiciones económicas vigentes durante un periodo. Permite cambiar precios sin alterar ciclos históricos.
+### TarifaMaquina
+Define condiciones económicas vigentes por lavandería y periodo.
 
-Atributos:
+Atributos clave:
+
 - id_tarifa
 - id_lavanderia
 - precio_arranque
@@ -97,14 +105,15 @@ Atributos:
 
 Relación:
 
-TarifaMaquina 1 --- N Ciclo
+- TarifaMaquina 1 --- N Ciclo
 
 ---
 
-## Ciclo
-    Representa una ejecución real de la máquina.
+### Ciclo
+Representa una ejecución real de máquina.
 
-Atributos:
+Atributos clave:
+
 - id_ciclo
 - id_maquina
 - id_tarifa_aplicada
@@ -118,80 +127,68 @@ Atributos:
 - importe_bonificado_total
 - importe_total_aplicado
 - duracion_total_programada_min
-- observaciones
 
 Relaciones:
 
-Ciclo 1 --- N MovimientoMaquina  
-Ciclo 1 --- N LogMaquina
+- Ciclo 1 --- N MovimientoMaquina
+- Ciclo 1 --- N LogMaquina
 
 ---
 
-## MovimientoMaquina
-    Representa cada entrada económica aplicada a una máquina.
+### MovimientoMaquina
+Representa cada movimiento económico aplicado a máquina/ciclo.
 
-@Tipos de movimiento:
-- ARRANQUE
-- AMPLIACION_TIEMPO
+Atributos clave:
 
-@Origen del movimiento:
-- MONEDERO
-- WEB_MANUAL
-
-Atributos:
 - id_movimiento
 - id_lavanderia
 - id_maquina
 - id_ciclo
 - id_usuario
-- fecha_hora
 - tipo_movimiento
 - origen_movimiento
 - importe
 - minutos_extra_generados
 - es_bonificacion
-- descripcion
+
+Valores de negocio relevantes:
+
+- tipo_movimiento: `ARRANQUE`, `AMPLIACION_TIEMPO`
+- origen_movimiento: `MONEDERO`, `WEB_MANUAL`
 
 Interpretación:
 
-- `es_bonificacion = false` → dinero real del cliente
-- `es_bonificacion = true` → saldo añadido desde la web
+- `es_bonificacion = 0` -> importe cliente
+- `es_bonificacion = 1` -> importe bonificado/manual
 
 ---
 
-## LogMaquina
-    Eventos técnicos generados por dispositivos o backend.
+### LogMaquina
+Registra eventos técnicos/operativos de máquina.
 
-Atributos:
+Atributos clave:
+
 - id_log
 - id_lavanderia
 - id_maquina
 - id_ciclo
-- fecha_hora
 - tipo_evento
 - nivel
 - payload
 - procesado
 
-Ejemplos de eventos:
-- CICLO_INICIADO
-- CICLO_FINALIZADO
-- MONEDA_RECIBIDA
-- AMPLIACION_APLICADA
-- ERROR_COMUNICACION
-
 ---
 
-## Auditoria
-    Registro de acciones administrativas.
+### Auditoria
+Registra acciones administrativas para trazabilidad.
 
-Atributos:
+Atributos clave:
+
 - id_auditoria
 - id_usuario
 - id_lavanderia
 - id_maquina
 - id_ciclo
-- fecha_hora
 - accion
 - entidad_afectada
 - id_entidad_afectada
@@ -200,45 +197,23 @@ Atributos:
 
 ---
 
-## Configuracion
-    Parámetros auxiliares del sistema.
+### Configuracion
+Tabla de parámetros auxiliares del sistema.
 
-Atributos:
+Atributos clave:
+
 - id_configuracion
-- ambito
+- ambito (`GLOBAL` | `LAVANDERIA`)
 - id_lavanderia
 - clave
 - valor
-- descripcion
-- fecha_actualizacion
 
 ---
 
-# Relaciones globales
+## Reglas conceptuales principales
 
-Lavanderia 1 --- N Maquina  
-Lavanderia 1 --- N TarifaMaquina  
-Lavanderia 1 --- N MovimientoMaquina  
-
-Maquina 1 --- N Ciclo  
-Maquina 1 --- N MovimientoMaquina  
-Maquina 1 --- N LogMaquina  
-
-Ciclo 1 --- N MovimientoMaquina  
-Ciclo 1 --- N LogMaquina  
-
-Usuario 1 --- N MovimientoMaquina  
-Usuario 1 --- N Auditoria  
-
-TarifaMaquina 1 --- N Ciclo
-
----
-
-# Reglas de negocio
-
-1. El precio de arranque puede cambiar en el futuro.
-2. Cada ciclo guarda los valores aplicados en el momento del arranque.
-3. Cada euro añadido durante el ciclo genera minutos extra.
-4. Las aportaciones manuales desde la web se consideran bonificaciones.
-5. El dinero real del cliente se distingue mediante `es_bonificacion = false`.
-6. Los informes de caja se calculan a partir de ciclos y movimientos.
+1. El backend decide y persiste; los dispositivos ejecutan.
+2. Un ciclo conserva snapshot tarifario para no romper histórico.
+3. Se separa contabilidad de cliente y bonificación.
+4. Los informes se calculan sobre tablas base, no sobre resúmenes persistidos.
+5. Toda acción crítica debe tener trazabilidad (`auditoria` y/o `log_maquina`).

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>KWL — Mapa Arquitectura TFC</title>
+
+    <!-- D3 -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+
+    <!-- CSS externo -->
+    <link rel="stylesheet" href="./mapa.css" />
+  </head>
+
+  <body>
+    <!-- HUD -->
+    <div id="hud">
+      <div id="title">
+        KWL — Mapa Arquitectura TFC
+        <span class="pill">Real · Demo · Contexto</span>
+      </div>
+      <div id="crumb">Ruta: Universo</div>
+      <div id="hint">
+        Rueda: zoom · Arrastra: mover · Click: abrir · Shift+Click: abrir (nueva pestaña) · Minimapa: click/arrastrar · UI: se oculta a los 30s
+      </div>
+      <div id="actions">
+        <div class="btn" id="btnBack" disabled>← Volver</div>
+        <div class="btn" id="btnHome">⌂ Inicio</div>
+        <div class="btn" id="btnCenter">◎ Centrar</div>
+        <div class="btn" id="btnFit">⤢ Ajustar</div>
+        <div class="btn" id="btnToggleLabels">Aa Etiquetas</div>
+        <div class="btn" id="btnToggleEdges">— Conexiones</div>
+        <div class="btn" id="btnToggleMini">▣ Minimapa</div>
+      </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div id="tooltip"></div>
+
+    <!-- Minimapa -->
+    <div id="miniWrap">
+      <div id="miniTitle">Navegador</div>
+      <svg id="miniSvg"></svg>
+    </div>
+
+    <!-- Índice -->
+    <div id="navPanel">
+      <div class="navHeader">
+        <div class="navTitle">Índice</div>
+        <input id="navSearch" class="navSearch" type="text" placeholder="Buscar nodo… (label/id)" />
+      </div>
+      <div id="navList" class="navList"></div>
+    </div>
+
+    <!-- Fondo animado -->
+    <canvas id="spaceBg"></canvas>
+
+    <!-- Lienzo -->
+    <svg id="space"></svg>
+
+    <!-- JS externo -->
+    <script src="./mapa.js"></script>
+  </body>
+</html>
+>>>>>>> 68052d34e6abd8c957363c38d2eb7081d8235ae0:00_Presentacion/Mapa/index.html

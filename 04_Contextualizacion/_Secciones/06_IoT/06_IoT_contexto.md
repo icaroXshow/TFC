@@ -98,7 +98,7 @@ Con este modelo se mantiene control centralizado, trazabilidad y escalabilidad.
 
 ## 10. Simulacion de dispositivo en VM
 
-Para pruebas y demo sin hardware fisico, el sistema incorpora una maquina virtual `VM_SIM_ESP32`.
+Para pruebas y demo sin hardware fisico, el sistema incorpora simulador software desplegado en `VM_CORE`.
 
 Este nodo software:
 

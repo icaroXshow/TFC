@@ -67,7 +67,7 @@ Mosquitto MQTT
 VM_CORE
 
 - Nginx
-- Backend PHP
+- Backend Node.js
 - Redis
 
 VM_DATA

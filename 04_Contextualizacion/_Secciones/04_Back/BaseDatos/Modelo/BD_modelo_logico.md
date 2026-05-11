@@ -71,7 +71,6 @@ Valores esperados inicialmente:
 
 - `ADMIN`
 - `OPERADOR`
-- `TECNICO`
 
 ## Índices
 

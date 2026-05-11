@@ -15,13 +15,13 @@ Sus funciones principales son:
 
 ## 2. Relacion con VM_CORE
 
-El backend se ejecuta en `VM_CORE (192.168.1.51)` junto con Nginx, PHP-FPM y Redis.
+El backend se ejecuta en `VM_CORE (192.168.1.51)` junto con Nginx y simulador (perfil opcional).
 
 Esta maquina concentra:
 
 - punto de entrada HTTP del sistema
 - logica de aplicacion
-- cache y estado rapido
+- simulacion MQTT para pruebas/control sin hardware
 
 VM_CORE no almacena datos persistentes de negocio; delega ese rol en VM_DATA.
 
@@ -35,7 +35,7 @@ Se utiliza para persistencia transaccional:
 - movimientos economicos
 - auditoria y logs
 
-### Redis (VM_CORE)
+### Redis (VM_DATA)
 
 Se utiliza para:
 
@@ -70,11 +70,13 @@ Principios de implementacion:
 
 ## 6. API prevista
 
-Endpoints base del MVP:
+Endpoints base del estado actual:
 
-- `GET /api/health`: estado de backend, DB y Redis
-- `GET /api/machines`: listado de maquinas y estado
-- `POST /api/machines/{id}/command`: solicitud de accion
+- `GET /health`: estado de backend, DB, Redis y MQTT
+- `POST /api/auth/login`: inicio de sesion
+- `GET /api/maquinas`: listado de maquinas y estado
+- `POST /api/maquinas/{id}/iniciar`: inicio de ciclo
+- `POST /api/maquinas/{id}/detener`: parada de ciclo
 
 Evolucion prevista:
 
@@ -106,10 +108,10 @@ La auditoria es obligatoria para acciones de control de maquinas y parametros.
 
 ## 9. Tiempo real
 
-Estrategia de tiempo real:
+Estrategia de tiempo real actual:
 
 - backend consume estado de MQTT
 - Redis sirve como capa de estado rapido
-- frontend consulta periodica (MVP) y evolucion a WebSocket
+- frontend admin combina consulta periodica y canal WebSocket
 
 Esto permite observabilidad operativa sin depender de nube externa.

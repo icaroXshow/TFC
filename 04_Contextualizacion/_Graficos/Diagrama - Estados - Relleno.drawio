@@ -1,0 +1,135 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.5.2 Chrome/142.0.7444.265 Electron/39.6.1 Safari/537.36" version="29.5.2">
+  <diagram name="Página-1" id="diag2">
+    <mxGraphModel dx="1186" dy="811" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t3" value="Diagrama de estados — KWL/QWL" style="rounded=0;whiteSpace=wrap;html=1;shadow=0;fontSize=16;fontStyle=1;strokeColor=none;fillColor=none;fontSize=22;" vertex="1" parent="1">
+          <mxGeometry x="20" y="15" width="1660" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="t4" value="&lt;b&gt;Estados de máquina&lt;/b&gt;&lt;br&gt;El backend valida, registra y publica comandos. El dispositivo o simulador reporta el estado real por MQTT." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="70" y="70" width="760" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="v5" value="" style="ellipse;html=1;shape=ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="70" y="200" width="32" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="v6" value="&lt;b&gt;STOP&lt;/b&gt;&lt;br&gt;Máquina libre/parada&lt;br&gt;estado_actual = STOP" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="150" y="170" width="210" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="v7" value="&lt;b&gt;PAUSADA&lt;/b&gt;&lt;br&gt;Encendida / lista&lt;br&gt;espera crédito o inicio" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="500" y="170" width="220" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="v8" value="&lt;b&gt;EN_MARCHA&lt;/b&gt;&lt;br&gt;Ciclo activo&lt;br&gt;temporizador + eventos" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="870" y="170" width="220" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="v9" value="&lt;b&gt;FUERA_SERVICIO&lt;/b&gt;&lt;br&gt;Bloqueada por avería&lt;br&gt;no operativa" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="320" y="385" width="220" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="v10" value="&lt;b&gt;MANTENIMIENTO&lt;/b&gt;&lt;br&gt;Intervención técnica&lt;br&gt;operación restringida" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="710" y="385" width="230" height="85" as="geometry"/>
+        </mxCell>
+        <mxCell id="e11" value="" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v5" target="v6">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e12" value="POST /api/maquinas/{id}/iniciar&lt;br&gt;encender_rele" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v6" target="v7">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e13" value="crédito mínimo + confirmar inicio&lt;br&gt;POST /iniciar" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v7" target="v8">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e14" value="CICLO_FINALIZADO&lt;br&gt;fin natural → queda lista" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v8" target="v7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="870" y="310"/>
+              <mxPoint x="610" y="310"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e15" value="POST /detener&lt;br&gt;stop_manual" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v8" target="v6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="880" y="90"/>
+              <mxPoint x="250" y="90"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e16" value="POST /detener / apagar" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="v7" target="v6">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e17" value="incidencia / bloqueo" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v8" target="v9">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="355"/>
+              <mxPoint x="430" y="355"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e18" value="marcar mantenimiento" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v6" target="v10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="260" y="330"/>
+              <mxPoint x="825" y="330"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e19" value="reactivar tras revisión" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v9" target="v6">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e20" value="reactivar" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v10" target="v6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="825" y="520"/>
+              <mxPoint x="250" y="520"/>
+              <mxPoint x="250" y="260"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="v21" value="&lt;b&gt;Regla de estados&lt;/b&gt;&lt;br&gt;La BD conserva el histórico y el estado persistente. Redis mantiene estado operativo rápido; MQTT representa el estado físico informado por ESP32/simulador." style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="145" width="420" height="145" as="geometry"/>
+        </mxCell>
+        <mxCell id="t22" value="&lt;b&gt;Estados de ciclo&lt;/b&gt;&lt;br&gt;Un ciclo se crea al arrancar y congela tarifa/importes aplicados." style="text;html=1;strokeColor=none;fillColor=none;align=left;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="70" y="570" width="760" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="v23" value="&lt;b&gt;INICIADO&lt;/b&gt;&lt;br&gt;fecha_hora_inicio&lt;br&gt;duración programada" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="160" y="660" width="210" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="v24" value="&lt;b&gt;FINALIZADO&lt;/b&gt;&lt;br&gt;fecha_hora_fin&lt;br&gt;cierre natural" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="520" y="610" width="210" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="v25" value="&lt;b&gt;CANCELADO&lt;/b&gt;&lt;br&gt;parada manual&lt;br&gt;o anulación" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="520" y="735" width="210" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="v26" value="&lt;b&gt;INCIDENCIA&lt;/b&gt;&lt;br&gt;error técnico&lt;br&gt;intervención necesaria" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="875" y="670" width="210" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="e27" value="CICLO_FINALIZADO" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v23" target="v24">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e28" value="POST /detener&lt;br&gt;stop_manual" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v23" target="v25">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e29" value="ERROR_COMUNICACION&lt;br&gt;fallo dispositivo" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;" edge="1" parent="1" source="v23" target="v26">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e30" value="revisión / regularización" style="endArrow=block;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;fontSize=11;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="v26" target="v25">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="t31" value="&lt;b&gt;Estados IoT auxiliares&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="890" width="500" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="v32" value="&lt;b&gt;Puerta / persiana&lt;/b&gt;&lt;br&gt;ABIERTA ↔ CERRADA&lt;br&gt;ABRIENDO / CERRANDO&lt;br&gt;ERROR" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="145" y="945" width="250" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="v33" value="&lt;b&gt;Luces&lt;/b&gt;&lt;br&gt;ON ↔ OFF" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="465" y="945" width="220" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="v34" value="&lt;b&gt;Ventilación&lt;/b&gt;&lt;br&gt;ON ↔ OFF&lt;br&gt;auto por máquina opcional" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=12;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="755" y="945" width="250" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="v35" value="&lt;b&gt;Transiciones IoT&lt;/b&gt;&lt;br&gt;Manual desde panel, programador individual o escena de apertura/cierre de tienda. Se registran en configuración, auditoría y log de acciones IoT." style="rounded=1;whiteSpace=wrap;html=1;shadow=0;fontSize=11;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="900" width="420" height="130" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

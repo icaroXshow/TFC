@@ -16,7 +16,7 @@ Debe permitir al usuario:
 Perfiles en MVP:
 
 - cliente final: solo consume landing publica informativa
-- `ADMIN`: unico perfil con inicio de sesion y control operativo
+- `ADMIN` y `OPERADOR`: perfiles con inicio de sesion y control operativo segun permisos
 
 El frontend separa claramente zona publica y zona privada de administracion.
 
@@ -44,13 +44,10 @@ Toda validacion critica se realiza en backend.
 
 ## 5. Tiempo real
 
-En MVP se plantea actualizacion periodica de datos via polling.
+En la version actual se usa actualizacion periodica de datos via API y WebSocket para panel admin en tiempo real.
 
-En fase posterior se migrara a WebSocket para:
-
-- reducir latencia visual
-- actualizar panel sin recargar
-- mejorar experiencia en eventos de maquina
+- el panel mantiene la evolucion WebSocket activa para estados operativos
+- se conserva polling como mecanismo de apoyo
 
 ## 6. Diseno responsive
 
